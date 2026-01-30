@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Bar Chinesca Mxli</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">
+                    <h1>🍺 Bar Chinesca Mxli</h1>
+                </a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html#reservations">Reservations</a></li>
+                <li><a href="cancel.html">Cancel</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+            <div class="nav-right">
+                <a href="profile.html" class="profile-icon active" title="My Profile">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </a>
+                <div class="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Profile Section -->
+    <section class="profile-section" style="padding-top: 100px;">
+        <div class="container">
+            <h2>My Profile</h2>
+            
+            <!-- Shown when not logged in (default so no user data is ever visible without login) -->
+            <div id="notLoggedIn" style="display: block;">
+                <p>You are not logged in. <a href="index.html">Go to home page</a> to login or create an account.</p>
+            </div>
+            
+            <!-- Shown only when logged in - reservations and logout -->
+            <div id="profileContent" style="display: none;">
+                <div class="reservations-list">
+                    <div id="reservationsList">
+                        <p>No reservations found.</p>
+                    </div>
+                </div>
+                <p class="profile-logout-wrap"><button class="btn btn-secondary" id="logoutBtn">Logout</button></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Bar Chinesca Mxli. All rights reserved.</p>
+            <p>Place reservations at <a href="tel:+1234567890">(123) 456-7890</a></p>
+        </div>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Profile page: show reservations and logout ONLY when the user is logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const orderDetails = JSON.parse(localStorage.getItem('orderDetails')) || {};
+            
+            if (!currentUser) {
+                document.getElementById('notLoggedIn').style.display = 'block';
+                document.getElementById('profileContent').style.display = 'none';
+                return;
+            }
+            
+            // Only show profile content when we have a logged-in user
+            document.getElementById('notLoggedIn').style.display = 'none';
+            document.getElementById('profileContent').style.display = 'block';
+            
+            // Defensive: do not render any reservation data if for some reason currentUser is missing here
+            if (!currentUser || !currentUser.email) {
+                document.getElementById('profileContent').style.display = 'none';
+                document.getElementById('notLoggedIn').style.display = 'block';
+                return;
+            }
+            
+            // Get only this user's reservations (filtered by logged-in user's email)
+            const userReservations = [];
+            for (const [orderNumber, order] of Object.entries(orderDetails)) {
+                if (order && order.email === currentUser.email) {
+                    userReservations.push({
+                        orderNumber: orderNumber,
+                        ...order
+                    });
+                }
+            }
+            
+            // Display reservations (only for logged-in user; currentUser already verified above)
+            const reservationsList = document.getElementById('reservationsList');
+            if (!reservationsList) return;
+            if (userReservations.length === 0) {
+                reservationsList.innerHTML = '<p>No reservations found.</p>';
+            } else {
+                userReservations.sort((a, b) => new Date(a.date) - new Date(b.date));
+                let html = '<div class="reservations-grid profile-cards">';
+                userReservations.forEach(reservation => {
+                    const tableDisplay = reservation.table <= 4 ? 
+                        `VIP Table ${reservation.table}` : 
+                        `Table ${reservation.table}`;
+                    const nameDisplay = reservation.name || (currentUser.firstName && currentUser.lastName ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.email) || '—';
+                    
+                    html += `
+                        <div class="reservation-card profile-card-simple">
+                            <div class="profile-card-order">${reservation.orderNumber}</div>
+                            <div class="profile-card-table">${tableDisplay}</div>
+                            <div class="profile-card-name">${nameDisplay}</div>
+                            <div class="profile-card-guests">${reservation.guests} ${reservation.guests === '1' ? 'person' : 'people'}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                reservationsList.innerHTML = html;
+            }
+            
+            // If Firebase restores session after load, reload so profile shows (user was logged in)
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user && !localStorage.getItem('currentUser')) {
+                        window.location.reload();
+                    }
+                });
+            }
+            
+            // Logout button (sign out from Firebase if used)
+            var logoutBtn = document.getElementById('logoutBtn');
+            if (!logoutBtn) return;
+            logoutBtn.addEventListener('click', function() {
+                if (typeof firebase !== 'undefined' && firebase.auth) {
+                    firebase.auth().signOut();
+                }
+                localStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>

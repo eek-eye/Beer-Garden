@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Bar Chinesca Mxli</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">
+                    <h1>🍺 Bar Chinesca Mxli</h1>
+                </a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html#reservations">Reservations</a></li>
+                <li><a href="cancel.html">Cancel</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+                <li id="navLoginItem"><a href="login.html" class="active">Login</a></li>
+            </ul>
+            <div class="nav-right">
+                <a href="profile.html" class="profile-icon" title="My Profile">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </a>
+                <div class="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login / Sign up Section (full page) -->
+    <section class="login-page-section">
+        <div class="container container-narrow">
+            <h2 class="login-page-title">Welcome to Bar Chinesca Mxli</h2>
+            <p class="login-page-subtitle">Sign in or create an account to make reservations</p>
+
+            <!-- Login form -->
+            <div id="loginForm" class="auth-form auth-form-page">
+                <h3>Login</h3>
+                <form id="loginFormElement">
+                    <div class="form-group">
+                        <label for="loginEmail">Email *</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password *</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                </form>
+                <div class="auth-divider">or</div>
+                <div id="googleSignInButton" class="google-signin-container">
+                    <button type="button" class="btn btn-google js-google-btn" aria-label="Continue with Google">
+                        <span class="btn-google-icon"><svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V6.258H.957C.347 7.58 0 9.024 0 10.5c0 1.474.348 2.92.957 4.242l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.258L3.964 6.59C4.672 4.414 6.656 2.83 9 2.83z"/></svg></span>
+                        Continue with Google
+                    </button>
+                </div>
+                <p class="auth-switch">Don't have an account? <a href="#" id="switchToSignup">Sign up</a></p>
+            </div>
+
+            <!-- Sign up form -->
+            <div id="signupForm" class="auth-form auth-form-page" style="display: none;">
+                <h3>Create Account</h3>
+                <form id="signupFormElement">
+                    <div class="form-group">
+                        <label for="signupFirstName">First Name *</label>
+                        <input type="text" id="signupFirstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupLastName">Last Name *</label>
+                        <input type="text" id="signupLastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email *</label>
+                        <input type="email" id="signupEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Password *</label>
+                        <input type="password" id="signupPassword" required minlength="6" placeholder="At least 6 characters">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+                </form>
+                <div class="auth-divider">or</div>
+                <div id="googleSignUpButton" class="google-signin-container">
+                    <button type="button" class="btn btn-google js-google-btn" aria-label="Continue with Google">
+                        <span class="btn-google-icon"><svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V6.258H.957C.347 7.58 0 9.024 0 10.5c0 1.474.348 2.92.957 4.242l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.258L3.964 6.59C4.672 4.414 6.656 2.83 9 2.83z"/></svg></span>
+                        Continue with Google
+                    </button>
+                </div>
+                <p class="auth-switch">Already have an account? <a href="#" id="switchToLogin">Login</a></p>
+            </div>
+
+            <p class="login-page-back"><a href="index.html">← Back to home</a></p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Bar Chinesca Mxli. All rights reserved.</p>
+            <p>Place reservations at <a href="tel:+1234567890">(123) 456-7890</a></p>
+        </div>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer onload="if (typeof initGoogleSignIn === 'function') initGoogleSignIn();"></script>
+    <script src="google-auth-config.js"></script>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('currentUser')) {
+                window.location.href = 'index.html';
+                return;
+            }
+            var loginForm = document.getElementById('loginForm');
+            var signupForm = document.getElementById('signupForm');
+            var switchToSignup = document.getElementById('switchToSignup');
+            var switchToLogin = document.getElementById('switchToLogin');
+
+            if (switchToSignup) {
+                switchToSignup.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (loginForm) loginForm.style.display = 'none';
+                    if (signupForm) signupForm.style.display = 'block';
+                });
+            }
+            if (switchToLogin) {
+                switchToLogin.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (signupForm) signupForm.style.display = 'none';
+                    if (loginForm) loginForm.style.display = 'block';
+                });
+            }
+
+            if (typeof initGoogleSignIn === 'function') setTimeout(initGoogleSignIn, 300);
+        });
+    </script>
+</body>
+</html>
