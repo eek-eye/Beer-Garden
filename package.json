@@ -1,0 +1,12 @@
+{
+  "name": "bar-chinesca-mxli",
+  "version": "1.0.0",
+  "description": "Bar Chinesca Mxli - reservation system with Google auth",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}
