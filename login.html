@@ -16,9 +16,9 @@
                 </a>
             </div>
             <ul class="nav-menu">
-                <li><a href="index.html#reservations">Reservations</a></li>
+                <li><a href="index.html">Reservations</a></li>
                 <li><a href="cancel.html">Cancel</a></li>
-                <li><a href="index.html#contact">Contact</a></li>
+                <li><a href="index.html">Contact</a></li>
                 <li id="navLoginItem"><a href="login.html" class="active">Login</a></li>
             </ul>
             <div class="nav-right">
@@ -47,7 +47,7 @@
             <div id="loginForm" class="auth-form auth-form-page">
                 <h3>Login</h3>
                 <p class="auth-form-intro">Sign in with your email and password, or use Google below.</p>
-                <form id="loginFormElement">
+                <form id="loginFormElement" method="post" action="javascript:void(0);">
                     <div class="form-group">
                         <label for="loginEmail">Email *</label>
                         <input type="email" id="loginEmail" required>
@@ -71,8 +71,8 @@
             <!-- Sign up form (email + password) -->
             <div id="signupForm" class="auth-form auth-form-page" style="display: none;">
                 <h3>Create Account with Email</h3>
-                <p class="auth-form-intro">Sign up with your email and a password to make reservations.</p>
-                <form id="signupFormElement">
+                <p class="auth-form-intro">Enter your name, email, and password — we create your account and log you in. No verification code.</p>
+                <form id="signupFormElement" method="post" action="javascript:void(0);">
                     <div class="form-group">
                         <label for="signupFirstName">First Name *</label>
                         <input type="text" id="signupFirstName" required>
@@ -101,6 +101,7 @@
                 <p class="auth-switch">Already have an account? <a href="#" id="switchToLogin">Login</a></p>
             </div>
 
+            <div id="loginPageMessage" class="login-page-message" style="display: none;" role="alert"></div>
             <p class="login-page-back"><a href="index.html">← Back to home</a></p>
         </div>
     </section>
@@ -122,7 +123,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (localStorage.getItem('currentUser')) {
-                window.location.href = 'index.html';
+                window.location.href = 'profile.html';
                 return;
             }
             var loginForm = document.getElementById('loginForm');
@@ -142,6 +143,42 @@
                     e.preventDefault();
                     if (signupForm) signupForm.style.display = 'none';
                     if (loginForm) loginForm.style.display = 'block';
+                });
+            }
+
+            // Login form: prevent page reload and call handleLogin
+            var loginFormEl = document.getElementById('loginFormElement');
+            if (loginFormEl) {
+                loginFormEl.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var email = (document.getElementById('loginEmail') || {}).value;
+                    var password = (document.getElementById('loginPassword') || {}).value;
+                    if (email && password && typeof handleLogin === 'function') {
+                        handleLogin(email.trim(), password);
+                    } else {
+                        alert('Please enter email and password.');
+                    }
+                    return false;
+                });
+            }
+
+            // Signup form: prevent page reload and call handleSignup
+            var signupFormEl = document.getElementById('signupFormElement');
+            if (signupFormEl) {
+                signupFormEl.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var firstName = (document.getElementById('signupFirstName') || {}).value;
+                    var lastName = (document.getElementById('signupLastName') || {}).value;
+                    var email = (document.getElementById('signupEmail') || {}).value;
+                    var password = (document.getElementById('signupPassword') || {}).value;
+                    if (firstName && lastName && email && password && typeof handleSignup === 'function') {
+                        handleSignup(firstName.trim(), lastName.trim(), email.trim(), password);
+                    } else {
+                        alert('Please fill in first name, last name, email, and password.');
+                    }
+                    return false;
                 });
             }
 

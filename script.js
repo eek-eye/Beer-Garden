@@ -1302,7 +1302,8 @@ function handleLogin(email, password) {
         firebaseAuth.signInWithEmailAndPassword(email, password)
             .then(function() {
                 if (!document.getElementById('authModal')) {
-                    window.location.href = 'index.html';
+                    showLoginPageMessage('Login successful. Redirecting…');
+                    window.location.href = 'profile.html';
                     return;
                 }
                 closeAuthModal();
@@ -1328,7 +1329,8 @@ function handleLogin(email, password) {
             };
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             if (!document.getElementById('authModal')) {
-                window.location.href = 'index.html';
+                showLoginPageMessage('Login successful. Redirecting…');
+                window.location.href = 'profile.html';
                 return;
             }
             closeAuthModal();
@@ -1342,38 +1344,21 @@ function handleLogin(email, password) {
     }
 }
 
-// Signup Function (Firebase Email/Password or fallback to localStorage)
-function handleSignup(firstName, lastName, email, password) {
-    if (password.length < 6) {
-        alert('Password must be at least 6 characters long.');
-        return;
+function showLoginPageMessage(text) {
+    var el = document.getElementById('loginPageMessage');
+    if (el) {
+        el.textContent = text;
+        el.style.display = 'block';
+        el.className = 'login-page-message login-page-message-show';
     }
-    if (firebaseAuth) {
-        firebaseAuth.createUserWithEmailAndPassword(email, password)
-            .then(function(cred) {
-                return cred.user.updateProfile({ displayName: (firstName + ' ' + lastName).trim() });
-            })
-            .then(function() {
-                if (!document.getElementById('authModal')) {
-                    window.location.href = 'index.html';
-                    return;
-                }
-                closeAuthModal();
-                checkLoginStatus();
-                alert('Account created successfully! Welcome, ' + firstName + '!');
-            })
-            .catch(function(err) {
-                if (err.code === 'auth/email-already-in-use') alert('An account with this email already exists. Please login instead.');
-                else if (err.code === 'auth/weak-password') alert('Password is too weak. Use at least 6 characters.');
-                else if (err.code === 'auth/invalid-email') alert('Invalid email address.');
-                else alert(err.message || 'Sign up failed. Please try again.');
-            });
-        return;
-    }
+}
+
+// Create account with name + email + password only, then log in immediately (no security code, no verification)
+function createAccountAndLogIn(firstName, lastName, email, password) {
     userAccounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
     if (userAccounts[email]) {
         alert('An account with this email already exists. Please login instead.');
-        return;
+        return false;
     }
     var newUser = {
         firstName: firstName,
@@ -1392,12 +1377,56 @@ function handleSignup(firstName, lastName, email, password) {
     };
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
     if (!document.getElementById('authModal')) {
-        window.location.href = 'index.html';
-        return;
+        showLoginPageMessage('Account created. Redirecting…');
+        window.location.href = 'profile.html';
+        return true;
     }
     closeAuthModal();
     checkLoginStatus();
-    alert('Account created successfully! Welcome, ' + firstName + '!');
+    alert('Account created.');
+    return true;
+}
+
+// Signup: first name, last name, email, password only. Account created and you're logged in (no code, no verification).
+function handleSignup(firstName, lastName, email, password) {
+    if (password.length < 6) {
+        alert('Password must be at least 6 characters long.');
+        return;
+    }
+    if (firebaseAuth && typeof firebase !== 'undefined') {
+        firebaseAuth.createUserWithEmailAndPassword(email, password)
+            .then(function(cred) {
+                return cred.user.updateProfile({ displayName: (firstName + ' ' + lastName).trim() });
+            })
+            .then(function() {
+                if (!document.getElementById('authModal')) {
+                    showLoginPageMessage('Account created. Redirecting…');
+                    window.location.href = 'profile.html';
+                    return;
+                }
+                closeAuthModal();
+                checkLoginStatus();
+                alert('Account created.');
+            })
+            .catch(function(err) {
+                if (err.code === 'auth/email-already-in-use') {
+                    alert('An account with this email already exists. Please login instead.');
+                    return;
+                }
+                if (err.code === 'auth/weak-password') {
+                    alert('Password is too weak. Use at least 6 characters.');
+                    return;
+                }
+                if (err.code === 'auth/invalid-email') {
+                    alert('Invalid email address.');
+                    return;
+                }
+                // Firebase failed (e.g. not configured, wrong domain, network) — create account with your data and log you in anyway
+                createAccountAndLogIn(firstName, lastName, email, password);
+            });
+        return;
+    }
+    createAccountAndLogIn(firstName, lastName, email, password);
 }
 
 // Initialize auth system when page loads
