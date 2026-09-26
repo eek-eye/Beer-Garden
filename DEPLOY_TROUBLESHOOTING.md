@@ -24,6 +24,7 @@ In Firebase: **Authentication → Settings → Authorized domains**.
   - Add only the hostname: **`eek-eye.github.io`**
   - No `https://`, no path, no trailing slash.
 - If you use a **custom domain** (e.g. `www.yourbar.com`), add that: **`yourbar.com`** and **`www.yourbar.com`** if both are used.
+- **This site is live at https://eekseye.com/Beer-Garden/** (eek-eye.github.io redirects to the custom domain eekseye.com), so **`eekseye.com`** and **`www.eekseye.com`** must be in the list too.
 
 ---
 

@@ -49,7 +49,13 @@
             
             <!-- Shown only when logged in - name (username = first + last), then reservations and logout -->
             <div id="profileContent" style="display: none;">
-                <p class="profile-user-name" id="profileUserName"></p>
+                <div class="profile-user">
+                    <img id="profileUserPhoto" class="profile-user-photo" alt="" referrerpolicy="no-referrer" style="display: none;">
+                    <div>
+                        <p class="profile-user-name" id="profileUserName"></p>
+                        <p class="profile-user-email" id="profileUserEmail"></p>
+                    </div>
+                </div>
                 <div class="reservations-list">
                     <div id="reservationsList">
                         <p>No reservations found.</p>
@@ -77,6 +83,15 @@
         document.addEventListener('DOMContentLoaded', function() {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             const orderDetails = JSON.parse(localStorage.getItem('orderDetails')) || {};
+
+            // If Firebase restores or ends the Google/email session after load, re-render the page
+            if (typeof firebaseAuth !== 'undefined' && firebaseAuth) {
+                firebaseAuth.onAuthStateChanged(function(user) {
+                    if ((user && !currentUser) || (!user && currentUser && currentUser.uid)) {
+                        window.location.reload();
+                    }
+                });
+            }
             
             if (!currentUser) {
                 document.getElementById('notLoggedIn').style.display = 'block';
@@ -93,6 +108,14 @@
             if (profileUserName) {
                 var fullName = [currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ').trim();
                 profileUserName.textContent = fullName || 'User';
+            }
+            var profileUserEmail = document.getElementById('profileUserEmail');
+            if (profileUserEmail) profileUserEmail.textContent = currentUser.email || '';
+            var profileUserPhoto = document.getElementById('profileUserPhoto');
+            if (profileUserPhoto && currentUser.photoURL) {
+                profileUserPhoto.onerror = function() { profileUserPhoto.style.display = 'none'; };
+                profileUserPhoto.src = currentUser.photoURL;
+                profileUserPhoto.style.display = '';
             }
             
             // Defensive: do not render any reservation data if for some reason currentUser is missing here
@@ -140,24 +163,18 @@
                 reservationsList.innerHTML = html;
             }
             
-            // If Firebase restores session after load, reload so profile shows (user was logged in)
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                firebase.auth().onAuthStateChanged(function(user) {
-                    if (user && !localStorage.getItem('currentUser')) {
-                        window.location.reload();
-                    }
-                });
-            }
-            
             // Logout button (sign out from Firebase if used)
             var logoutBtn = document.getElementById('logoutBtn');
             if (!logoutBtn) return;
             logoutBtn.addEventListener('click', function() {
-                if (typeof firebase !== 'undefined' && firebase.auth) {
-                    firebase.auth().signOut();
+                logoutBtn.disabled = true;
+                // Wait for Firebase to finish signing out, otherwise the session comes back on the next page
+                if (typeof signOutUser === 'function') {
+                    signOutUser(function() { window.location.href = 'index.html'; });
+                } else {
+                    localStorage.removeItem('currentUser');
+                    window.location.href = 'index.html';
                 }
-                localStorage.removeItem('currentUser');
-                window.location.href = 'index.html';
             });
         });
     </script>

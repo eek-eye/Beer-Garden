@@ -101,7 +101,7 @@ function generateOrderNumber() {
 const hamburger = document.querySelector('.hamburger');
 const navMenu = document.querySelector('.nav-menu');
 
-hamburger.addEventListener('click', () => {
+if (hamburger && navMenu) hamburger.addEventListener('click', () => {
     hamburger.classList.toggle('active');
     navMenu.classList.toggle('active');
 });
@@ -109,6 +109,7 @@ hamburger.addEventListener('click', () => {
 // Close mobile menu when clicking on a link
 document.querySelectorAll('.nav-menu a').forEach(link => {
     link.addEventListener('click', () => {
+        if (!hamburger || !navMenu) return;
         hamburger.classList.remove('active');
         navMenu.classList.remove('active');
     });
@@ -307,6 +308,7 @@ You can also place your reservation directly at (123) 456-7890.
         successDiv.remove();
     }, 5000);
 });
+}
 
 // Initialize seat elements with data attributes for table numbers
 function initializeSeatDataAttributes() {
@@ -337,7 +339,7 @@ const day = String(now.getDate()).padStart(2, '0');
 const todayStr = `${year}-${month}-${day}`;
 
 // Set minimum to today so today is always selectable
-dateInput.setAttribute('min', todayStr);
+if (dateInput) dateInput.setAttribute('min', todayStr);
 
 // Add validation to prevent booking dates that have passed 7 PM on that day
 function isDateLocked(dateString) {
@@ -376,11 +378,11 @@ for (let i = 1; i <= 50; i++) {
     } else {
         option.textContent = `Table ${i}`;
     }
-    tableSelect.appendChild(option);
+    if (tableSelect) tableSelect.appendChild(option);
 }
 
 // Update seating chart and dropdown when date changes
-dateInput.addEventListener('change', function() {
+if (dateInput) dateInput.addEventListener('change', function() {
     const selectedDate = this.value;
     if (selectedDate) {
         // Check if date is locked
@@ -1035,213 +1037,162 @@ document.querySelectorAll('a[href^="tel:"]').forEach(link => {
 // AUTHENTICATION SYSTEM
 // ============================================
 
-// Firebase Auth (when firebase-config.js is filled: Google + Email/Password)
+// Firebase Auth (Google + Email/Password). Config lives in firebase-config.js.
+// Google sign-in uses Firebase's popup flow (no separate OAuth client ID needed).
 var firebaseApp = null;
 var firebaseAuth = null;
+
+function isLoginPage() {
+    return /(^|\/)login(\.html)?$/.test(window.location.pathname || '');
+}
+
+// Build the site's currentUser object from a Firebase user (name, email, photo)
+function saveFirebaseUser(user) {
+    if (!user) return null;
+    var googleProfile = (user.providerData || []).filter(function(p) { return p && p.providerId === 'google.com'; })[0] || null;
+    var displayName = (user.displayName || (googleProfile && googleProfile.displayName) || '').trim();
+    var email = user.email || (googleProfile && googleProfile.email) || '';
+    var parts = displayName.split(/\s+/).filter(Boolean);
+    currentUser = {
+        firstName: parts[0] || (email ? email.split('@')[0] : '') || 'User',
+        lastName: parts.length > 1 ? parts.slice(1).join(' ') : '',
+        displayName: displayName,
+        email: email,
+        photoURL: user.photoURL || (googleProfile && googleProfile.photoURL) || '',
+        uid: user.uid,
+        isGoogle: !!googleProfile,
+        createdAt: (user.metadata && user.metadata.creationTime) || new Date().toISOString()
+    };
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    return currentUser;
+}
+
+// Called after a successful Google sign-in (popup or redirect)
+function onGoogleSignedIn(user) {
+    var u = saveFirebaseUser(user);
+    if (!u) return;
+    if (isLoginPage()) {
+        window.location.href = 'profile.html';
+        return;
+    }
+    if (typeof closeAuthModal === 'function') closeAuthModal();
+    checkLoginStatus();
+    alert('Signed in with Google! Welcome, ' + u.firstName + '!');
+}
 
 function initFirebaseAuth() {
     if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.enabled ||
         !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey.indexOf('YOUR_') === 0) {
         return;
     }
-    if (typeof firebase === 'undefined') return;
+    if (typeof firebase === 'undefined' || !firebase.auth) return;
     try {
         firebaseApp = firebase.app();
     } catch (e) {
         firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
     }
     firebaseAuth = firebase.auth();
+    try { firebaseAuth.useDeviceLanguage(); } catch (e) {}
 
+    // Finish a redirect sign-in (only used when the popup was blocked)
     firebaseAuth.getRedirectResult().then(function(result) {
-        if (result && result.user) {
-            var user = result.user;
-            var displayName = (user.displayName || user.email || '').trim();
-            var parts = displayName.split(/\s+/).filter(Boolean);
-            currentUser = {
-                firstName: parts[0] || (user.email ? user.email.split('@')[0] : '') || 'User',
-                lastName: parts.length > 1 ? parts.slice(1).join(' ') : '',
-                email: user.email,
-                uid: user.uid,
-                isGoogle: true,
-                createdAt: user.metadata.creationTime || new Date().toISOString()
-            };
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            checkLoginStatus();
-            if (typeof closeAuthModal === 'function') closeAuthModal();
-            if (window.location.pathname.replace(/^.*[/\\], '') === 'login.html') {
-                window.location.href = 'index.html';
-            }
-        }
-    }).catch(function() {});
+        if (result && result.user) onGoogleSignedIn(result.user);
+    }).catch(function(err) {
+        if (err && err.code) showGoogleSignInError(err);
+    });
 
     firebaseAuth.onAuthStateChanged(function(user) {
         if (user) {
-            var displayName = (user.displayName || user.email || '').trim();
-            var parts = displayName.split(/\s+/).filter(Boolean);
-            currentUser = {
-                firstName: parts[0] || (user.email ? user.email.split('@')[0] : '') || 'User',
-                lastName: parts.length > 1 ? parts.slice(1).join(' ') : '',
-                email: user.email,
-                uid: user.uid,
-                isGoogle: user.providerData && user.providerData.some(function(p) { return p.providerId === 'google.com'; }),
-                createdAt: user.metadata.creationTime || new Date().toISOString()
-            };
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            saveFirebaseUser(user);
             checkLoginStatus();
-            if (typeof window.location !== 'undefined' && window.location.pathname.replace(/^.*[/\\]/, '') === 'login.html') {
-                window.location.href = 'index.html';
-                return;
+            if (isLoginPage()) {
+                window.location.href = 'profile.html';
             }
         } else {
-            currentUser = null;
-            localStorage.removeItem('currentUser');
+            // Only clear a session that came from Firebase (keep local-only accounts)
+            var stored = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (stored && stored.uid) {
+                currentUser = null;
+                localStorage.removeItem('currentUser');
+                checkLoginStatus();
+            }
         }
     });
 }
 
 initFirebaseAuth();
 
-function signInWithGoogleRedirect() {
-    if (!firebaseAuth || typeof firebase === 'undefined') return;
+function showGoogleSignInError(err) {
+    var code = (err && err.code) || '';
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request' ||
+        code === 'auth/user-cancelled') {
+        return; // user just closed the Google window
+    }
+    console.error('Google sign-in error:', err);
+    var msg;
+    if (code === 'auth/unauthorized-domain') {
+        msg = 'Google sign-in is not allowed on this website address yet (' + window.location.hostname +
+            '). Add it in Firebase Console > Authentication > Settings > Authorized domains.';
+    } else if (code === 'auth/operation-not-allowed') {
+        msg = 'Google sign-in is turned off for this site. Enable Google in Firebase Console > Authentication > Sign-in method.';
+    } else if (code === 'auth/account-exists-with-different-credential') {
+        msg = 'An account with this email already exists. Please log in with your email and password.';
+    } else if (code === 'auth/network-request-failed') {
+        msg = 'Network error. Check your connection and try again.';
+    } else {
+        msg = 'Google sign-in failed. ' + ((err && err.message) || 'Please try again.');
+    }
+    alert(msg);
+}
+
+// Sign in with Google: popup first (works on desktop and mobile), redirect if the popup is blocked
+function signInWithGoogle() {
+    if (!firebaseAuth || typeof firebase === 'undefined') {
+        alert('Google sign-in is not available right now. Please refresh the page and try again.');
+        return;
+    }
     var provider = new firebase.auth.GoogleAuthProvider();
-    firebaseAuth.signInWithRedirect(provider);
-}
-
-// Decode JWT payload (base64url) from Google credential
-function decodeGoogleJwtPayload(credential) {
-    try {
-        const parts = credential.split('.');
-        if (parts.length !== 3) return null;
-        const payload = parts[1];
-        const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-        const json = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        return JSON.parse(json);
-    } catch (e) {
-        console.error('Error decoding Google JWT:', e);
-        return null;
-    }
-}
-
-// Handle Google Sign-In credential (firewall: access with Google account)
-function handleGoogleCredential(response) {
-    if (!response || !response.credential) {
-        console.error('Google Sign-In: no credential in response');
-        return;
-    }
-    const payload = decodeGoogleJwtPayload(response.credential);
-    if (!payload || !payload.email) {
-        alert('Could not get your Google account info. Please try again.');
-        return;
-    }
-    const fullName = (payload.name || payload.email || '').trim();
-    const nameParts = fullName.split(/\s+/);
-    const firstName = payload.given_name || nameParts[0] || 'User';
-    const lastName = payload.family_name || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : '');
-    const email = payload.email;
-
-    userAccounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
-    if (!userAccounts[email]) {
-        userAccounts[email] = {
-            firstName: firstName,
-            lastName: lastName,
-            email: email,
-            isGoogle: true,
-            createdAt: new Date().toISOString()
-        };
-        localStorage.setItem('userAccounts', JSON.stringify(userAccounts));
-    }
-
-    currentUser = {
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        isGoogle: true,
-        createdAt: userAccounts[email].createdAt || new Date().toISOString()
-    };
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    if (!document.getElementById('authModal')) {
-        window.location.href = 'index.html';
-        return;
-    }
-    closeAuthModal();
-    checkLoginStatus();
-    alert('Signed in with Google! Welcome, ' + firstName + '!');
-}
-
-// Initialize Google Sign-In: Firebase (Google + Email/Password) or standalone Google Identity
-window.initGoogleSignIn = function() {
-    var loginContainer = document.getElementById('googleSignInButton');
-    var signupContainer = document.getElementById('googleSignUpButton');
-    if (!loginContainer || !signupContainer) return;
-
-    var attachGoogleClick = function(container) {
-        var btn = container && container.querySelector('.js-google-btn');
-        if (!btn) return;
-        if (firebaseAuth && typeof firebase !== 'undefined') {
-            var provider = new firebase.auth.GoogleAuthProvider();
-            btn.onclick = function(e) {
-                if (e) e.preventDefault();
-                // Use redirect so Google account picker always opens (no popup blocker issues)
-                signInWithGoogleRedirect();
-                if (typeof closeAuthModal === 'function') closeAuthModal();
-            };
+    provider.addScope('profile');
+    provider.addScope('email');
+    provider.setCustomParameters({ prompt: 'select_account' });
+    // Must be called directly from the click so the browser allows the popup
+    firebaseAuth.signInWithPopup(provider).then(function(result) {
+        if (result && result.user) onGoogleSignedIn(result.user);
+    }).catch(function(err) {
+        var code = (err && err.code) || '';
+        if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment' ||
+            code === 'auth/web-storage-unsupported') {
+            firebaseAuth.signInWithRedirect(provider).catch(showGoogleSignInError);
             return;
         }
-        btn.onclick = function() {
-            var msg = 'Google sign-in is not set up yet. ';
-            if (typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.indexOf('YOUR_') !== 0) {
-                msg += 'If the popup was blocked, try allowing popups for this site or use a different browser.';
-            } else {
-                msg += 'Add your Firebase config in firebase-config.js (Project settings > Your apps) and enable Google sign-in in Authentication.';
-            }
-            alert(msg);
-        };
+        showGoogleSignInError(err);
+    });
+}
+
+// Sign out everywhere (Firebase + local session), then run callback
+function signOutUser(callback) {
+    var done = function() {
+        currentUser = null;
+        localStorage.removeItem('currentUser');
+        if (typeof callback === 'function') callback();
     };
-
-    // When Firebase Auth is configured, attach click to the existing "Continue with Google" button
-    if (firebaseAuth && typeof firebase !== 'undefined') {
-        attachGoogleClick(loginContainer);
-        attachGoogleClick(signupContainer);
-        return;
+    if (firebaseAuth) {
+        firebaseAuth.signOut().then(done, done);
+    } else {
+        done();
     }
+}
+window.signOutUser = signOutUser;
 
-    // Fallback: standalone Google Identity Services – replace container content with Google's button
-    var gsiConfigured = typeof GOOGLE_AUTH_CONFIG !== 'undefined' && GOOGLE_AUTH_CONFIG.enabled &&
-        GOOGLE_AUTH_CONFIG.clientId && GOOGLE_AUTH_CONFIG.clientId.indexOf('YOUR_GOOGLE') !== 0;
-    if (gsiConfigured && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-        google.accounts.id.initialize({
-            client_id: GOOGLE_AUTH_CONFIG.clientId,
-            callback: handleGoogleCredential,
-            auto_select: false
-        });
-        loginContainer.innerHTML = '';
-        signupContainer.innerHTML = '';
-        google.accounts.id.renderButton(loginContainer, {
-            type: 'standard',
-            theme: 'filled_black',
-            size: 'large',
-            text: 'continue_with',
-            width: 320
-        });
-        google.accounts.id.renderButton(signupContainer, {
-            type: 'standard',
-            theme: 'filled_black',
-            size: 'large',
-            text: 'continue_with',
-            width: 320
-        });
-        return;
+// Wire up the "Continue with Google" buttons (login + signup views)
+window.initGoogleSignIn = function() {
+    var buttons = document.querySelectorAll('.js-google-btn');
+    for (var i = 0; i < buttons.length; i++) {
+        buttons[i].onclick = function(e) {
+            if (e) e.preventDefault();
+            signInWithGoogle();
+        };
     }
-    if (gsiConfigured && (typeof google === 'undefined' || !google.accounts || !google.accounts.id)) {
-        setTimeout(initGoogleSignIn, 100);
-        return;
-    }
-
-    // No Firebase and no GSI: attach fallback so the HTML button is always pressable
-    attachGoogleClick(loginContainer);
-    attachGoogleClick(signupContainer);
 };
 
 // Check if user is logged in and update UI
@@ -1256,6 +1207,29 @@ function checkLoginStatus() {
     var navLoginItem = document.getElementById('navLoginItem');
     if (navLoginItem) {
         navLoginItem.style.display = currentUser ? 'none' : '';
+    }
+
+    // Show the Google profile photo in the navbar profile icon when signed in
+    var profileIcons = document.querySelectorAll('.profile-icon');
+    for (var pi = 0; pi < profileIcons.length; pi++) {
+        var icon = profileIcons[pi];
+        var svg = icon.querySelector('svg');
+        var img = icon.querySelector('img.profile-avatar');
+        if (currentUser && currentUser.photoURL) {
+            if (!img) {
+                img = document.createElement('img');
+                img.className = 'profile-avatar';
+                img.alt = '';
+                img.referrerPolicy = 'no-referrer';
+                img.onerror = function() { this.remove(); var s = this.parentNode && this.parentNode.querySelector('svg'); if (s) s.style.display = ''; };
+                icon.appendChild(img);
+            }
+            img.src = currentUser.photoURL;
+            if (svg) svg.style.display = 'none';
+        } else {
+            if (img) img.remove();
+            if (svg) svg.style.display = '';
+        }
     }
     
     if (currentUser) {
@@ -1517,23 +1491,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-// Update reservation form to require login
-const originalReservationSubmit = reservationForm ? reservationForm.addEventListener : null;
-
-if (reservationForm) {
-    reservationForm.addEventListener('submit', (e) => {
-        // Check if user is logged in
-        currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
-        
-        if (!currentUser) {
-            e.preventDefault();
-            alert('Please login or create an account to make a reservation.');
-            showAuthModal('login');
-            return;
-        }
-        
-        // Continue with existing form submission logic...
-        // The rest of the form handler code will continue below
-    });
-}

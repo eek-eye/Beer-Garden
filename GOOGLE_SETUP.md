@@ -1,60 +1,29 @@
 # Google Sign-In Setup (Bar Chinesca Mxli)
 
-Users can sign in with their Google account to make reservations. To enable this:
+"Continue with Google" uses **Firebase Authentication** (project `bar-chinesca`).
+No separate Google OAuth client ID is needed – Firebase provides it.
 
-## 1. Create a Google Cloud project
+## How it works
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/).
-2. Create a new project or select an existing one.
+- `firebase-config.js` holds the Firebase web config (the apiKey is public by design).
+- Clicking **Continue with Google** opens Google's account picker in a popup
+  (`signInWithPopup`). If the browser blocks the popup, it falls back to a full-page redirect.
+- After sign-in, the site stores `currentUser` (first/last name, email, photo from the
+  Google account) so reservations and the profile page work as before.
+- **Logout** on the profile page signs out of Firebase and clears the local session.
 
-## 2. Configure OAuth consent screen
+## Firebase Console checklist (https://console.firebase.google.com/project/bar-chinesca)
 
-1. Go to **APIs & Services** → **OAuth consent screen**.
-2. Choose **External** (or Internal if it’s only for your organization).
-3. Fill in App name (e.g. "Bar Chinesca Mxli"), User support email, and Developer contact.
-4. Add your domain under **Authorized domains** if you use a custom domain.
-5. Save and continue (you can skip adding scopes for basic email/profile).
+1. **Authentication → Sign-in method** → **Google** = Enabled (also Email/Password).
+2. **Authentication → Settings → Authorized domains** must list every hostname the site is opened on:
+   - `localhost` (local testing)
+   - `eekseye.com` and `www.eekseye.com` (live site: https://eekseye.com/Beer-Garden/)
+   - `eek-eye.github.io`
+   Hostname only – no `https://`, no path.
 
-## 3. Create OAuth client ID
+If a domain is missing, clicking the button shows an "auth/unauthorized-domain" message.
 
-1. Go to **APIs & Services** → **Credentials**.
-2. Click **Create Credentials** → **OAuth client ID**.
-3. Application type: **Web application**.
-4. Name: e.g. "Bar Chinesca Web".
-5. Under **Authorized JavaScript origins**, add:
-   - `http://localhost` (for local testing)
-   - `http://127.0.0.1`
-   - Your live site, e.g. `https://yourdomain.com`
-6. You can leave **Authorized redirect URIs** empty for the Google Sign-In button (One Tap / button flow).
-7. Click **Create** and copy the **Client ID** (looks like `123456789-xxxx.apps.googleusercontent.com`).
+## Local testing
 
-## 4. Enable Google Identity Services (if needed)
-
-- In **APIs & Services** → **Library**, search for **Google Identity Services** and enable it if required by your project.
-
-## 5. Configure this app
-
-1. Open **google-auth-config.js** in this project.
-2. Replace `YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com` with your actual Client ID:
-
-```javascript
-const GOOGLE_AUTH_CONFIG = {
-    clientId: 'YOUR_ACTUAL_CLIENT_ID.apps.googleusercontent.com',
-    enabled: true
-};
-```
-
-3. Save the file.
-
-## 6. Test
-
-1. Open the site (e.g. `index.html` via a local server or your deployed URL).
-2. Click **Login** or **Sign up** to open the auth modal.
-3. Use **Sign in with Google** and complete the flow.
-4. After signing in, you can make reservations and use the profile page as usual.
-
-## Notes
-
-- The Google button appears in both the Login and Create Account views.
-- Signing in with Google creates/updates the same `currentUser` used for reservations and profile.
-- For local file testing (`file://`), Google Sign-In will not work; use a local server (e.g. `npx serve .`) or deploy to a host with `https`.
+Serve the folder over http (not `file://`), e.g. `npx serve .` or `python -m http.server`,
+then open `http://localhost:<port>/`.

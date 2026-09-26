@@ -1235,6 +1235,37 @@ html {
     padding: 0;
 }
 
+.profile-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-user .profile-user-name {
+    margin-bottom: 0.25rem;
+}
+
+.profile-user-email {
+    color: #666;
+    margin: 0;
+}
+
+.profile-user-photo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.profile-icon img.profile-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .profile-info {
     background: var(--black-color);
     color: var(--white-color);
