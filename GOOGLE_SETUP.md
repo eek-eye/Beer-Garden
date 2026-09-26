@@ -1,6 +1,6 @@
 # Google Sign-In Setup (Bar Chinesca Mxli)
 
-"Continue with Google" uses **Firebase Authentication** (project `bar-chinesca`).
+"Continue with Google" uses **Firebase Authentication** (project `eeks-eye-2efd9`).
 No separate Google OAuth client ID is needed – Firebase provides it.
 
 ## How it works
@@ -12,7 +12,7 @@ No separate Google OAuth client ID is needed – Firebase provides it.
   Google account) so reservations and the profile page work as before.
 - **Logout** on the profile page signs out of Firebase and clears the local session.
 
-## Firebase Console checklist (https://console.firebase.google.com/project/bar-chinesca)
+## Firebase Console checklist (https://console.firebase.google.com/project/eeks-eye-2efd9)
 
 1. **Authentication → Sign-in method** → **Google** = Enabled (also Email/Password).
 2. **Authentication → Settings → Authorized domains** must list every hostname the site is opened on:

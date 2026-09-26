@@ -2,11 +2,11 @@
 
 This backend uses Firebase Admin to verify Google sign-in tokens and use Firebase services.
 
-**Project ID:** `project-1013450031605`
+**Project ID:** `eeks-eye-2efd9`
 
 ## 1. Get a service account key
 
-1. Go to [Firebase Console](https://console.firebase.google.com/) and select project **project-1013450031605** (or create/link it).
+1. Go to [Firebase Console](https://console.firebase.google.com/) and select project **eeks-eye-2efd9**.
 2. Open **Project settings** (gear) → **Service accounts**.
 3. Click **Generate new private key** and download the JSON file.
 4. Rename the file to `serviceAccountKey.json` and place it in the **project root** (same folder as `server.js`).
@@ -35,4 +35,4 @@ if (decoded) {
 }
 ```
 
-Use the same Firebase project as your frontend Google Sign-In (same project as the OAuth Client ID in `google-auth-config.js`). For Firebase Auth, enable the "Google" sign-in provider in Authentication → Sign-in method.
+Use the same Firebase project as your frontend Google Sign-In (`eeks-eye-2efd9`, configured in `firebase-config.js`). For Firebase Auth, enable the "Google" sign-in provider in Authentication → Sign-in method.
