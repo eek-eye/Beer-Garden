@@ -2272,7 +2272,12 @@ textarea {
     }
 
     .is-signed-in .navbar .logo h1 {
-        font-size: 1rem;
+        font-size: 0.92rem;
+    }
+
+    .navbar .container {
+        gap: 8px;
+        padding: 0 14px;
     }
 
     .reservations h2,
