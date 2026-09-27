@@ -78,19 +78,19 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script>
         // Profile page: show reservations and logout ONLY when the user is logged in
         document.addEventListener('DOMContentLoaded', function() {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            const orderDetails = JSON.parse(localStorage.getItem('orderDetails')) || {};
 
             // If Firebase restores or ends the Google/email session after load, re-render the page
             if (typeof firebaseAuth !== 'undefined' && firebaseAuth) {
                 firebaseAuth.onAuthStateChanged(function(user) {
                     if (window.isSigningOut) return; // Sign out handles its own redirect
-                    if ((user && !currentUser) || (!user && currentUser && currentUser.uid)) {
+                    if ((user && !currentUser) || (!user && currentUser)) {
                         window.location.reload();
                     }
                 });
@@ -128,23 +128,19 @@
                 return;
             }
             
-            // Get only this user's reservations (filtered by logged-in user's email)
-            const userReservations = [];
-            for (const [orderNumber, order] of Object.entries(orderDetails)) {
-                if (order && order.email === currentUser.email) {
-                    userReservations.push({
-                        orderNumber: orderNumber,
-                        ...order
-                    });
-                }
-            }
-            
-            // Display reservations (only for logged-in user; currentUser already verified above)
+            // This user's reservations from the shared database (barReservations where uid == signed-in user)
             const reservationsList = document.getElementById('reservationsList');
-            if (!reservationsList) return;
-            if (userReservations.length === 0) {
-                reservationsList.innerHTML = '<p>No reservations found.</p>';
-            } else {
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function renderReservations(userReservations) {
+                if (!reservationsList) return;
+                if (userReservations.length === 0) {
+                    reservationsList.innerHTML = '<p>No reservations found.</p>';
+                    return;
+                }
                 userReservations.sort((a, b) => new Date(a.date) - new Date(b.date));
                 let html = '<div class="reservations-grid profile-cards">';
                 userReservations.forEach(reservation => {
@@ -155,15 +151,22 @@
                     
                     html += `
                         <div class="reservation-card profile-card-simple">
-                            <div class="profile-card-order">${reservation.orderNumber}</div>
-                            <div class="profile-card-table">${tableDisplay}</div>
-                            <div class="profile-card-name">${nameDisplay}</div>
-                            <div class="profile-card-guests">${reservation.guests} ${reservation.guests === '1' ? 'person' : 'people'}</div>
+                            <div class="profile-card-order">${esc(reservation.orderNumber)}</div>
+                            <div class="profile-card-table">${esc(tableDisplay)}</div>
+                            <div class="profile-card-name">${esc(nameDisplay)}</div>
+                            <div class="profile-card-guests">${esc(reservation.guests)} ${reservation.guests === '1' ? 'person' : 'people'}</div>
                         </div>
                     `;
                 });
                 html += '</div>';
                 reservationsList.innerHTML = html;
+            }
+            if (typeof whenAuthReady === 'function' && typeof getMyReservations === 'function') {
+                whenAuthReady().then(function(user) {
+                    return user ? getMyReservations(user.uid) : [];
+                }).then(renderReservations).catch(function(err) {
+                    console.warn('Could not load your reservations:', err && err.code);
+                });
             }
             
             // Logout button (sign out from Firebase if used)

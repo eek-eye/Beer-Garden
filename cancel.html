@@ -80,10 +80,13 @@
         // Cancellation page JavaScript - runs immediately since script is at end of body
         let currentOrderNumber = null;
 
+        // Reservations live in the shared database; only the account that booked can cancel
+        function cancelNeedsLogin() {
+            alert('Please log in (Login at the top of the page) with the account you used to reserve, then try again.');
+        }
+
         // Step 1: Check order number and populate table dropdown
         document.getElementById('continueBtn').addEventListener('click', function() {
-            console.log('Continue button clicked');
-            
             const orderNumberInput = document.getElementById('orderNumber');
             if (!orderNumberInput) {
                 alert('Order number input not found.');
@@ -91,49 +94,57 @@
             }
             
             let orderNumber = orderNumberInput.value.trim().replace(/\D/g, '');
-            console.log('Order number entered:', orderNumber);
             
             if (!orderNumber || orderNumber.length !== 6) {
                 alert('Please enter a valid 6-digit order number.');
                 return;
             }
             
-            // Load order details from localStorage
-            const orderDetails = JSON.parse(localStorage.getItem('orderDetails')) || {};
-            console.log('Order details loaded:', orderDetails);
-            console.log('Looking for order:', orderNumber);
-            
-            if (!orderDetails[orderNumber]) {
-                alert('Unexistent Order number');
+            if (typeof getBarReservation !== 'function') {
+                alert('Cancellations are not available right now. Please refresh the page and try again.');
                 return;
             }
             
-            currentOrderNumber = orderNumber;
-            console.log('Order found!', orderDetails[orderNumber]);
-            
-            // Populate table dropdown with tables 1-50
-            const tableSelect = document.getElementById('tableSelect');
-            if (tableSelect) {
-                tableSelect.innerHTML = '<option value="">Select your table...</option>';
-                
-                for (let i = 1; i <= 50; i++) {
-                    const option = document.createElement('option');
-                    option.value = i;
-                    if (i <= 4) {
-                        option.textContent = `VIP Table ${i}`;
-                    } else {
-                        option.textContent = `Table ${i}`;
-                    }
-                    tableSelect.appendChild(option);
+            const continueBtn = this;
+            continueBtn.disabled = true;
+            getBarReservation(orderNumber).then(function(order) {
+                if (!order) {
+                    alert('Unexistent Order number');
+                    return;
                 }
-                console.log('Table dropdown populated');
-            }
+                
+                currentOrderNumber = orderNumber;
+                
+                // Populate table dropdown with tables 1-50
+                const tableSelect = document.getElementById('tableSelect');
+                if (tableSelect) {
+                    tableSelect.innerHTML = '<option value="">Select your table...</option>';
+                    
+                    for (let i = 1; i <= 50; i++) {
+                        const option = document.createElement('option');
+                        option.value = i;
+                        if (i <= 4) {
+                            option.textContent = `VIP Table ${i}`;
+                        } else {
+                            option.textContent = `Table ${i}`;
+                        }
+                        tableSelect.appendChild(option);
+                    }
+                }
+            }).catch(function(err) {
+                if (err && err.code === 'bar/signed-out') {
+                    cancelNeedsLogin();
+                    return;
+                }
+                console.warn('Order lookup failed:', err);
+                alert('Could not look up your order right now. Please check your connection and try again.');
+            }).then(function() {
+                continueBtn.disabled = false;
+            });
         });
 
         // Submit cancellation
         document.getElementById('submitCancellationBtn').addEventListener('click', function() {
-            console.log('Submit button clicked');
-            
             if (!currentOrderNumber) {
                 alert('Please enter your order number first.');
                 return;
@@ -146,69 +157,46 @@
             }
             
             const selectedTable = tableSelect.value;
-            console.log('Selected table:', selectedTable);
             
             if (!selectedTable) {
                 alert('Please select your table.');
                 return;
             }
             
-            // Load data from localStorage
-            let reservations = JSON.parse(localStorage.getItem('reservations')) || {};
-            let orderDetails = JSON.parse(localStorage.getItem('orderDetails')) || {};
-            
-            const currentOrder = orderDetails[currentOrderNumber];
-            if (!currentOrder) {
-                alert('Order not found. Please try again.');
-                return;
-            }
-            
-            const orderDate = currentOrder.date;
-            const tableNumber = selectedTable.toString();
-            
-            console.log('Order date:', orderDate, 'Table:', tableNumber);
-            console.log('Reservations for date:', reservations[orderDate]);
-            
-            // Verify the order number matches the selected table
-            if (reservations[orderDate] && reservations[orderDate][tableNumber]) {
-                const lockedOrderNumber = reservations[orderDate][tableNumber];
-                console.log('Locked order number:', lockedOrderNumber, 'Current:', currentOrderNumber);
-                
-                if (lockedOrderNumber.toString() !== currentOrderNumber.toString()) {
+            const submitBtn = this;
+            submitBtn.disabled = true;
+            getBarReservation(currentOrderNumber).then(function(order) {
+                if (!order) {
+                    alert('Order not found. Please try again.');
+                    return false;
+                }
+                // Verify the order number matches the selected table
+                if (String(order.table) !== String(selectedTable)) {
                     alert('This table is not associated with your order number. Please select the correct table.');
+                    return false;
+                }
+                // Delete the reservation + table lock and free the slot (one transaction)
+                return cancelBarReservation(currentOrderNumber).then(function() { return true; });
+            }).then(function(done) {
+                if (!done) return;
+                showCancelThankYou();
+            }).catch(function(err) {
+                if (err && err.code === 'bar/signed-out') {
+                    cancelNeedsLogin();
                     return;
                 }
-            } else {
-                alert('This table is not reserved for this order. Please select the correct table.');
-                return;
-            }
-            
-            // Remove reservation
-            if (reservations[orderDate] && reservations[orderDate][tableNumber]) {
-                delete reservations[orderDate][tableNumber];
-                if (Object.keys(reservations[orderDate]).length === 0) {
-                    delete reservations[orderDate];
+                if (err && err.code === 'bar/not-found') {
+                    alert('Order not found. Please try again.');
+                    return;
                 }
-                localStorage.setItem('reservations', JSON.stringify(reservations));
-                console.log('Reservation removed');
-            }
-            
-            // Remove order details
-            delete orderDetails[currentOrderNumber];
-            localStorage.setItem('orderDetails', JSON.stringify(orderDetails));
-            console.log('Order details removed');
-            
-            // Update seating chart if on main page
-            const dateInput = document.getElementById('date');
-            if (dateInput && dateInput.value === orderDate) {
-                if (typeof updateSeatingChartForDate === 'function') {
-                    updateSeatingChartForDate(orderDate);
-                }
-                if (typeof updateTableDropdownForDate === 'function') {
-                    updateTableDropdownForDate(orderDate);
-                }
-            }
-            
+                console.warn('Cancellation failed:', err);
+                alert('Could not cancel your reservation right now. Please try again.');
+            }).then(function() {
+                submitBtn.disabled = false;
+            });
+        });
+
+        function showCancelThankYou() {
             // Hide form and show thank you
             const step1 = document.getElementById('step1');
             const step2 = document.getElementById('step2');
@@ -217,10 +205,11 @@
             if (step1) step1.style.display = 'none';
             if (step2) step2.style.display = 'none';
             if (thankYou) thankYou.style.display = 'block';
-        });
+        }
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
 </body>

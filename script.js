@@ -140,42 +140,153 @@ tabBtns.forEach(btn => {
 });
 
 // ============================================
-// TABLE LIMIT: each account can hold at most 2 tables
+// RESERVATIONS (shared Firebase Firestore database)
+//   barReservations/{orderNumber}  the user's reservation (private to its owner)
+//   barTableLocks/{date_table}     "table taken on date" (public, no personal data)
+//   barUserCounts/{uid}            how many tables the user holds (max 2, enforced by the security rules)
 // ============================================
 var MAX_TABLES_PER_ACCOUNT = 2;
 var TABLE_LIMIT_MESSAGE = 'You can only reserve 2 tables per account. Cancel an existing reservation to book another.';
+var SIGN_IN_TO_RESERVE_MESSAGE = 'Please <a href="login.html">log in</a> to reserve a table. Each account can reserve up to 2 tables.';
+var firestoreDb = null;
 
 function localDateString(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
-// A reservation belongs to the user when it was made with the same account (uid) or email
-function orderBelongsToUser(order, user) {
-    if (!order || !user) return false;
-    if (order.uid && user.uid && order.uid === user.uid) return true;
-    var a = (order.email || '').trim().toLowerCase();
-    var b = (user.email || '').trim().toLowerCase();
-    return !!a && a === b;
+function barError(code, extra) {
+    var err = new Error(code);
+    err.code = code;
+    if (extra) Object.keys(extra).forEach(function(k) { err[k] = extra[k]; });
+    return err;
 }
 
-// Count the tables this user currently holds: reservations that still lock a table
-// (cancelling removes the lock, which frees the slot) for today or a future date
-function getActiveTableCount(user) {
-    if (!user) return 0;
-    var orders = JSON.parse(localStorage.getItem('orderDetails')) || {};
-    var locks = JSON.parse(localStorage.getItem('reservations')) || {};
-    var today = localDateString(new Date());
-    var count = 0;
-    Object.keys(orders).forEach(function(orderNumber) {
-        var order = orders[orderNumber];
-        if (!orderBelongsToUser(order, user)) return;
-        if (order.cancelled || order.status === 'cancelled') return;
-        if (order.date && order.date < today) return; // past reservations no longer hold a table
-        var lock = locks[order.date] && locks[order.date][String(order.table)];
-        if (!lock || String(lock) !== String(orderNumber)) return;
-        count++;
+function barLockId(date, table) {
+    return date + '_' + parseInt(table, 10);
+}
+
+// Resolves with the Firebase user (or null) once Firebase has restored the session
+var authReadyResolve;
+var authReadyPromise = new Promise(function(resolve) { authReadyResolve = resolve; });
+function whenAuthReady() {
+    if (!firebaseAuth) return Promise.resolve(null);
+    return authReadyPromise.then(function() { return firebaseAuth.currentUser; });
+}
+window.whenAuthReady = whenAuthReady;
+
+// The signed-in user's reservations (all dates), newest data from Firestore
+function getMyReservations(uid) {
+    if (!firestoreDb || !uid) return Promise.resolve([]);
+    return firestoreDb.collection('barReservations').where('uid', '==', uid).get().then(function(snap) {
+        var list = [];
+        snap.forEach(function(d) { list.push(d.data()); });
+        return list;
     });
-    return count;
+}
+window.getMyReservations = getMyReservations;
+
+// Look up one reservation by order number (only works for its owner)
+function getBarReservation(orderNumber) {
+    return whenAuthReady().then(function(user) {
+        if (!user || !firestoreDb) throw barError('bar/signed-out');
+        return firestoreDb.collection('barReservations').doc(String(orderNumber)).get().then(function(snap) {
+            if (!snap.exists) return null;
+            return snap.data();
+        }, function(err) {
+            if (err && err.code === 'permission-denied') return null; // someone else's order
+            throw err;
+        });
+    });
+}
+window.getBarReservation = getBarReservation;
+
+// Cancel = delete the reservation + its table lock and decrement the user's counter, all at once
+function cancelBarReservation(orderNumber) {
+    return whenAuthReady().then(function(user) {
+        if (!user || !firestoreDb) throw barError('bar/signed-out');
+        var resRef = firestoreDb.collection('barReservations').doc(String(orderNumber));
+        var countRef = firestoreDb.collection('barUserCounts').doc(user.uid);
+        return firestoreDb.runTransaction(function(t) {
+            return Promise.all([t.get(resRef), t.get(countRef)]).then(function(snaps) {
+                if (!snaps[0].exists) throw barError('bar/not-found');
+                var res = snaps[0].data();
+                if (res.uid !== user.uid) throw barError('bar/not-found');
+                var count = snaps[1].exists ? (snaps[1].data().count || 0) : 0;
+                t.delete(resRef);
+                t.delete(firestoreDb.collection('barTableLocks').doc(barLockId(res.date, res.table)));
+                t.set(countRef, {
+                    count: Math.max(0, count - 1),
+                    lastOrder: String(orderNumber),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                return res;
+            });
+        }).then(function(res) {
+            invalidateTableLocks(res.date);
+            return res;
+        });
+    });
+}
+window.cancelBarReservation = cancelBarReservation;
+
+// Past-dated reservations no longer hold a table: cancel the user's own ones (frees their counter)
+function cancelPastReservations(uid) {
+    var today = localDateString(new Date());
+    return getMyReservations(uid).then(function(list) {
+        var past = list.filter(function(r) { return r.date && r.date < today; });
+        return past.reduce(function(p, r) {
+            return p.then(function() {
+                return cancelBarReservation(r.orderNumber).catch(function(err) {
+                    console.warn('Could not clear past reservation', r.orderNumber, err && err.code);
+                });
+            });
+        }, Promise.resolve()).then(function() {
+            return list.filter(function(r) { return !(r.date && r.date < today); });
+        });
+    });
+}
+
+// Book one table: reservation + table lock + counter in one transaction (the rules re-check all of it)
+function bookTableInFirestore(user, formData) {
+    var table = parseInt(formData.table, 10);
+    var lockRef = firestoreDb.collection('barTableLocks').doc(barLockId(formData.date, table));
+    var countRef = firestoreDb.collection('barUserCounts').doc(user.uid);
+    var attempts = 0;
+    function attempt() {
+        attempts++;
+        var orderNumber = String(Math.floor(100000 + Math.random() * 900000));
+        var resRef = firestoreDb.collection('barReservations').doc(orderNumber);
+        return firestoreDb.runTransaction(function(t) {
+            return Promise.all([t.get(lockRef), t.get(countRef), t.get(resRef)]).then(function(snaps) {
+                if (snaps[0].exists) throw barError('bar/table-taken', { orderNumber: snaps[0].data().orderNumber });
+                var count = snaps[1].exists ? (snaps[1].data().count || 0) : 0;
+                if (count >= MAX_TABLES_PER_ACCOUNT) throw barError('bar/limit');
+                if (snaps[2].exists) throw barError('bar/order-number-taken');
+                var ts = firebase.firestore.FieldValue.serverTimestamp();
+                t.set(resRef, {
+                    orderNumber: orderNumber,
+                    uid: user.uid,
+                    email: formData.email,
+                    name: formData.name,
+                    date: formData.date,
+                    time: formData.time,
+                    guests: formData.guests,
+                    table: table,
+                    status: 'active',
+                    createdAt: ts
+                });
+                t.set(lockRef, { date: formData.date, table: table, time: formData.time, orderNumber: orderNumber, createdAt: ts });
+                t.set(countRef, { count: count + 1, lastOrder: orderNumber, updatedAt: ts });
+                return orderNumber;
+            });
+        }).catch(function(err) {
+            // Random order number already used (by someone else it reads as permission-denied): pick another
+            var retry = err && (err.code === 'bar/order-number-taken' || (err.code === 'permission-denied' && attempts < 2));
+            if (retry && attempts < 5) return attempt();
+            throw err;
+        });
+    }
+    return attempt();
 }
 
 // Inline message under the reservation form's submit button (same look as the login page messages)
@@ -199,56 +310,56 @@ function hideReservationMessage(kind) {
     el.setAttribute('data-kind', '');
 }
 
-// Show the limit message as soon as a signed-in user already holds 2 tables
+// Show the limit message as soon as a signed-in user already holds 2 tables (today or later)
 function updateReservationLimitNotice() {
     if (!document.getElementById('reservationForm')) return;
     var user = JSON.parse(localStorage.getItem('currentUser')) || null;
+    var fbUser = firebaseAuth && firebaseAuth.currentUser;
     if (!user) {
         hideReservationMessage('limit');
         return;
     }
     hideReservationMessage('signin');
-    if (getActiveTableCount(user) >= MAX_TABLES_PER_ACCOUNT) {
-        showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
-    } else {
+    if (!fbUser || !firestoreDb) {
         hideReservationMessage('limit');
+        return;
     }
+    var today = localDateString(new Date());
+    getMyReservations(fbUser.uid).then(function(list) {
+        var active = list.filter(function(r) { return !(r.date && r.date < today); });
+        if (active.length >= MAX_TABLES_PER_ACCOUNT) {
+            showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
+        } else {
+            hideReservationMessage('limit');
+        }
+    }).catch(function(err) {
+        console.warn('Could not check your reservations:', err && err.code);
+    });
 }
 
-// Re-check when reservations change in another tab (e.g. a cancellation)
-window.addEventListener('storage', function(e) {
-    if (!e.key || e.key === 'orderDetails' || e.key === 'reservations' || e.key === 'currentUser') {
-        updateReservationLimitNotice();
-    }
-});
-window.addEventListener('pageshow', function() { updateReservationLimitNotice(); });
+window.addEventListener('pageshow', function(e) { if (e.persisted) updateReservationLimitNotice(); });
 
 // Reservation Form Handler
 const reservationForm = document.getElementById('reservationForm');
+var reservationSubmitting = false;
 
 if (reservationForm) {
     reservationForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        
-        // Check if user is logged in
-        currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
-        
-        if (!currentUser) {
-            // Reservations need an account so the 2-tables-per-account limit can be enforced
-            showReservationMessage('Please <a href="login.html">log in</a> to reserve a table. Each account can reserve up to 2 tables.', 'signin');
-            return;
-        }
+        if (reservationSubmitting) return;
 
-        // Limit: at most 2 tables per account (cancelled reservations don't count)
-        if (getActiveTableCount(currentUser) >= MAX_TABLES_PER_ACCOUNT) {
-            showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
+        // Reservations need a real (Firebase) account so the 2-tables-per-account limit can be enforced
+        currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+        var fbUser = firebaseAuth && firebaseAuth.currentUser;
+        if (!currentUser || !fbUser) {
+            showReservationMessage(SIGN_IN_TO_RESERVE_MESSAGE, 'signin');
             return;
         }
 
         // Get form data (use logged in user's info to ensure consistency)
         const formData = {
-            name: currentUser.firstName + ' ' + currentUser.lastName,
-            email: currentUser.email,
+            name: ((currentUser.firstName || '') + ' ' + (currentUser.lastName || '')).trim() || fbUser.displayName || fbUser.email,
+            email: fbUser.email || currentUser.email,
             date: document.getElementById('date').value,
             time: document.getElementById('time').value,
             guests: document.getElementById('guests').value,
@@ -274,6 +385,11 @@ if (reservationForm) {
             }
         }
 
+        if (!firestoreDb) {
+            alert('Reservations are not available right now. Please refresh the page and try again.');
+            return;
+        }
+
     // Format the date for display (avoid timezone issues)
     const dateParts = formData.date.split('-');
     const year = parseInt(dateParts[0]);
@@ -287,43 +403,49 @@ if (reservationForm) {
         day: 'numeric' 
     });
 
-    // Check if table is already reserved for this date
-    reservations = JSON.parse(localStorage.getItem('reservations')) || {};
-    const selectedDate = formData.date;
-    const selectedTable = formData.table.toString();
-    
-    // Verify table is available (not already locked with an order number)
-    if (reservations[selectedDate] && reservations[selectedDate][selectedTable]) {
-        const existingOrderNumber = reservations[selectedDate][selectedTable];
-        alert('This table is already reserved for this date. Table ' + selectedTable + ' is locked with order number ' + existingOrderNumber + '. Please select a different table.');
-        return;
-    }
-    
-    // Generate order number (already returns as string)
-    const orderNumber = generateOrderNumber();
-    
-    // Ensure order number is stored as string
-    const orderKey = orderNumber.toString();
-    
-    // Store order details - always use string key
-    orderDetails = JSON.parse(localStorage.getItem('orderDetails')) || {};
-    orderDetails[orderKey] = {
-        name: formData.name,
-        email: formData.email,
-        uid: currentUser.uid || undefined,
-        date: formData.date,
-        time: formData.time,
-        guests: formData.guests,
-        table: parseInt(formData.table)
-    };
-    localStorage.setItem('orderDetails', JSON.stringify(orderDetails));
-    
-    // Debug: Log saved order
-    console.log('Order saved with key:', orderKey, 'Type:', typeof orderKey);
-    console.log('Order details:', orderDetails[orderKey]);
-    console.log('All order keys in storage:', Object.keys(orderDetails));
-    console.log('Key types:', Object.keys(orderDetails).map(k => typeof k));
+    const submitBtn = reservationForm.querySelector('button[type="submit"]');
+    reservationSubmitting = true;
+    if (submitBtn) submitBtn.disabled = true;
 
+    // 1) past-dated reservations of this user are cancelled first (they no longer hold a table)
+    // 2) at most 2 tables per account, 3) book table + lock + counter in one transaction
+    cancelPastReservations(fbUser.uid).then(function(active) {
+        if (active.length >= MAX_TABLES_PER_ACCOUNT) throw barError('bar/limit');
+        return bookTableInFirestore(fbUser, formData);
+    }).then(function(orderNumber) {
+        onReservationBooked(formData, orderNumber, formattedDate);
+    }).catch(function(err) {
+        var code = err && err.code;
+        if (code === 'bar/limit') {
+            showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
+        } else if (code === 'bar/table-taken') {
+            alert('This table is already reserved for this date. Table ' + formData.table + ' is locked with order number ' + err.orderNumber + '. Please select a different table.');
+            updateSeatingChartForDate(formData.date, true);
+            updateTableDropdownForDate(formData.date);
+        } else if (code === 'permission-denied') {
+            // The database refused the booking: most likely the per-account limit
+            getMyReservations(fbUser.uid).then(function(list) {
+                if (list.length >= MAX_TABLES_PER_ACCOUNT) {
+                    showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
+                } else {
+                    alert('Sorry, we could not save your reservation. Please refresh the page and try again.');
+                }
+            }).catch(function() {
+                alert('Sorry, we could not save your reservation. Please refresh the page and try again.');
+            });
+        } else {
+            console.warn('Reservation failed:', err);
+            alert('Sorry, we could not save your reservation. Please check your connection and try again.');
+        }
+    }).then(function() {
+        reservationSubmitting = false;
+        if (submitBtn) submitBtn.disabled = false;
+    });
+});
+}
+
+// After the reservation is saved: same confirmation, email, seating chart update and success toast as before
+function onReservationBooked(formData, orderNumber, formattedDate) {
     // Create confirmation message
     const confirmationMessage = `
 Thank you for your reservation request, ${formData.name}!
@@ -350,9 +472,6 @@ You can also place your reservation directly at +52 686 364 2083.
     // Show confirmation (in a real app, this would send to a server)
     alert(confirmationMessage);
 
-    // Mark the selected table as reserved with red X for the selected date
-    markTableAsReserved(formData.table, formData.date, orderNumber);
-
     // Reset form
     reservationForm.reset();
     hideReservationMessage();
@@ -360,6 +479,7 @@ You can also place your reservation directly at +52 686 364 2083.
     
     // Update seating chart and dropdown for the current date (if date input still has a value)
     const dateInput = document.getElementById('date');
+    invalidateTableLocks(formData.date);
     if (dateInput.value) {
         updateSeatingChartForDate(dateInput.value);
         updateTableDropdownForDate(dateInput.value);
@@ -398,7 +518,6 @@ You can also place your reservation directly at +52 686 364 2083.
     setTimeout(() => {
         successDiv.remove();
     }, 5000);
-});
 }
 
 // Initialize seat elements with data attributes for table numbers
@@ -531,7 +650,9 @@ window.addEventListener('scroll', () => {
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
+        const href = this.getAttribute('href');
+        if (!href || href === '#') return; // plain "#" links (e.g. Sign up / Login switch) have their own handlers
+        const target = document.querySelector(href);
         if (target) {
             const offsetTop = target.offsetTop - 70; // Account for fixed navbar
             window.scrollTo({
@@ -565,68 +686,53 @@ document.querySelectorAll('.menu-item, .contact-card, .reservation-info, .reserv
     observer.observe(el);
 });
 
-// Function to mark a table as reserved with red X for a specific date
-// The order number is PERMANENTLY locked to this specific table+date combination
-// This lock persists across page refreshes until the reservation is cancelled
-function markTableAsReserved(tableNumber, date, orderNumber) {
-    // Reload from localStorage to ensure we have latest data
-    reservations = JSON.parse(localStorage.getItem('reservations')) || {};
-    orderDetails = JSON.parse(localStorage.getItem('orderDetails')) || {};
-    
-    // Store reservation by date with order number
-    // This PERMANENTLY locks the order number to the table for this specific date
-    if (!reservations[date]) {
-        reservations[date] = {};
+// Taken tables per date come from the public barTableLocks collection (cached for a few seconds)
+var tableLocksCache = {};
+function fetchTableLocks(date, fresh) {
+    var cached = tableLocksCache[date];
+    if (!fresh && cached && Date.now() - cached.at < 5000) return cached.promise;
+    var promise;
+    if (!firestoreDb) {
+        promise = Promise.resolve({});
+    } else {
+        promise = firestoreDb.collection('barTableLocks').where('date', '==', date).get().then(function(snap) {
+            var locked = {};
+            snap.forEach(function(d) {
+                var lock = d.data();
+                locked[String(lock.table)] = { orderNumber: lock.orderNumber, time: lock.time || '' };
+            });
+            return locked;
+        }).catch(function(err) {
+            console.warn('Could not load taken tables:', err && err.code);
+            delete tableLocksCache[date];
+            return {};
+        });
     }
-    
-    // Ensure table number is string for consistency
-    const tableKey = tableNumber.toString();
-    const orderKey = orderNumber.toString();
-    
-    // Check if table is already reserved (shouldn't happen due to check above, but double-check)
-    if (reservations[date][tableKey]) {
-        const existingOrder = reservations[date][tableKey];
-        console.error('ERROR: Table', tableKey, 'for date', date, 'is already locked with order number', existingOrder);
-        console.error('Attempted to lock with new order number:', orderKey);
-        alert('Error: This table is already reserved. Please refresh the page and try again.');
-        return;
-    }
-    
-    // PERMANENTLY lock the order number to this table+date combination
-    reservations[date][tableKey] = orderKey;
-    
-    // Ensure order details exist
-    if (!orderDetails[orderKey]) {
-        console.error('ERROR: Order details not found for order number:', orderKey);
-        alert('Error: Order details not found. Please try making the reservation again.');
-        return;
-    }
-    
-    // Save to localStorage - this persists across page refreshes
-    localStorage.setItem('reservations', JSON.stringify(reservations));
-    localStorage.setItem('orderDetails', JSON.stringify(orderDetails));
-    
-    console.log('✅ PERMANENT LOCK CREATED:');
-    console.log('  Table:', tableKey, 'for date:', date);
-    console.log('  Locked with order number:', orderKey);
-    console.log('  This lock will persist until cancellation');
-    
-    // Update the seating chart and dropdown for the current date
-    updateSeatingChartForDate(date);
-    updateTableDropdownForDate(date);
+    tableLocksCache[date] = { at: Date.now(), promise: promise };
+    return promise;
+}
+
+function invalidateTableLocks(date) {
+    delete tableLocksCache[date];
+}
+
+// Only draw results for the date that is still selected
+function isSelectedDate(date) {
+    var input = document.getElementById('date');
+    return !input || !input.value || input.value === date;
 }
 
 // Function to update seating chart based on selected date
-// Shows X on tables that are locked with an order number
-function updateSeatingChartForDate(date) {
-    // Reload from localStorage to ensure we have latest data
-    reservations = JSON.parse(localStorage.getItem('reservations')) || {};
-    
+// Shows X (and the reservation time) on tables that are taken
+function updateSeatingChartForDate(date, fresh) {
+    fetchTableLocks(date, fresh).then(function(reservedTables) {
+        if (!isSelectedDate(date)) return;
+        renderSeatingChart(reservedTables);
+    });
+}
+
+function renderSeatingChart(reservedTables) {
     const allSeats = document.querySelectorAll('.vip-seat, .seat-circle, .seat-square');
-    const reservedTables = reservations[date] || {};
-    
-    console.log('Updating seating chart for date:', date);
-    console.log('Locked tables:', reservedTables);
     
     allSeats.forEach(seat => {
         // Get the seat number from the original content or data attribute
@@ -638,38 +744,26 @@ function updateSeatingChartForDate(date) {
         } else {
             // Try to get from text content (might be a number or X)
             const text = seat.textContent.trim();
-            // If it's just a number, use it; otherwise check parent or siblings
             if (!isNaN(parseInt(text)) && text !== '✕') {
                 seatNumber = parseInt(text);
-                // Store it for future reference
                 seat.dataset.tableNumber = seatNumber.toString();
             } else {
-                // Try to find the number from nearby elements or use the seat's position
-                // For now, we'll need to store the original number when we first see it
                 return; // Skip if we can't determine the number
             }
         }
         
         const tableKey = seatNumber.toString();
-        const isReserved = reservedTables.hasOwnProperty(tableKey);
+        const lock = reservedTables[tableKey];
         
-        if (isReserved) {
-            // Table is LOCKED with an order number - show X and time
-            const lockedOrderNumber = reservedTables[tableKey];
+        if (lock) {
+            // Table is taken - show X and time
+            const reservationTime = lock.time || '';
             seat.classList.add('reserved');
-            
-            // Get reservation time from order details
-            const orderDetails = JSON.parse(localStorage.getItem('orderDetails')) || {};
-            const orderInfo = orderDetails[lockedOrderNumber];
-            const reservationTime = orderInfo ? orderInfo.time : '';
-            
-            // Display X with time underneath
             seat.innerHTML = `
                 <span class="reserved-x">✕</span>
                 ${reservationTime ? `<span class="reserved-time">${reservationTime}</span>` : ''}
             `;
-            seat.title = `Locked with order number: ${lockedOrderNumber}${reservationTime ? ` | Time: ${reservationTime}` : ''}`;
-            console.log('Table', seatNumber, 'is LOCKED with order number', lockedOrderNumber, 'Time:', reservationTime);
+            seat.title = `Locked with order number: ${lock.orderNumber}${reservationTime ? ` | Time: ${reservationTime}` : ''}`;
         } else {
             // Table is available - show number
             seat.classList.remove('reserved');
@@ -680,13 +774,17 @@ function updateSeatingChartForDate(date) {
 }
 
 // Function to update table dropdown based on selected date
-// Only shows tables that are NOT locked with an order number
-function updateTableDropdownForDate(date) {
-    // Reload from localStorage to ensure we have latest data
-    reservations = JSON.parse(localStorage.getItem('reservations')) || {};
-    
+// Only shows tables that are NOT taken
+function updateTableDropdownForDate(date, fresh) {
+    fetchTableLocks(date, fresh).then(function(reservedTables) {
+        if (!isSelectedDate(date)) return;
+        renderTableDropdown(reservedTables);
+    });
+}
+
+function renderTableDropdown(reservedTables) {
     const tableSelect = document.getElementById('table');
-    const reservedTables = reservations[date] || {};
+    if (!tableSelect) return;
     const currentValue = tableSelect.value;
     
     // Clear existing options except the first "Select a table..." option
@@ -695,7 +793,7 @@ function updateTableDropdownForDate(date) {
     // Add all tables 1-50
     for (let i = 1; i <= 50; i++) {
         const tableKey = i.toString();
-        // Only add if NOT locked with an order number for this date
+        // Only add if NOT taken for this date
         if (!reservedTables.hasOwnProperty(tableKey)) {
             const option = document.createElement('option');
             option.value = i;
@@ -705,10 +803,6 @@ function updateTableDropdownForDate(date) {
                 option.textContent = `Table ${i}`;
             }
             tableSelect.appendChild(option);
-        } else {
-            // Table is locked - log it for debugging
-            const lockedOrderNumber = reservedTables[tableKey];
-            console.log('Table', i, 'is LOCKED with order number', lockedOrderNumber, 'for date', date);
         }
     }
     
@@ -822,6 +916,7 @@ document.querySelectorAll('a[href^="tel:"]').forEach(link => {
 // Google sign-in uses Firebase's popup flow (no separate OAuth client ID needed).
 var firebaseApp = null;
 var firebaseAuth = null;
+var accountSetupInProgress = false;
 
 function isLoginPage() {
     return /(^|\/)login(\.html)?$/.test(window.location.pathname || '');
@@ -874,6 +969,10 @@ function initFirebaseAuth() {
     }
     firebaseAuth = firebase.auth();
     try { firebaseAuth.useDeviceLanguage(); } catch (e) {}
+    // Reservations database (pages that load firebase-firestore-compat.js)
+    if (firebase.firestore) {
+        try { firestoreDb = firebase.firestore(); } catch (e) { firestoreDb = null; }
+    }
 
     // Finish a redirect sign-in (only used when the popup was blocked)
     firebaseAuth.getRedirectResult().then(function(result) {
@@ -886,18 +985,21 @@ function initFirebaseAuth() {
         if (user) {
             saveFirebaseUser(user);
             checkLoginStatus();
-            if (isLoginPage()) {
+            // (sign-up / account migration redirect themselves once the name is saved)
+            if (isLoginPage() && !accountSetupInProgress) {
                 window.location.href = 'profile.html';
             }
         } else {
-            // Only clear a session that came from Firebase (keep local-only accounts)
+            // Not signed in to Firebase: drop any stored session, including old browser-only
+            // accounts (reservations need a real Firebase account; logging in again migrates them)
             var stored = JSON.parse(localStorage.getItem('currentUser') || 'null');
-            if (stored && stored.uid) {
+            if (stored) {
                 currentUser = null;
                 localStorage.removeItem('currentUser');
                 checkLoginStatus();
             }
         }
+        if (authReadyResolve) { authReadyResolve(); authReadyResolve = null; }
     });
 }
 
@@ -1132,8 +1234,18 @@ function handleLogin(email, password) {
                 alert('Login successful! Welcome back.');
             })
             .catch(function(err) {
+                // Old browser-only account (made before accounts moved to Firebase): move it to Firebase now
+                var legacyAccounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+                var legacy = legacyAccounts[email];
+                var notFound = err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' ||
+                    err.code === 'auth/invalid-login-credentials';
+                if (legacy && legacy.password === password && notFound) {
+                    migrateLegacyAccount(legacy, email, password);
+                    return;
+                }
                 if (err.code === 'auth/user-not-found') alert('No account with this email. Please sign up first.');
-                else if (err.code === 'auth/wrong-password') alert('Incorrect password. Please try again.');
+                else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' ||
+                    err.code === 'auth/invalid-login-credentials') alert('Incorrect email or password. Please try again.');
                 else if (err.code === 'auth/invalid-email') alert('Invalid email address.');
                 else alert(err.message || 'Login failed. Please try again.');
             });
@@ -1163,6 +1275,35 @@ function handleLogin(email, password) {
     } else {
         alert('Account not found. Please create an account first.');
     }
+}
+
+// Create the Firebase account for an old browser-only account, then continue as a normal login
+function migrateLegacyAccount(legacy, email, password) {
+    accountSetupInProgress = true;
+    firebaseAuth.createUserWithEmailAndPassword(email, password)
+        .then(function(cred) {
+            return cred.user.updateProfile({ displayName: ((legacy.firstName || '') + ' ' + (legacy.lastName || '')).trim() })
+                .then(function() { saveFirebaseUser(cred.user); });
+        })
+        .then(function() {
+            accountSetupInProgress = false;
+            var accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+            delete accounts[email];
+            localStorage.setItem('userAccounts', JSON.stringify(accounts));
+            if (!document.getElementById('authModal')) {
+                showLoginPageMessage('Login successful. Redirecting…');
+                window.location.href = 'profile.html';
+                return;
+            }
+            closeAuthModal();
+            checkLoginStatus();
+            alert('Login successful! Welcome back.');
+        })
+        .catch(function(err) {
+            accountSetupInProgress = false;
+            if (err.code === 'auth/email-already-in-use') alert('Incorrect email or password. Please try again.');
+            else alert(err.message || 'Login failed. Please try again.');
+        });
 }
 
 function showLoginPageMessage(text) {
@@ -1215,11 +1356,14 @@ function handleSignup(firstName, lastName, email, password) {
         return;
     }
     if (firebaseAuth && typeof firebase !== 'undefined') {
+        accountSetupInProgress = true;
         firebaseAuth.createUserWithEmailAndPassword(email, password)
             .then(function(cred) {
-                return cred.user.updateProfile({ displayName: (firstName + ' ' + lastName).trim() });
+                return cred.user.updateProfile({ displayName: (firstName + ' ' + lastName).trim() })
+                    .then(function() { saveFirebaseUser(cred.user); });
             })
             .then(function() {
+                accountSetupInProgress = false;
                 if (!document.getElementById('authModal')) {
                     showLoginPageMessage('Account created. Redirecting…');
                     window.location.href = 'profile.html';
@@ -1230,6 +1374,7 @@ function handleSignup(firstName, lastName, email, password) {
                 alert('Account created.');
             })
             .catch(function(err) {
+                accountSetupInProgress = false;
                 if (err.code === 'auth/email-already-in-use') {
                     alert('An account with this email already exists. Please login instead.');
                     return;
@@ -1242,8 +1387,12 @@ function handleSignup(firstName, lastName, email, password) {
                     alert('Invalid email address.');
                     return;
                 }
-                // Firebase failed (e.g. not configured, wrong domain, network) — create account with your data and log you in anyway
-                createAccountAndLogIn(firstName, lastName, email, password);
+                // Accounts must be real Firebase accounts (reservations are tied to them)
+                if (err.code === 'auth/network-request-failed') {
+                    alert('Network error. Check your connection and try again.');
+                    return;
+                }
+                alert((err && err.message) || 'Could not create your account. Please try again.');
             });
         return;
     }
@@ -1313,8 +1462,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Login form submit
-    if (loginFormElement) {
+    // Login form submit (index.html modal; login.html wires its own forms)
+    if (loginFormElement && authModal) {
         loginFormElement.addEventListener('submit', function(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value.trim();
@@ -1325,8 +1474,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Signup form submit
-    if (signupFormElement) {
+    // Signup form submit (index.html modal; login.html wires its own forms)
+    if (signupFormElement && authModal) {
         signupFormElement.addEventListener('submit', function(e) {
             e.preventDefault();
             const firstName = document.getElementById('signupFirstName').value.trim();
