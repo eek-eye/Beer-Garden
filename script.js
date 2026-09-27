@@ -139,6 +139,90 @@ tabBtns.forEach(btn => {
     });
 });
 
+// ============================================
+// TABLE LIMIT: each account can hold at most 2 tables
+// ============================================
+var MAX_TABLES_PER_ACCOUNT = 2;
+var TABLE_LIMIT_MESSAGE = 'You can only reserve 2 tables per account. Cancel an existing reservation to book another.';
+
+function localDateString(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// A reservation belongs to the user when it was made with the same account (uid) or email
+function orderBelongsToUser(order, user) {
+    if (!order || !user) return false;
+    if (order.uid && user.uid && order.uid === user.uid) return true;
+    var a = (order.email || '').trim().toLowerCase();
+    var b = (user.email || '').trim().toLowerCase();
+    return !!a && a === b;
+}
+
+// Count the tables this user currently holds: reservations that still lock a table
+// (cancelling removes the lock, which frees the slot) for today or a future date
+function getActiveTableCount(user) {
+    if (!user) return 0;
+    var orders = JSON.parse(localStorage.getItem('orderDetails')) || {};
+    var locks = JSON.parse(localStorage.getItem('reservations')) || {};
+    var today = localDateString(new Date());
+    var count = 0;
+    Object.keys(orders).forEach(function(orderNumber) {
+        var order = orders[orderNumber];
+        if (!orderBelongsToUser(order, user)) return;
+        if (order.cancelled || order.status === 'cancelled') return;
+        if (order.date && order.date < today) return; // past reservations no longer hold a table
+        var lock = locks[order.date] && locks[order.date][String(order.table)];
+        if (!lock || String(lock) !== String(orderNumber)) return;
+        count++;
+    });
+    return count;
+}
+
+// Inline message under the reservation form's submit button (same look as the login page messages)
+function showReservationMessage(html, kind) {
+    var el = document.getElementById('reservationLimitMessage');
+    if (!el) {
+        alert(String(html).replace(/<[^>]+>/g, ''));
+        return;
+    }
+    el.innerHTML = html;
+    el.setAttribute('data-kind', kind || '');
+    el.style.display = 'block';
+}
+
+function hideReservationMessage(kind) {
+    var el = document.getElementById('reservationLimitMessage');
+    if (!el) return;
+    if (kind && el.getAttribute('data-kind') !== kind) return;
+    el.style.display = 'none';
+    el.innerHTML = '';
+    el.setAttribute('data-kind', '');
+}
+
+// Show the limit message as soon as a signed-in user already holds 2 tables
+function updateReservationLimitNotice() {
+    if (!document.getElementById('reservationForm')) return;
+    var user = JSON.parse(localStorage.getItem('currentUser')) || null;
+    if (!user) {
+        hideReservationMessage('limit');
+        return;
+    }
+    hideReservationMessage('signin');
+    if (getActiveTableCount(user) >= MAX_TABLES_PER_ACCOUNT) {
+        showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
+    } else {
+        hideReservationMessage('limit');
+    }
+}
+
+// Re-check when reservations change in another tab (e.g. a cancellation)
+window.addEventListener('storage', function(e) {
+    if (!e.key || e.key === 'orderDetails' || e.key === 'reservations' || e.key === 'currentUser') {
+        updateReservationLimitNotice();
+    }
+});
+window.addEventListener('pageshow', function() { updateReservationLimitNotice(); });
+
 // Reservation Form Handler
 const reservationForm = document.getElementById('reservationForm');
 
@@ -150,11 +234,14 @@ if (reservationForm) {
         currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
         
         if (!currentUser) {
-            // Show popup when they try to submit without being logged in
-            alert('You must be logged in to request service. Let\'s create an account!');
-            if (typeof showAuthModal === 'function') {
-                showAuthModal('signup'); // Show signup form first to encourage account creation
-            }
+            // Reservations need an account so the 2-tables-per-account limit can be enforced
+            showReservationMessage('Please <a href="login.html">log in</a> to reserve a table. Each account can reserve up to 2 tables.', 'signin');
+            return;
+        }
+
+        // Limit: at most 2 tables per account (cancelled reservations don't count)
+        if (getActiveTableCount(currentUser) >= MAX_TABLES_PER_ACCOUNT) {
+            showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
             return;
         }
 
@@ -219,9 +306,11 @@ if (reservationForm) {
     const orderKey = orderNumber.toString();
     
     // Store order details - always use string key
+    orderDetails = JSON.parse(localStorage.getItem('orderDetails')) || {};
     orderDetails[orderKey] = {
         name: formData.name,
         email: formData.email,
+        uid: currentUser.uid || undefined,
         date: formData.date,
         time: formData.time,
         guests: formData.guests,
@@ -266,6 +355,8 @@ You can also place your reservation directly at (123) 456-7890.
 
     // Reset form
     reservationForm.reset();
+    hideReservationMessage();
+    checkLoginStatus(); // refill name/email and show the limit message if this was their 2nd table
     
     // Update seating chart and dropdown for the current date (if date input still has a value)
     const dateInput = document.getElementById('date');
@@ -961,6 +1052,9 @@ function checkLoginStatus() {
 
     // Show the header "Sign out" button only when signed in (see .nav-signout in styles.css)
     document.documentElement.classList.toggle('is-signed-in', !!currentUser);
+
+    // Reservation form: show/hide the 2-tables-per-account notice
+    updateReservationLimitNotice();
 
     // Show the Google profile photo in the navbar profile icon when signed in
     var profileIcons = document.querySelectorAll('.profile-icon');

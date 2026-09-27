@@ -1438,3 +1438,16 @@ html {
         white-space: nowrap;
     }
 }
+
+/* Reservation form notices (2 tables per account, sign-in required) */
+.reservation-limit-message {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.reservation-limit-message a {
+    color: inherit;
+    font-weight: bold;
+    text-decoration: underline;
+}
