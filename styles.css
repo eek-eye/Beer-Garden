@@ -2552,3 +2552,356 @@ textarea {
         animation: none;
     }
 }
+
+/* ==========================================================================
+   Nav bookmarks: Reservations / Cancel / Contact / Login hang on the left
+   edge of the page as Chinese bookmarks (vertical tabs with knot and tassel).
+   The links stay in the same <ul class="nav-menu">, so all nav logic is kept.
+   ========================================================================== */
+.nav-menu {
+    --bm-tassel-gold: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 44'%3E%3Cpath d='M10 0v6M10 16v5' stroke='%23f2c14e' stroke-width='1.4'/%3E%3Cpath d='M10 5l6 6-6 6-6-6z' fill='%23b0121b' stroke='%23f2c14e' stroke-width='1.2'/%3E%3Cpath d='M10 8.2l2.8 2.8-2.8 2.8-2.8-2.8z' fill='none' stroke='%23f2c14e' stroke-width='.8'/%3E%3Crect x='6.5' y='20' width='7' height='4' rx='1' fill='%23f2c14e'/%3E%3Cpath d='M7 24h6l2.6 19H4.4z' fill='%23f2c14e'/%3E%3Cpath d='M8 25v17M10 25v18M12 25v17' stroke='%23b8860b' stroke-width='.7'/%3E%3C/svg%3E");
+    --bm-tassel-red: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 44'%3E%3Cpath d='M10 0v6M10 16v5' stroke='%23d4a017' stroke-width='1.4'/%3E%3Cpath d='M10 5l6 6-6 6-6-6z' fill='%23d4a017' stroke='%238b0000' stroke-width='1.2'/%3E%3Cpath d='M10 8.2l2.8 2.8-2.8 2.8-2.8-2.8z' fill='none' stroke='%238b0000' stroke-width='.8'/%3E%3Crect x='6.5' y='20' width='7' height='4' rx='1' fill='%23d4a017'/%3E%3Cpath d='M7 24h6l2.6 19H4.4z' fill='%23d0161f'/%3E%3Cpath d='M8 25v17M10 25v18M12 25v17' stroke='%237a0a0f' stroke-width='.7'/%3E%3C/svg%3E");
+}
+
+/* Colours: cinnabar red, black lacquer, oxblood, imperial gold */
+.nav-menu li {
+    --bm-edge: var(--cn-gold);
+    --bm-bg: linear-gradient(180deg, #d0161f 0%, #9c0d14 100%);
+    --bm-ink: #fbeccb;
+    --bm-char: var(--cn-gold-light);
+    --bm-frame: rgba(242, 193, 78, 0.75);
+    --bm-tassel: var(--bm-tassel-gold);
+}
+
+.nav-menu li:nth-child(2) {
+    --bm-bg: linear-gradient(180deg, #2e1818 0%, #0d0a0a 100%);
+    --bm-ink: var(--cn-gold-light);
+    --bm-char: #ff4b3e;
+    --bm-tassel: var(--bm-tassel-red);
+}
+
+.nav-menu li:nth-child(3) {
+    --bm-bg: linear-gradient(180deg, #74101a 0%, #420509 100%);
+    --bm-ink: #fbeccb;
+    --bm-char: var(--cn-gold-light);
+}
+
+.nav-menu li:nth-child(4) {
+    --bm-edge: #8b0000;
+    --bm-bg: linear-gradient(180deg, #f9dc7c 0%, #d9a520 100%);
+    --bm-ink: #7a0a0f;
+    --bm-char: #b0121b;
+    --bm-frame: rgba(139, 0, 0, 0.6);
+    --bm-tassel: var(--bm-tassel-red);
+}
+
+.nav-menu li:nth-child(1)::before { content: '订' / ''; }
+.nav-menu li:nth-child(2)::before { content: '消' / ''; }
+.nav-menu li:nth-child(3)::before { content: '联' / ''; }
+.nav-menu li:nth-child(4)::before { content: '登' / ''; }
+
+.nav-menu li {
+    position: relative;
+    filter: drop-shadow(2px 3px 4px rgba(0, 0, 0, 0.55));
+    transition: transform 0.28s ease, filter 0.28s ease;
+}
+
+/* Chinese character on the bookmark (decorative, clicks go to the link) */
+.nav-menu li::before {
+    position: absolute;
+    z-index: 1;
+    font-family: var(--cn-font-display);
+    font-weight: 900;
+    line-height: 1;
+    color: var(--bm-char);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+/* Knot and tassel */
+.nav-menu li::after {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    width: 16px;
+    height: 35px;
+    background: var(--bm-tassel) center top / 100% 100% no-repeat;
+    pointer-events: none;
+    transform-origin: 50% 0;
+    transition: transform 0.4s ease;
+}
+
+.nav-menu a,
+.nav-menu a:hover,
+.nav-menu a.active {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    position: relative;
+    isolation: isolate;
+    font-family: var(--cn-font-display);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.1;
+    color: var(--bm-ink);
+    text-decoration: none;
+    background: var(--bm-edge);
+    outline: none;
+}
+
+/* Lacquer body (inside the 2px edge) */
+.nav-menu a::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    background: var(--bm-bg);
+}
+
+/* Thin inner frame (replaces the old underline) */
+.nav-menu a::after,
+.nav-menu a:hover::after,
+.nav-menu a.active::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    height: auto;
+    background: none;
+    border: 1px solid var(--bm-frame);
+    border-left: 0;
+    transform: none;
+    transition: border-color 0.2s;
+}
+
+.nav-menu a:focus-visible::after {
+    border: 2px solid #ffffff;
+    border-left: 0;
+}
+
+.nav-menu li:hover,
+.nav-menu li:has(a:focus-visible) {
+    filter: drop-shadow(2px 3px 4px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 9px rgba(242, 193, 78, 0.85));
+}
+
+.nav-menu li:has(a:focus-visible) {
+    filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 10px rgba(242, 193, 78, 0.95));
+}
+
+.nav-menu li:hover::after,
+.nav-menu li:has(a:focus-visible)::after {
+    transform: rotate(6deg);
+}
+
+/* ---------- Desktop: fixed tabs on the left edge of the page ---------- */
+@media (min-width: 769px) {
+    .navbar .nav-menu {
+        position: fixed;
+        top: 92px;
+        left: 0;
+        z-index: 5;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 30px;
+        margin: 0;
+        padding: 0;
+        pointer-events: none;
+    }
+
+    .nav-menu li {
+        pointer-events: auto;
+        transform: translateX(-10px); /* 10px tucked behind the edge */
+    }
+
+    .nav-menu li:hover,
+    .nav-menu li:has(a:focus-visible),
+    .nav-menu li:has(a.active) {
+        transform: translateX(0);
+    }
+
+    .nav-menu li:has(a.active) {
+        filter: drop-shadow(2px 3px 4px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 5px rgba(242, 193, 78, 0.6));
+    }
+
+    .nav-menu a,
+    .nav-menu a:hover,
+    .nav-menu a.active {
+        justify-content: center;
+        width: 54px;
+        height: 148px;
+        padding: 40px 0 22px 10px;
+        writing-mode: vertical-rl;
+        font-size: 12.5px;
+        white-space: nowrap;
+        /* swallowtail notch at the bottom */
+        clip-path: polygon(0 0, 100% 0, 100% 100%, calc(50% + 5px) calc(100% - 11px), 0 100%);
+    }
+
+    .nav-menu a::before {
+        inset: 2px 2px 2px 0;
+        clip-path: polygon(0 0, 100% 0, 100% 100%, calc(50% + 5px) calc(100% - 11px), 0 100%);
+    }
+
+    .nav-menu a::after,
+    .nav-menu a:hover::after,
+    .nav-menu a.active::after {
+        top: 6px;
+        right: 6px;
+        bottom: 19px;
+        left: 0;
+    }
+
+    .nav-menu li::before {
+        top: 13px;
+        left: 10px;
+        width: 44px;
+        text-align: center;
+        font-size: 17px;
+    }
+
+    .nav-menu li::after {
+        top: 135px;
+        left: 24px;
+    }
+
+    /* Keep page content clear of the tabs (the header keeps its own padding) */
+    .container {
+        padding-left: max(20px, calc(70px - max(0px, (100vw - 1200px) / 2)));
+        padding-right: max(20px, calc(70px - max(0px, (100vw - 1200px) / 2)));
+    }
+
+    .navbar .container {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .hero::before {
+        left: max(7%, 76px);
+    }
+
+    .login-page-section::before,
+    .cancellation::before {
+        left: max(6%, 72px);
+    }
+
+    .profile-section::before {
+        left: max(76px, calc(50% - 520px));
+    }
+}
+
+/* Shorter screens: smaller bookmarks so all of them fit */
+@media (min-width: 769px) and (max-height: 820px) {
+    .navbar .nav-menu {
+        top: 86px;
+        gap: 26px;
+    }
+
+    .nav-menu a,
+    .nav-menu a:hover,
+    .nav-menu a.active {
+        height: 132px;
+        padding-top: 36px;
+        font-size: 11.5px;
+        letter-spacing: 0.05em;
+    }
+
+    .nav-menu li::before {
+        top: 12px;
+        font-size: 15px;
+    }
+
+    .nav-menu li::after {
+        top: 119px;
+    }
+}
+
+@media (min-width: 769px) and (max-height: 680px) {
+    .navbar .nav-menu {
+        top: 80px;
+        gap: 22px;
+    }
+
+    .nav-menu a,
+    .nav-menu a:hover,
+    .nav-menu a.active {
+        height: 116px;
+        padding-top: 10px;
+        font-size: 10.5px;
+        letter-spacing: 0.03em;
+    }
+
+    .nav-menu li::before {
+        display: none;
+    }
+
+    .nav-menu li::after {
+        top: 103px;
+    }
+}
+
+/* ---------- Phones: horizontal bookmarks inside the hamburger menu ---------- */
+@media (max-width: 768px) {
+    .nav-menu {
+        align-items: flex-start;
+        text-align: left;
+        gap: 22px;
+        padding: 1.4rem 0 2.1rem;
+    }
+
+    .nav-menu li {
+        transform: translateX(-14px);
+    }
+
+    .nav-menu li:hover,
+    .nav-menu li:has(a:focus-visible),
+    .nav-menu li:has(a.active) {
+        transform: translateX(0);
+    }
+
+    .nav-menu a,
+    .nav-menu a:hover,
+    .nav-menu a.active {
+        width: 240px;
+        height: 46px;
+        padding: 0 30px 0 60px;
+        font-size: 1rem;
+        clip-path: polygon(0 0, 100% 0, calc(100% - 13px) 50%, 100% 100%, 0 100%);
+    }
+
+    .nav-menu a::before {
+        inset: 2px 2px 2px 0;
+        clip-path: polygon(0 0, 100% 0, calc(100% - 13px) 50%, 100% 100%, 0 100%);
+    }
+
+    .nav-menu a::after,
+    .nav-menu a:hover::after,
+    .nav-menu a.active::after {
+        top: 5px;
+        right: 19px;
+        bottom: 5px;
+        left: 0;
+    }
+
+    .nav-menu li::before {
+        top: 50%;
+        left: 28px;
+        transform: translateY(-50%);
+        font-size: 19px;
+    }
+
+    .nav-menu li::after {
+        top: 23px;
+        left: 219px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-menu li,
+    .nav-menu li::after,
+    .nav-menu a::after {
+        transition: none;
+    }
+
+    .nav-menu li:hover::after,
+    .nav-menu li:has(a:focus-visible)::after {
+        transform: none;
+    }
+}
