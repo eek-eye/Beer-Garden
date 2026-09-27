@@ -147,7 +147,7 @@ tabBtns.forEach(btn => {
 // ============================================
 var MAX_TABLES_PER_ACCOUNT = 2;
 var TABLE_LIMIT_MESSAGE = 'You can only reserve 2 tables per account. Cancel an existing reservation to book another.';
-var SIGN_IN_TO_RESERVE_MESSAGE = 'Please <a href="login.html">log in</a> to reserve a table. Each account can reserve up to 2 tables.';
+var SIGN_IN_TO_RESERVE_MESSAGE = 'Please <a href="/login">log in</a> to reserve a table. Each account can reserve up to 2 tables.';
 var firestoreDb = null;
 
 function localDateString(d) {
@@ -948,7 +948,7 @@ function onGoogleSignedIn(user) {
     var u = saveFirebaseUser(user);
     if (!u) return;
     if (isLoginPage()) {
-        window.location.href = 'profile.html';
+        window.location.href = '/profile';
         return;
     }
     if (typeof closeAuthModal === 'function') closeAuthModal();
@@ -987,7 +987,7 @@ function initFirebaseAuth() {
             checkLoginStatus();
             // (sign-up / account migration redirect themselves once the name is saved)
             if (isLoginPage() && !accountSetupInProgress) {
-                window.location.href = 'profile.html';
+                window.location.href = '/profile';
             }
         } else {
             // Not signed in to Firebase: drop any stored session, including old browser-only
@@ -1102,7 +1102,7 @@ function handleSignOutClick(e) {
     var prevUser = currentUser;
     signOutUser(function() {
         if (!isHomePage()) {
-            window.location.href = 'index.html';
+            window.location.href = '/';
             return;
         }
         // Already on the home page: clear the prefilled reservation name/email and show Login again
@@ -1226,7 +1226,7 @@ function handleLogin(email, password) {
             .then(function() {
                 if (!document.getElementById('authModal')) {
                     showLoginPageMessage('Login successful. Redirecting…');
-                    window.location.href = 'profile.html';
+                    window.location.href = '/profile';
                     return;
                 }
                 closeAuthModal();
@@ -1263,7 +1263,7 @@ function handleLogin(email, password) {
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             if (!document.getElementById('authModal')) {
                 showLoginPageMessage('Login successful. Redirecting…');
-                window.location.href = 'profile.html';
+                window.location.href = '/profile';
                 return;
             }
             closeAuthModal();
@@ -1292,7 +1292,7 @@ function migrateLegacyAccount(legacy, email, password) {
             localStorage.setItem('userAccounts', JSON.stringify(accounts));
             if (!document.getElementById('authModal')) {
                 showLoginPageMessage('Login successful. Redirecting…');
-                window.location.href = 'profile.html';
+                window.location.href = '/profile';
                 return;
             }
             closeAuthModal();
@@ -1340,7 +1340,7 @@ function createAccountAndLogIn(firstName, lastName, email, password) {
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
     if (!document.getElementById('authModal')) {
         showLoginPageMessage('Account created. Redirecting…');
-        window.location.href = 'profile.html';
+        window.location.href = '/profile';
         return true;
     }
     closeAuthModal();
@@ -1366,7 +1366,7 @@ function handleSignup(firstName, lastName, email, password) {
                 accountSetupInProgress = false;
                 if (!document.getElementById('authModal')) {
                     showLoginPageMessage('Account created. Redirecting…');
-                    window.location.href = 'profile.html';
+                    window.location.href = '/profile';
                     return;
                 }
                 closeAuthModal();

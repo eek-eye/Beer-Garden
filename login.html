@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){var p=location.pathname;if(/\.html$/.test(p)){history.replaceState(null,'',p.replace(/\.html$/,'')+location.search+location.hash);}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Bar Chinesca Mxli</title>
     <link rel="stylesheet" href="styles.css">
@@ -11,19 +12,19 @@
     <nav class="navbar">
         <div class="container">
             <div class="logo">
-                <a href="index.html" style="text-decoration: none; color: inherit;">
+                <a href="/" style="text-decoration: none; color: inherit;">
                     <h1>🍺 Bar Chinesca Mxli</h1>
                 </a>
             </div>
             <ul class="nav-menu">
-                <li><a href="index.html">Reservations</a></li>
-                <li><a href="cancel.html">Cancel</a></li>
-                <li><a href="index.html">Contact</a></li>
-                <li id="navLoginItem"><a href="login.html" class="active">Login</a></li>
+                <li><a href="/">Reservations</a></li>
+                <li><a href="/cancel">Cancel</a></li>
+                <li><a href="/">Contact</a></li>
+                <li id="navLoginItem"><a href="/login" class="active">Login</a></li>
             </ul>
             <div class="nav-right">
                 <button type="button" class="btn btn-secondary nav-signout js-signout-btn" id="navSignOutBtn">Sign out</button>
-                <a href="profile.html" class="profile-icon" title="My Profile">
+                <a href="/profile" class="profile-icon" title="My Profile">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
@@ -103,7 +104,7 @@
             </div>
 
             <div id="loginPageMessage" class="login-page-message" style="display: none;" role="alert"></div>
-            <p class="login-page-back"><a href="index.html">← Back to home</a></p>
+            <p class="login-page-back"><a href="/">← Back to home</a></p>
         </div>
     </section>
 
@@ -123,7 +124,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (localStorage.getItem('currentUser')) {
-                window.location.href = 'profile.html';
+                window.location.href = '/profile';
                 return;
             }
             var loginForm = document.getElementById('loginForm');
