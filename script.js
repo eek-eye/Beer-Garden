@@ -710,6 +710,26 @@ document.querySelectorAll('a[data-section]').forEach(function(link) {
     });
 })();
 
+// A #hash added while already on a page (e.g. typing /#contact in the address bar): show the section
+// on the home page, then remove the hash so the address bar stays clean.
+window.addEventListener('hashchange', function() {
+    var id = '';
+    try { id = decodeURIComponent(window.location.hash.slice(1)); } catch (err) {}
+    if (isHomePage()) {
+        var target = id && document.getElementById(id);
+        if (target && target.tagName === 'SECTION') {
+            window.scrollTo({ top: Math.max(0, target.offsetTop - 70), behavior: 'smooth' });
+        }
+        history.replaceState(null, '', window.location.pathname);
+    } else if (window.location.pathname === '/' && (id === 'reservations' || id === 'contact')) {
+        // The profile page also shows "/": a home-page section was requested, so go to the home page
+        try { sessionStorage.setItem('barScrollToSection', id); } catch (err) {}
+        window.location.replace('/');
+    } else {
+        history.replaceState(null, '', window.location.pathname);
+    }
+});
+
 // Add animation on scroll (optional enhancement)
 const observerOptions = {
     threshold: 0.1,
