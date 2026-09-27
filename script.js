@@ -663,6 +663,35 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
+// Arriving from another page at /#reservations or /#contact: land on the section just below the fixed navbar
+// (same 70px offset as the smooth scroll above), and keep it there while the page finishes loading content.
+(function() {
+    var hash = window.location.hash;
+    if (!hash || hash.length < 2 || !isHomePage()) return;
+    var target = null;
+    try { target = document.getElementById(decodeURIComponent(hash.slice(1))); } catch (err) { return; }
+    if (!target || target.tagName !== 'SECTION') return;
+    var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    if (nav && nav.type === 'back_forward') return; // let the browser restore the previous position
+    var userScrolled = false;
+    ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(function(ev) {
+        window.addEventListener(ev, function() { userScrolled = true; }, { once: true, passive: true });
+    });
+    function land() {
+        if (userScrolled) return;
+        var root = document.documentElement;
+        var prev = root.style.scrollBehavior;
+        root.style.scrollBehavior = 'auto'; // jump instantly (html has scroll-behavior: smooth)
+        window.scrollTo(0, Math.max(0, target.offsetTop - 70));
+        root.style.scrollBehavior = prev;
+    }
+    land();
+    window.addEventListener('load', function() {
+        land();
+        [300, 800, 1500, 2500].forEach(function(ms) { setTimeout(land, ms); });
+    });
+})();
+
 // Add animation on scroll (optional enhancement)
 const observerOptions = {
     threshold: 0.1,
