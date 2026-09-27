@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script>(function(){var p=location.pathname;if(/\.html$/.test(p)){history.replaceState(null,'',p.replace(/\.html$/,'')+location.search+location.hash);}})();</script>
+    <script>(function(){var c=location.pathname.replace(/\.html$/,'');if(location.href!==location.origin+c){history.replaceState(null,'',c);}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Bar Chinesca Mxli</title>
     <link rel="icon" href="/favicon.ico" sizes="48x48">
@@ -21,9 +21,9 @@
                 </a>
             </div>
             <ul class="nav-menu">
-                <li><a href="/#reservations">Reservations</a></li>
+                <li><a href="/" data-section="reservations">Reservations</a></li>
                 <li><a href="/cancel">Cancel</a></li>
-                <li><a href="/#contact">Contact</a></li>
+                <li><a href="/" data-section="contact">Contact</a></li>
                 <li id="navLoginItem"><a href="/login" class="active">Login</a></li>
             </ul>
             <div class="nav-right">

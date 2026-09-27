@@ -663,16 +663,34 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Arriving from another page at /#reservations or /#contact: land on the section just below the fixed navbar
+// Nav links on other pages (Reservations / Contact) go to "/" and pass the section via sessionStorage,
+// so the address bar never shows a #hash. On the home page they just smooth-scroll.
+document.querySelectorAll('a[data-section]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // new tab/window: plain "/"
+        var id = link.getAttribute('data-section');
+        var target = isHomePage() && document.getElementById(id);
+        if (target) {
+            e.preventDefault();
+            window.scrollTo({ top: target.offsetTop - 70, behavior: 'smooth' });
+            return;
+        }
+        try { sessionStorage.setItem('barScrollToSection', id); } catch (err) {}
+    });
+});
+
+// Arriving on the home page with a section to show (from the nav links above, or an old /#contact bookmark
+// whose hash the <head> script already removed): land on the section just below the fixed navbar
 // (same 70px offset as the smooth scroll above), and keep it there while the page finishes loading content.
 (function() {
-    var hash = window.location.hash;
-    if (!hash || hash.length < 2 || !isHomePage()) return;
-    var target = null;
-    try { target = document.getElementById(decodeURIComponent(hash.slice(1))); } catch (err) { return; }
+    var id = window.__barLandSection || null;
+    try {
+        var stored = sessionStorage.getItem('barScrollToSection');
+        if (stored) { sessionStorage.removeItem('barScrollToSection'); if (!id) id = stored; }
+    } catch (err) {}
+    if (!id || !isHomePage()) return;
+    var target = document.getElementById(id);
     if (!target || target.tagName !== 'SECTION') return;
-    var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
-    if (nav && nav.type === 'back_forward') return; // let the browser restore the previous position
     var userScrolled = false;
     ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(function(ev) {
         window.addEventListener(ev, function() { userScrolled = true; }, { once: true, passive: true });
@@ -1120,7 +1138,8 @@ function signOutUser(callback) {
 window.signOutUser = signOutUser;
 
 function isHomePage() {
-    return /(^|\/)(index(\.html)?)?$/.test(window.location.pathname || '');
+    // Detect by content, not the URL: the profile page also shows "/" in the address bar
+    return !!document.getElementById('reservationForm');
 }
 
 // Header "Sign out" button: sign out, reset the header, go back to the home page
