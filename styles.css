@@ -3588,3 +3588,177 @@ body {
         transition: none;
     }
 }
+
+/* ==========================================================================
+   Privacy page (/privacy): dark club section, glass cards, neon title
+   ========================================================================== */
+.privacy-section {
+    position: relative;
+    padding: 120px 0 5rem;
+    color: var(--club-text);
+    background-color: #09060b;
+    background-image:
+        var(--cn-lattice),
+        radial-gradient(ellipse at 15% 0%, rgba(255, 45, 149, 0.13) 0%, rgba(9, 6, 11, 0) 55%),
+        radial-gradient(ellipse at 90% 100%, rgba(161, 59, 255, 0.14) 0%, rgba(9, 6, 11, 0) 55%),
+        linear-gradient(180deg, #0e0911 0%, #060407 100%);
+    background-size: 60px 60px, 100% 100%, 100% 100%, 100% 100%;
+}
+
+.privacy-section .container {
+    max-width: 900px;
+}
+
+.privacy-section h2 {
+    position: relative;
+    text-align: center;
+    font-family: var(--cn-font-display);
+    font-size: 2.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #fff4fa;
+    margin-bottom: 1rem;
+    padding-bottom: 2.1rem;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.55), 0 0 12px var(--club-pink), 0 0 26px rgba(255, 45, 149, 0.7), 0 0 44px rgba(255, 35, 64, 0.45);
+    background:
+        linear-gradient(90deg, transparent, var(--cn-gold)) calc(50% - 68px) calc(100% - 13px) / 96px 1.5px no-repeat,
+        linear-gradient(90deg, var(--cn-gold), transparent) calc(50% + 68px) calc(100% - 13px) / 96px 1.5px no-repeat;
+}
+
+.privacy-section h2::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    width: 22px;
+    height: 22px;
+    margin-left: -11px;
+    background: var(--cn-red);
+    border: 1px solid var(--cn-gold);
+    transform: rotate(45deg);
+}
+
+.privacy-section h2::after {
+    content: '福';
+    position: absolute;
+    left: 50%;
+    bottom: 3px;
+    width: 24px;
+    margin-left: -12px;
+    font-family: var(--cn-font-brush);
+    font-weight: normal;
+    font-size: 17px;
+    line-height: 24px;
+    text-align: center;
+    color: var(--cn-gold-light);
+    text-shadow: none;
+}
+
+.privacy-section h2:hover {
+    animation: club-glitch 0.9s steps(2, end) infinite;
+}
+
+.privacy-section .section-subtitle {
+    text-align: center;
+    color: var(--club-muted);
+    margin-bottom: 2.5rem;
+}
+
+.privacy-card {
+    background: var(--club-glass);
+    color: var(--club-text);
+    border: 1px solid rgba(255, 45, 149, 0.55);
+    border-top: 3px solid var(--club-pink);
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px rgba(161, 59, 255, 0.22), 0 0 22px rgba(255, 45, 149, 0.22), 0 14px 32px rgba(0, 0, 0, 0.55);
+    padding: 2.25rem 2.5rem;
+    line-height: 1.7;
+}
+
+.privacy-card + .privacy-card {
+    margin-top: 2rem;
+}
+
+.privacy-card h3 {
+    font-family: var(--cn-font-display);
+    font-weight: 900;
+    font-size: 1.15rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #ffe3f1;
+    text-shadow: 0 0 8px rgba(255, 45, 149, 0.7);
+    margin: 1.9rem 0 0.6rem;
+}
+
+.privacy-card h3[id] {
+    scroll-margin-top: 96px;
+}
+
+.privacy-card h3:first-child {
+    margin-top: 0;
+}
+
+.privacy-card p,
+.privacy-card li {
+    color: var(--club-muted);
+}
+
+.privacy-card strong {
+    color: var(--club-text);
+}
+
+.privacy-card ul,
+.privacy-card ol {
+    padding-left: 1.4rem;
+    margin: 0.4rem 0 0.8rem;
+}
+
+.privacy-card li + li {
+    margin-top: 0.45rem;
+}
+
+.privacy-card .privacy-lead {
+    color: var(--club-text);
+    font-size: 1.05rem;
+}
+
+.privacy-card a {
+    color: #ff6cb8;
+    word-break: break-word;
+}
+
+.privacy-card a:hover,
+.privacy-card a:focus-visible {
+    color: #ffffff;
+    text-shadow: 0 0 8px var(--club-pink);
+}
+
+.privacy-card-es {
+    border-top-color: var(--cn-gold);
+}
+
+.footer .footer-legal {
+    margin-top: 0.9rem;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+    .privacy-section {
+        padding-top: 100px;
+    }
+
+    .privacy-section h2 {
+        font-size: 1.9rem;
+    }
+
+    .privacy-card {
+        padding: 1.6rem 1.25rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .privacy-section h2:hover {
+        animation: none;
+    }
+}
