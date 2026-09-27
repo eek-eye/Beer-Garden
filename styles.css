@@ -2905,3 +2905,111 @@ textarea {
         transform: none;
     }
 }
+
+/* ==========================================================================
+   Social links (Facebook / Instagram): red lacquer coins with a gold rim,
+   neon glow in the brand colour on hover
+   ========================================================================== */
+.social-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.social-link {
+    --social-glow: var(--cn-gold-light);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    color: var(--cn-gold-light);
+    background: radial-gradient(circle at 35% 30%, #d0161f 0%, #8b0000 70%, #5c0609 100%);
+    border: 2px solid var(--cn-gold);
+    box-shadow: inset 0 0 0 3px #8b0000, inset 0 0 0 4px rgba(242, 193, 78, 0.55), 0 3px 8px rgba(0, 0, 0, 0.45);
+    text-decoration: none;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+.social-link svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+
+.social-facebook {
+    --social-glow: #3b82ff;
+}
+
+.social-instagram {
+    --social-glow: #ff2d95;
+}
+
+.social-link:hover,
+.social-link:focus-visible {
+    color: #ffffff;
+    border-color: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: inset 0 0 0 3px #8b0000, inset 0 0 0 4px rgba(255, 255, 255, 0.6),
+        0 0 6px var(--social-glow), 0 0 16px var(--social-glow), 0 0 28px var(--social-glow);
+    text-decoration: none;
+}
+
+.social-link:focus-visible {
+    outline: 2px solid var(--cn-gold-light);
+    outline-offset: 4px;
+}
+
+/* Contact section: four cards (one row on wide screens, 2 x 2 below) */
+@media (min-width: 1101px) {
+    .contact-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (min-width: 601px) and (max-width: 1100px) {
+    .contact-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .contact-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.contact-card-social .social-links {
+    margin-top: 0.25rem;
+}
+
+/* Footer row */
+.footer-social {
+    margin-top: 1rem;
+    gap: 14px;
+}
+
+.footer-social .social-link {
+    width: 42px;
+    height: 42px;
+}
+
+.footer-social .social-link svg {
+    width: 19px;
+    height: 19px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .social-link {
+        transition: none;
+    }
+
+    .social-link:hover,
+    .social-link:focus-visible {
+        transform: none;
+    }
+}
