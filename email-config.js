@@ -10,5 +10,5 @@
 // ============================================
 
 const EMAIL_CONFIG = {
-    webAppUrl: ''
+    webAppUrl: 'https://script.google.com/macros/s/AKfycbz2vDDoAvlk4UCTj9I8RPz9hWtTZbpAllBS_nxZzfgGiAGY9szDZcUxznN9UavH2jWi/exec'
 };
