@@ -1461,3 +1461,789 @@ html {
 .inline-contact-link:hover {
     text-decoration: underline;
 }
+
+/* ==========================================================================
+   Chinese bar theme – Bar Chinesca Mxli
+   Deep Chinese red, near-black and gold; lanterns, hui-wen / lattice patterns
+   and cloud trims are inline SVG (no extra image requests).
+   ========================================================================== */
+:root {
+    --cn-red: #b0121b;
+    --cn-red-dark: #8b0000;
+    --cn-red-deep: #5c0609;
+    --cn-black: #0d0a0a;
+    --cn-ink: #1c1414;
+    --cn-gold: #d4a017;
+    --cn-gold-light: #f2c14e;
+    --cn-paper: #fbf3e4;
+    --cn-paper-dark: #f3e4c8;
+    --cn-font-display: 'Noto Serif SC', 'Songti SC', 'SimSun', Georgia, serif;
+    --cn-font-brush: 'Ma Shan Zheng', 'Noto Serif SC', serif;
+    --cn-lantern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 150'%3E %3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='45%25' r='60%25'%3E%3Cstop offset='0' stop-color='%23ff5a3c'/%3E%3Cstop offset='.55' stop-color='%23c8161d'/%3E%3Cstop offset='1' stop-color='%237a0a0f'/%3E%3C/radialGradient%3E%3C/defs%3E %3Cline x1='32' y1='0' x2='32' y2='26' stroke='%23d4a017' stroke-width='2'/%3E %3Crect x='20' y='24' width='24' height='9' rx='2' fill='%23d4a017'/%3E %3Cellipse cx='32' cy='64' rx='29' ry='33' fill='url(%23g)'/%3E %3Cpath d='M32 31v66M19 34c-9 18-9 42 0 60M45 34c9 18 9 42 0 60M9 50c-3 9-3 19 0 28M55 50c3 9 3 19 0 28' stroke='%238b0000' stroke-width='1.6' fill='none' opacity='.8'/%3E %3Crect x='20' y='95' width='24' height='9' rx='2' fill='%23d4a017'/%3E %3Cline x1='32' y1='104' x2='32' y2='112' stroke='%23d4a017' stroke-width='2'/%3E %3Cpath d='M27 112h10l3 34h-16z' fill='%23f2c14e'/%3E %3Cpath d='M29 114v30M32 114v31M35 114v30' stroke='%23b8860b' stroke-width='.8'/%3E %3C/svg%3E");
+    --cn-meander: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E %3Cpath d='M4 4h36v36H12V12h20v20h-12v-8h4' fill='none' stroke='%238b0000' stroke-width='1.4' opacity='.05'/%3E %3C/svg%3E");
+    --cn-band: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='14' viewBox='0 0 32 14'%3E %3Crect width='32' height='14' fill='%238b0000'/%3E %3Cpath d='M0 11h6V3h12v6h-6V6' fill='none' stroke='%23d4a017' stroke-width='1.3'/%3E %3Cpath d='M16 11h6V3h12' fill='none' stroke='%23d4a017' stroke-width='1.3'/%3E %3Cpath d='M0 .7h32M0 13.3h32' stroke='%23f2c14e' stroke-width='1.2'/%3E %3C/svg%3E");
+    --cn-lattice: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E %3Cg fill='none' stroke='%23d4a017' stroke-width='1' opacity='.09'%3E %3Crect x='5' y='5' width='50' height='50'/%3E%3Crect x='15' y='15' width='30' height='30'/%3E %3Cpath d='M5 30h10M45 30h10M30 5v10M30 45v10M15 15L5 5M45 15l10-10M15 45L5 55M45 45l10 10'/%3E %3C/g%3E%3C/svg%3E");
+    --cn-cloud: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E %3Cg fill='none' stroke='%23d4a017' stroke-width='2.2' stroke-linecap='round'%3E %3Cpath d='M4 34h40c6 0 10-4 10-9s-4-9-9-9c-4 0-7 3-7 7 0 3 2 5 5 5'/%3E %3Cpath d='M22 34c-6 0-10-4-10-9s4-9 9-9c1-6 6-10 12-10 7 0 12 5 12 12'/%3E %3Cpath d='M21 16c4 0 7 3 7 7 0 3-2 5-5 5'/%3E %3C/g%3E%3C/svg%3E");
+}
+
+body {
+    color: var(--cn-ink);
+    background: var(--cn-black);
+}
+
+h1, h2, h3, h4,
+.btn,
+.chart-main-title,
+.stage-box,
+.dj-box,
+.profile-card-order,
+.table-number-display {
+    font-family: var(--cn-font-display);
+}
+
+.btn,
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
+.btn {
+    font-family: var(--cn-font-display);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+}
+
+/* ---------- Navbar ---------- */
+.navbar,
+.navbar.scrolled {
+    background: linear-gradient(180deg, #140c0c 0%, var(--cn-black) 100%);
+    border-bottom: 2px solid var(--cn-red);
+    box-shadow: 0 1px 0 var(--cn-gold), 0 6px 18px rgba(0, 0, 0, 0.55);
+}
+
+.navbar.scrolled {
+    background: rgba(13, 10, 10, 0.98);
+}
+
+.logo h1 {
+    color: var(--cn-gold-light);
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+/* Red "酒吧" (bar) seal next to the name */
+.logo h1::after {
+    content: '酒吧';
+    font-family: var(--cn-font-brush);
+    font-weight: normal;
+    font-size: 1.05rem;
+    line-height: 1;
+    color: var(--cn-gold-light);
+    background: var(--cn-red);
+    border: 1px solid var(--cn-gold);
+    border-radius: 3px;
+    padding: 4px 5px 3px;
+    box-shadow: inset 0 0 0 2px var(--cn-red), inset 0 0 0 3px rgba(242, 193, 78, 0.55);
+}
+
+.nav-menu a {
+    color: #f6eadb;
+    position: relative;
+    padding: 4px 0;
+}
+
+.nav-menu a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background: var(--cn-gold);
+    transform: scaleX(0);
+    transition: transform 0.25s;
+}
+
+.nav-menu a:hover,
+.nav-menu a.active {
+    color: var(--cn-gold-light);
+}
+
+.nav-menu a:hover::after,
+.nav-menu a.active::after {
+    transform: scaleX(1);
+}
+
+.hamburger span {
+    background: var(--cn-gold-light);
+}
+
+.profile-icon {
+    color: var(--cn-gold-light);
+    background: rgba(176, 18, 27, 0.35);
+    border: 1px solid rgba(212, 160, 23, 0.6);
+}
+
+.profile-icon:hover {
+    background: var(--cn-red);
+}
+
+.profile-icon.active {
+    background: var(--cn-red);
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary {
+    background: linear-gradient(180deg, #c8161d 0%, var(--cn-red) 55%, var(--cn-red-dark) 100%);
+    color: #fff8e7;
+    border: 2px solid var(--cn-gold);
+    box-shadow: inset 0 0 0 1px rgba(255, 220, 150, 0.35), 0 4px 12px rgba(139, 0, 0, 0.35);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(180deg, var(--cn-red) 0%, var(--cn-red-dark) 100%);
+    border-color: var(--cn-gold-light);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: inset 0 0 0 1px rgba(255, 220, 150, 0.45), 0 6px 18px rgba(212, 160, 23, 0.35);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--cn-gold-light);
+    border: 2px solid var(--cn-gold);
+}
+
+.btn-secondary:hover {
+    background: var(--cn-gold);
+    color: var(--cn-black);
+    border-color: var(--cn-gold);
+}
+
+/* ---------- Hero (home page) ---------- */
+.hero {
+    height: auto;
+    min-height: 78vh;
+    margin-top: 70px;
+    padding: 4.5rem 0 5rem;
+    background:
+        linear-gradient(180deg, rgba(13, 10, 10, 0.55) 0%, rgba(13, 10, 10, 0.25) 45%, rgba(13, 10, 10, 0.9) 100%),
+        radial-gradient(ellipse at center, rgba(176, 18, 27, 0.15) 0%, rgba(13, 10, 10, 0.55) 75%),
+        url('IMAGES/Chinesca.webp') center 38% / cover no-repeat;
+    overflow: hidden;
+    border-bottom: 14px solid transparent;
+    border-image: var(--cn-band) 0 0 14 0 / 0 0 14px 0 repeat;
+}
+
+.hero-overlay {
+    background: none;
+}
+
+.hero::before,
+.hero::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    width: 64px;
+    height: 150px;
+    background: var(--cn-lantern) center top / contain no-repeat;
+    transform-origin: 50% 0;
+    animation: cn-lantern-swing 4.5s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 18px rgba(255, 90, 60, 0.45));
+    z-index: 1;
+    pointer-events: none;
+}
+
+.hero::before {
+    left: 7%;
+}
+
+.hero::after {
+    right: 7%;
+    animation-delay: -2.2s;
+    height: 120px;
+    width: 52px;
+}
+
+.hero-content {
+    z-index: 2;
+    padding: 0 20px;
+}
+
+.hero-logo {
+    display: block;
+    width: min(460px, 78vw);
+    height: auto;
+    margin: 0 auto 1.25rem;
+    filter: drop-shadow(0 6px 22px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 30px rgba(176, 18, 27, 0.45));
+}
+
+.hero-subtitle {
+    font-family: var(--cn-font-display);
+    font-style: normal;
+    font-size: 1.15rem;
+    color: #f6eadb;
+    letter-spacing: 0.04em;
+    margin-bottom: 1.75rem;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.hero-subtitle::before,
+.hero-subtitle::after {
+    content: '';
+    display: inline-block;
+    width: 38px;
+    height: 1px;
+    background: var(--cn-gold);
+    vertical-align: middle;
+    margin: 0 0.8rem;
+}
+
+.hero-buttons .btn-secondary {
+    background: rgba(13, 10, 10, 0.55);
+}
+
+.hero-buttons .btn-secondary:hover {
+    background: var(--cn-gold);
+}
+
+@keyframes cn-lantern-swing {
+    from { transform: rotate(-4deg); }
+    to { transform: rotate(4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero::before,
+    .hero::after,
+    .login-page-section::before,
+    .login-page-section::after,
+    .profile-section::before,
+    .profile-section::after,
+    .cancellation::before,
+    .cancellation::after {
+        animation: none;
+    }
+}
+
+/* ---------- Section headings: gold rule with a red 福 diamond ---------- */
+.reservations h2,
+.contact h2,
+.cancellation h2,
+.login-page-title,
+.profile-section h2 {
+    font-family: var(--cn-font-display);
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    position: relative;
+    text-align: center;
+    padding-bottom: 2.1rem;
+    background:
+        linear-gradient(90deg, transparent, var(--cn-gold)) calc(50% - 68px) calc(100% - 13px) / 96px 1.5px no-repeat,
+        linear-gradient(90deg, var(--cn-gold), transparent) calc(50% + 68px) calc(100% - 13px) / 96px 1.5px no-repeat;
+}
+
+.reservations h2::before,
+.contact h2::before,
+.cancellation h2::before,
+.login-page-title::before,
+.profile-section h2::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    width: 22px;
+    height: 22px;
+    margin-left: -11px;
+    background: var(--cn-red);
+    border: 1px solid var(--cn-gold);
+    transform: rotate(45deg);
+}
+
+.reservations h2::after,
+.contact h2::after,
+.cancellation h2::after,
+.login-page-title::after,
+.profile-section h2::after {
+    content: '福';
+    position: absolute;
+    left: 50%;
+    bottom: 3px;
+    width: 24px;
+    margin-left: -12px;
+    font-family: var(--cn-font-brush);
+    font-weight: normal;
+    font-size: 17px;
+    line-height: 24px;
+    text-align: center;
+    color: var(--cn-gold-light);
+}
+
+/* ---------- Paper sections (reservations, login, profile, cancel) ---------- */
+.reservations,
+.login-page-section,
+.profile-section,
+.cancellation {
+    background-color: var(--cn-paper);
+    background-image: var(--cn-meander), linear-gradient(180deg, var(--cn-paper) 0%, var(--cn-paper-dark) 100%);
+    background-size: 44px 44px, 100% 100%;
+    position: relative;
+}
+
+.reservations h2,
+.cancellation h2,
+.login-page-title,
+.profile-section h2 {
+    color: var(--cn-red-dark);
+}
+
+/* Readable subtitle under "Make a Reservation" (was white on white) */
+.reservations .section-subtitle,
+.cancellation .section-subtitle,
+.login-page-subtitle {
+    color: #4a3a33;
+    opacity: 1;
+}
+
+.reservations .section-subtitle .inline-contact-link {
+    color: var(--cn-red);
+    font-weight: bold;
+}
+
+/* Lanterns on the inner pages */
+.login-page-section::before,
+.login-page-section::after,
+.profile-section::before,
+.profile-section::after,
+.cancellation::before,
+.cancellation::after {
+    content: '';
+    position: absolute;
+    top: 64px;
+    width: 52px;
+    height: 122px;
+    background: var(--cn-lantern) center top / contain no-repeat;
+    transform-origin: 50% 0;
+    animation: cn-lantern-swing 4.5s ease-in-out infinite alternate;
+    filter: drop-shadow(0 6px 10px rgba(139, 0, 0, 0.25));
+    pointer-events: none;
+}
+
+.login-page-section::before,
+.profile-section::before,
+.cancellation::before {
+    left: 6%;
+}
+
+.login-page-section::after,
+.profile-section::after,
+.cancellation::after {
+    right: 6%;
+    animation-delay: -2.2s;
+}
+
+.cancellation {
+    padding-top: 120px;
+}
+
+/* ---------- Reservation box (dark lacquer card with gold trim) ---------- */
+.reservation-info {
+    background:
+        var(--cn-lattice),
+        radial-gradient(ellipse at top, #2a0a0b 0%, var(--cn-black) 70%);
+    color: #f6eadb;
+    border: 1px solid var(--cn-gold);
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 5px var(--cn-black), inset 0 0 0 6px rgba(212, 160, 23, 0.55), 0 10px 28px rgba(92, 6, 9, 0.35);
+}
+
+.reservation-info h3 {
+    color: var(--cn-gold-light);
+}
+
+.phone-link {
+    color: var(--cn-gold-light);
+}
+
+.phone-link:hover {
+    color: #fff;
+}
+
+.hours li {
+    border-bottom-color: rgba(212, 160, 23, 0.25);
+}
+
+/* Seating chart */
+.seating-chart-container {
+    background: rgba(92, 6, 9, 0.35);
+    border: 1px solid var(--cn-gold);
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 3px rgba(13, 10, 10, 0.6), inset 0 0 0 4px rgba(212, 160, 23, 0.35);
+}
+
+.chart-main-title {
+    color: var(--cn-gold-light);
+    letter-spacing: 0.06em;
+}
+
+.wc-top-left,
+.wc-top-right,
+.wc-bottom-right {
+    color: var(--cn-gold-light);
+    background: rgba(212, 160, 23, 0.12);
+    border: 1px solid rgba(212, 160, 23, 0.35);
+}
+
+.vip-label {
+    color: var(--cn-gold-light);
+}
+
+.vip-seat {
+    background: linear-gradient(180deg, var(--cn-gold-light), var(--cn-gold));
+    color: var(--cn-black);
+    border: 1.5px solid #7a5a00;
+}
+
+.seat-circle,
+.seat-square {
+    background: var(--cn-paper);
+    color: var(--cn-ink);
+    border: 1.5px solid var(--cn-gold);
+}
+
+.vip-seat.reserved,
+.seat-circle.reserved,
+.seat-square.reserved {
+    background: var(--cn-red);
+    color: #fff;
+    border-color: var(--cn-gold-light);
+}
+
+.reserved-x,
+.reserved-time {
+    color: #fff;
+}
+
+.stage-box,
+.dj-box {
+    background: linear-gradient(180deg, var(--cn-red), var(--cn-red-dark));
+    color: var(--cn-gold-light);
+    border: 1.5px solid var(--cn-gold);
+    letter-spacing: 0.08em;
+}
+
+/* ---------- Forms / cards with gold trim ---------- */
+.reservation-form,
+.cancellation-form,
+.auth-form-page,
+.thank-you-message,
+.auth-modal-content {
+    background: #fffdf8;
+    border: 1px solid rgba(212, 160, 23, 0.8);
+    border-top: 4px solid var(--cn-red);
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 4px #fffdf8, inset 0 0 0 5px rgba(212, 160, 23, 0.35), 0 10px 28px rgba(92, 6, 9, 0.14);
+    position: relative;
+}
+
+/* Cloud (xiangyun) ornaments in the top corners of the cards */
+.reservation-form::before,
+.reservation-form::after,
+.cancellation-form::before,
+.cancellation-form::after,
+.auth-form-page::before,
+.auth-form-page::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    width: 42px;
+    height: 28px;
+    background: var(--cn-cloud) center / contain no-repeat;
+    opacity: 0.75;
+    pointer-events: none;
+}
+
+.reservation-form::before,
+.cancellation-form::before,
+.auth-form-page::before {
+    left: 12px;
+}
+
+.reservation-form::after,
+.cancellation-form::after,
+.auth-form-page::after {
+    right: 12px;
+    transform: scaleX(-1);
+}
+
+.reservation-form h3,
+.cancellation-form h3,
+.auth-form-page h3,
+.auth-form h2,
+.thank-you-message h2 {
+    color: var(--cn-red-dark);
+}
+
+.form-note {
+    color: #6b5a50;
+}
+
+.form-group label,
+.confirmation-question,
+.table-number-display {
+    color: var(--cn-ink);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    background: #fffaf0;
+    border: 1.5px solid #e2cfa6;
+    color: var(--cn-ink);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--cn-red);
+    box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.25);
+}
+
+.table-number-display {
+    background: var(--cn-paper);
+    border: 1px solid rgba(212, 160, 23, 0.6);
+}
+
+.cancel-link,
+.auth-switch a,
+.login-page-back a,
+.login-required a {
+    color: var(--cn-red);
+}
+
+.cancel-link:hover,
+.auth-switch a:hover,
+.login-page-back a:hover {
+    color: var(--cn-red-dark);
+}
+
+.auth-close {
+    color: var(--cn-red-dark);
+}
+
+.auth-divider {
+    color: #8a6d3b;
+}
+
+.reservation-limit-message {
+    background: #fdecea;
+    color: var(--cn-red-dark);
+    border: 1px solid rgba(176, 18, 27, 0.45);
+}
+
+/* ---------- Profile ---------- */
+.profile-user-name {
+    color: var(--cn-red-dark);
+    font-family: var(--cn-font-display);
+}
+
+.profile-user-photo {
+    border: 2px solid var(--cn-gold);
+}
+
+.reservation-card {
+    background: #fffdf8;
+    border: 1px solid rgba(212, 160, 23, 0.8);
+    border-top: 4px solid var(--cn-red);
+    border-radius: 6px;
+    box-shadow: 0 6px 16px rgba(92, 6, 9, 0.12);
+}
+
+.profile-card-order {
+    color: var(--cn-red-dark);
+}
+
+.profile-logout-wrap .btn-secondary {
+    color: var(--cn-red);
+    border-color: var(--cn-red);
+    background: transparent;
+}
+
+.profile-logout-wrap .btn-secondary:hover {
+    background: var(--cn-red);
+    color: #fff8e7;
+    border-color: var(--cn-gold);
+}
+
+/* ---------- Contact (dark, lattice) ---------- */
+.contact {
+    background:
+        var(--cn-lattice),
+        radial-gradient(ellipse at 50% 0%, rgba(176, 18, 27, 0.4) 0%, rgba(13, 10, 10, 0) 60%),
+        var(--cn-black);
+    background-size: 60px 60px, 100% 100%, auto;
+    color: #f6eadb;
+    border-top: 14px solid transparent;
+    border-image: var(--cn-band) 14 0 0 0 / 14px 0 0 0 repeat;
+}
+
+.contact h2 {
+    color: var(--cn-gold-light);
+}
+
+.contact-card {
+    background: linear-gradient(180deg, rgba(176, 18, 27, 0.22) 0%, rgba(13, 10, 10, 0.6) 100%);
+    border: 1px solid rgba(212, 160, 23, 0.55);
+    border-top: 3px solid var(--cn-gold);
+    border-radius: 6px;
+    position: relative;
+}
+
+.contact-card:hover {
+    box-shadow: 0 10px 25px rgba(212, 160, 23, 0.22);
+}
+
+.contact-card h3 {
+    color: var(--cn-gold-light);
+}
+
+.contact-link {
+    color: var(--cn-gold-light);
+}
+
+.contact-link:hover {
+    color: #fff;
+}
+
+/* ---------- Footer ---------- */
+.footer {
+    background: var(--cn-black);
+    color: #e9dccb;
+    border-top: 14px solid transparent;
+    border-image: var(--cn-band) 14 0 0 0 / 14px 0 0 0 repeat;
+}
+
+.footer a {
+    color: var(--cn-gold-light);
+}
+
+/* Contact section already has the band on top; the footer right after it gets a thin gold rule */
+.contact + .footer {
+    border-top: 1px solid rgba(212, 160, 23, 0.4);
+    border-image: none;
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 768px) {
+    .nav-menu {
+        background: var(--cn-black);
+        border-bottom: 2px solid var(--cn-red);
+        box-shadow: none; /* the closed menu sits off-screen; its shadow must not bleed in */
+    }
+
+    .nav-menu.active {
+        box-shadow: 0 1px 0 var(--cn-gold), 0 10px 27px rgba(0, 0, 0, 0.5);
+    }
+
+    .chart-main-title {
+        font-size: 0.9rem;
+    }
+
+    /* Keep the page 100% wide: grid columns may shrink below the seating chart's width */
+    .reservation-content > * {
+        min-width: 0;
+    }
+
+    .reservation-info,
+    .reservation-form {
+        padding: 1.75rem 1.25rem;
+    }
+
+    /* The seating chart keeps its real size and scrolls sideways inside its box */
+    .seating-chart-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 1rem 0.75rem;
+    }
+
+    .chart-main-content {
+        width: max-content;
+    }
+
+    .hero {
+        min-height: 64vh;
+        padding: 3.5rem 0 4rem;
+    }
+
+    .hero::before {
+        left: 3%;
+        width: 44px;
+        height: 104px;
+    }
+
+    .hero::after {
+        right: 3%;
+        width: 38px;
+        height: 88px;
+    }
+}
+
+@media (max-width: 600px) {
+    .login-page-section::before,
+    .login-page-section::after,
+    .profile-section::before,
+    .profile-section::after,
+    .cancellation::before,
+    .cancellation::after {
+        display: none;
+    }
+
+    .logo h1::after {
+        display: none;
+    }
+
+    .hero-subtitle::before,
+    .hero-subtitle::after {
+        display: none;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .hero {
+        min-height: 0;
+        padding: 2.75rem 0 3rem;
+    }
+
+    .hero-buttons .btn {
+        padding: 12px 24px;
+    }
+}
+
+/* Small phones: the display font is wider than Georgia, keep the logo on one line */
+@media (max-width: 480px) {
+    .navbar .logo h1 {
+        font-size: 1.15rem;
+        white-space: nowrap;
+    }
+
+    .is-signed-in .navbar .logo h1 {
+        font-size: 1rem;
+    }
+
+    .reservations h2,
+    .contact h2,
+    .cancellation h2,
+    .profile-section h2 {
+        font-size: 1.9rem;
+    }
+
+    .login-page-title {
+        font-size: 1.5rem;
+    }
+}

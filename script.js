@@ -639,11 +639,7 @@ if (timeInput) {
 // Navbar background on scroll
 window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');
-    if (window.scrollY > 50) {
-        navbar.style.background = 'rgba(0, 0, 0, 0.98)';
-    } else {
-        navbar.style.background = 'rgba(0, 0, 0, 0.95)';
-    }
+    if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 50); // colors live in styles.css
 });
 
 // Smooth scroll for anchor links
