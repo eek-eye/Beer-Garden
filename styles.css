@@ -65,7 +65,7 @@ body {
     gap: 2rem;
 }
 
-.nav-menu a {
+.nav-menu > li > a {
     color: var(--text-light);
     text-decoration: none;
     font-size: 1rem;
@@ -73,7 +73,7 @@ body {
     font-weight: 500;
 }
 
-.nav-menu a:hover {
+.nav-menu > li > a:hover {
     color: var(--gray-medium);
 }
 
@@ -1550,13 +1550,13 @@ textarea {
     box-shadow: inset 0 0 0 2px var(--cn-red), inset 0 0 0 3px rgba(242, 193, 78, 0.55);
 }
 
-.nav-menu a {
+.nav-menu > li > a {
     color: #f6eadb;
     position: relative;
     padding: 4px 0;
 }
 
-.nav-menu a::after {
+.nav-menu > li > a::after {
     content: '';
     position: absolute;
     left: 0;
@@ -1568,13 +1568,13 @@ textarea {
     transition: transform 0.25s;
 }
 
-.nav-menu a:hover,
-.nav-menu a.active {
+.nav-menu > li > a:hover,
+.nav-menu > li > a.active {
     color: var(--cn-gold-light);
 }
 
-.nav-menu a:hover::after,
-.nav-menu a.active::after {
+.nav-menu > li > a:hover::after,
+.nav-menu > li > a.active::after {
     transform: scaleX(1);
 }
 
@@ -2554,7 +2554,7 @@ textarea {
 }
 
 /* ==========================================================================
-   Nav bookmarks: Reservations / Cancel / Contact / Login hang on the left
+   Nav bookmarks: Reservations / Location / Social / Login hang on the left
    edge of the page as Chinese bookmarks (vertical tabs with knot and tassel).
    The links stay in the same <ul class="nav-menu">, so all nav logic is kept.
    ========================================================================== */
@@ -2596,8 +2596,8 @@ textarea {
 }
 
 .nav-menu li:nth-child(1)::before { content: '订' / ''; }
-.nav-menu li:nth-child(2)::before { content: '消' / ''; }
-.nav-menu li:nth-child(3)::before { content: '联' / ''; }
+.nav-menu li:nth-child(2)::before { content: '址' / ''; }
+.nav-menu li:nth-child(3)::before { content: '社' / ''; }
 .nav-menu li:nth-child(4)::before { content: '登' / ''; }
 
 .nav-menu li {
@@ -2631,9 +2631,9 @@ textarea {
     transition: transform 0.4s ease;
 }
 
-.nav-menu a,
-.nav-menu a:hover,
-.nav-menu a.active {
+.nav-menu > li > a,
+.nav-menu > li > a:hover,
+.nav-menu > li > a.active {
     display: flex;
     align-items: center;
     box-sizing: border-box;
@@ -2650,7 +2650,7 @@ textarea {
 }
 
 /* Lacquer body (inside the 2px edge) */
-.nav-menu a::before {
+.nav-menu > li > a::before {
     content: '';
     position: absolute;
     z-index: -1;
@@ -2658,9 +2658,9 @@ textarea {
 }
 
 /* Thin inner frame (replaces the old underline) */
-.nav-menu a::after,
-.nav-menu a:hover::after,
-.nav-menu a.active::after {
+.nav-menu > li > a::after,
+.nav-menu > li > a:hover::after,
+.nav-menu > li > a.active::after {
     content: '';
     position: absolute;
     z-index: -1;
@@ -2672,7 +2672,7 @@ textarea {
     transition: border-color 0.2s;
 }
 
-.nav-menu a:focus-visible::after {
+.nav-menu > li > a:focus-visible::after {
     border: 2px solid #ffffff;
     border-left: 0;
 }
@@ -2721,9 +2721,9 @@ textarea {
         filter: drop-shadow(2px 3px 4px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 5px rgba(242, 193, 78, 0.6));
     }
 
-    .nav-menu a,
-    .nav-menu a:hover,
-    .nav-menu a.active {
+    .nav-menu > li > a,
+    .nav-menu > li > a:hover,
+    .nav-menu > li > a.active {
         justify-content: center;
         width: 54px;
         height: 148px;
@@ -2735,14 +2735,14 @@ textarea {
         clip-path: polygon(0 0, 100% 0, 100% 100%, calc(50% + 5px) calc(100% - 11px), 0 100%);
     }
 
-    .nav-menu a::before {
+    .nav-menu > li > a::before {
         inset: 2px 2px 2px 0;
         clip-path: polygon(0 0, 100% 0, 100% 100%, calc(50% + 5px) calc(100% - 11px), 0 100%);
     }
 
-    .nav-menu a::after,
-    .nav-menu a:hover::after,
-    .nav-menu a.active::after {
+    .nav-menu > li > a::after,
+    .nav-menu > li > a:hover::after,
+    .nav-menu > li > a.active::after {
         top: 6px;
         right: 6px;
         bottom: 19px;
@@ -2794,9 +2794,9 @@ textarea {
         gap: 26px;
     }
 
-    .nav-menu a,
-    .nav-menu a:hover,
-    .nav-menu a.active {
+    .nav-menu > li > a,
+    .nav-menu > li > a:hover,
+    .nav-menu > li > a.active {
         height: 132px;
         padding-top: 36px;
         font-size: 11.5px;
@@ -2819,9 +2819,9 @@ textarea {
         gap: 22px;
     }
 
-    .nav-menu a,
-    .nav-menu a:hover,
-    .nav-menu a.active {
+    .nav-menu > li > a,
+    .nav-menu > li > a:hover,
+    .nav-menu > li > a.active {
         height: 116px;
         padding-top: 10px;
         font-size: 10.5px;
@@ -2856,9 +2856,9 @@ textarea {
         transform: translateX(0);
     }
 
-    .nav-menu a,
-    .nav-menu a:hover,
-    .nav-menu a.active {
+    .nav-menu > li > a,
+    .nav-menu > li > a:hover,
+    .nav-menu > li > a.active {
         width: 240px;
         height: 46px;
         padding: 0 30px 0 60px;
@@ -2866,14 +2866,14 @@ textarea {
         clip-path: polygon(0 0, 100% 0, calc(100% - 13px) 50%, 100% 100%, 0 100%);
     }
 
-    .nav-menu a::before {
+    .nav-menu > li > a::before {
         inset: 2px 2px 2px 0;
         clip-path: polygon(0 0, 100% 0, calc(100% - 13px) 50%, 100% 100%, 0 100%);
     }
 
-    .nav-menu a::after,
-    .nav-menu a:hover::after,
-    .nav-menu a.active::after {
+    .nav-menu > li > a::after,
+    .nav-menu > li > a:hover::after,
+    .nav-menu > li > a.active::after {
         top: 5px;
         right: 19px;
         bottom: 5px;
@@ -2896,7 +2896,7 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
     .nav-menu li,
     .nav-menu li::after,
-    .nav-menu a::after {
+    .nav-menu > li > a::after {
         transition: none;
     }
 
@@ -2907,7 +2907,7 @@ textarea {
 }
 
 /* ==========================================================================
-   Social links (Facebook / Instagram): red lacquer coins with a gold rim,
+   Social links (Facebook / Instagram / TikTok): red lacquer coins with a gold rim,
    neon glow in the brand colour on hover
    ========================================================================== */
 .social-links {
@@ -2946,6 +2946,10 @@ textarea {
 
 .social-instagram {
     --social-glow: #ff2d95;
+}
+
+.social-tiktok {
+    --social-glow: #25f4ee;
 }
 
 .social-link:hover,
@@ -4163,19 +4167,30 @@ body {
     bottom: calc(var(--hdr-h) - var(--line-y) + 9px);
     display: flex;
     align-items: baseline;
-    gap: 24px;
+    gap: 0;
     margin: 0;
     padding: 0;
     list-style: none;
     transition: bottom 0.3s ease;
 }
 
+/* Reservations · Tables | badge | Contact · Login: four equal slots, so the link centres sit
+   at -2S, -S, +S, +2S from the badge centre (even and symmetric) */
+.navbar.navbar-badge {
+    --slot: clamp(150px, 13vw, 176px);
+}
+
+.badge-links li {
+    width: var(--slot);
+    text-align: center;
+}
+
 .badge-links-left {
-    right: calc(50% + var(--badge) / 2 + 26px);
+    right: calc(50% + var(--slot) / 2);
 }
 
 .badge-links-right {
-    left: calc(50% + var(--badge) / 2 + 26px);
+    left: calc(50% + var(--slot) / 2);
 }
 
 .badge-links a {
@@ -4214,8 +4229,10 @@ body {
 .badge-social {
     position: absolute;
     top: 22px;
-    left: calc(50% + var(--badge) / 2 + 26px);
+    left: calc(50% + var(--slot) / 2);
+    width: calc(var(--slot) * 2);
     display: flex;
+    justify-content: center;
     gap: 8px;
     transition: opacity 0.25s ease;
 }
@@ -4905,4 +4922,122 @@ body {
     .pop-lanterns i {
         animation: none;
     }
+}
+
+/* ==========================================================================
+   "Social" bookmark: opens a small flyout with the Facebook / Instagram links
+   ========================================================================== */
+.nav-social-flyout[hidden] {
+    display: none;
+}
+
+.nav-social-flyout {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: var(--front-burlap, none), linear-gradient(180deg, #2e1818 0%, #0d0a0a 100%);
+    border: 2px solid var(--cn-gold);
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(139, 0, 0, 0.9), 0 10px 22px rgba(0, 0, 0, 0.65), 0 0 14px rgba(242, 193, 78, 0.25);
+}
+
+.nav-social-flyout a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 16px 6px 6px;
+    color: var(--cn-gold-light);
+    font-family: var(--cn-font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    border-radius: 3px;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.nav-social-flyout a:hover,
+.nav-social-flyout a:focus-visible {
+    background: linear-gradient(180deg, #d0161f 0%, #9c0d14 100%);
+    color: #ffffff;
+    outline: none;
+}
+
+.nav-social-flyout a:focus-visible {
+    box-shadow: 0 0 0 2px #ffffff;
+}
+
+.nav-social-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: var(--cn-gold-light);
+    background: rgba(176, 18, 27, 0.55);
+    border: 1px solid rgba(242, 193, 78, 0.75);
+}
+
+.nav-social-flyout a:hover .nav-social-icon,
+.nav-social-flyout a:focus-visible .nav-social-icon {
+    color: #ffffff;
+    border-color: #ffffff;
+}
+
+@media (min-width: 769px) {
+    .nav-social-flyout {
+        position: absolute;
+        top: 18px;
+        left: calc(100% + 12px);
+        z-index: 3;
+    }
+
+    /* little gold pointer towards the bookmark */
+    .nav-social-flyout::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: -10px;
+        border: 8px solid transparent;
+        border-left: 0;
+        border-right: 10px solid var(--cn-gold);
+    }
+
+    .nav-menu li.is-open {
+        transform: translateX(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-social-flyout {
+        width: max-content;
+        min-width: 200px;
+        max-width: calc(100vw - 40px);
+        margin: 10px 0 0 28px;
+    }
+
+    /* keep the character on the tab itself when the flyout makes the item taller */
+    .nav-menu li.nav-tab-social::before {
+        top: 23px;
+    }
+}
+
+/* /cancel stays reachable: footer link (styled like Privacy Policy) and the hint on the profile page */
+
+.profile-cancel-hint {
+    margin-top: 1.6rem;
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+.profile-section .profile-cancel-link {
+    color: var(--cn-red, #d0161f);
+    font-weight: bold;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }

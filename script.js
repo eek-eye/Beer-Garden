@@ -106,14 +106,43 @@ if (hamburger && navMenu) hamburger.addEventListener('click', () => {
     navMenu.classList.toggle('active');
 });
 
-// Close mobile menu when clicking on a link
-document.querySelectorAll('.nav-menu a').forEach(link => {
+// Close mobile menu when clicking on a link (the "Social" bookmark only opens its flyout)
+document.querySelectorAll('.nav-menu a:not(.nav-social-toggle)').forEach(link => {
     link.addEventListener('click', () => {
         if (!hamburger || !navMenu) return;
         hamburger.classList.remove('active');
         navMenu.classList.remove('active');
     });
 });
+
+// "Social" bookmark: toggles a small flyout with the Facebook / Instagram links (no navigation, no #)
+(function() {
+    var toggle = document.querySelector('.nav-social-toggle');
+    var flyout = document.getElementById('navSocialFlyout');
+    if (!toggle || !flyout) return;
+    var tab = toggle.closest('li');
+    function setOpen(open) {
+        flyout.hidden = !open;
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (tab) tab.classList.toggle('is-open', open);
+    }
+    toggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        setOpen(flyout.hidden);
+    });
+    flyout.addEventListener('click', function(e) {
+        if (e.target.closest('a')) setTimeout(function() { setOpen(false); }, 0);
+    });
+    document.addEventListener('click', function(e) {
+        if (!flyout.hidden && tab && !tab.contains(e.target)) setOpen(false);
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !flyout.hidden) {
+            setOpen(false);
+            toggle.focus();
+        }
+    });
+})();
 
 // Menu Tab Switching
 const tabBtns = document.querySelectorAll('.tab-btn');
