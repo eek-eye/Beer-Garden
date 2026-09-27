@@ -989,8 +989,9 @@ document.querySelectorAll('a[href^="tel:"]').forEach(link => {
 // AUTHENTICATION SYSTEM
 // ============================================
 
-// Firebase Auth (Google + Email/Password). Config lives in firebase-config.js.
-// Google sign-in uses Firebase's popup flow (no separate OAuth client ID needed).
+// Firebase Auth (Google + Facebook + Email/Password). Config lives in firebase-config.js.
+// Google and Facebook sign-in use Firebase's popup flow (redirect if the popup is blocked).
+// The Facebook buttons stay hidden until FIREBASE_CONFIG.facebookLogin is true.
 var firebaseApp = null;
 var firebaseAuth = null;
 var accountSetupInProgress = false;
@@ -1002,26 +1003,30 @@ function isLoginPage() {
 // Build the site's currentUser object from a Firebase user (name, email, photo)
 function saveFirebaseUser(user) {
     if (!user) return null;
-    var googleProfile = (user.providerData || []).filter(function(p) { return p && p.providerId === 'google.com'; })[0] || null;
-    var displayName = (user.displayName || (googleProfile && googleProfile.displayName) || '').trim();
-    var email = user.email || (googleProfile && googleProfile.email) || '';
+    var providers = user.providerData || [];
+    var googleProfile = providers.filter(function(p) { return p && p.providerId === 'google.com'; })[0] || null;
+    var facebookProfile = providers.filter(function(p) { return p && p.providerId === 'facebook.com'; })[0] || null;
+    var socialProfile = googleProfile || facebookProfile;
+    var displayName = (user.displayName || (socialProfile && socialProfile.displayName) || '').trim();
+    var email = user.email || (socialProfile && socialProfile.email) || '';
     var parts = displayName.split(/\s+/).filter(Boolean);
     currentUser = {
         firstName: parts[0] || (email ? email.split('@')[0] : '') || 'User',
         lastName: parts.length > 1 ? parts.slice(1).join(' ') : '',
         displayName: displayName,
         email: email,
-        photoURL: user.photoURL || (googleProfile && googleProfile.photoURL) || '',
+        photoURL: user.photoURL || (socialProfile && socialProfile.photoURL) || '',
         uid: user.uid,
         isGoogle: !!googleProfile,
+        isFacebook: !!facebookProfile,
         createdAt: (user.metadata && user.metadata.creationTime) || new Date().toISOString()
     };
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
     return currentUser;
 }
 
-// Called after a successful Google sign-in (popup or redirect)
-function onGoogleSignedIn(user) {
+// Called after a successful Google or Facebook sign-in (popup or redirect)
+function onSocialSignedIn(user, providerName) {
     var u = saveFirebaseUser(user);
     if (!u) return;
     if (isLoginPage()) {
@@ -1030,7 +1035,20 @@ function onGoogleSignedIn(user) {
     }
     if (typeof closeAuthModal === 'function') closeAuthModal();
     checkLoginStatus();
-    alert('Signed in with Google! Welcome, ' + u.firstName + '!');
+    alert('Signed in with ' + (providerName || 'Google') + '! Welcome, ' + u.firstName + '!');
+}
+
+function onGoogleSignedIn(user) {
+    onSocialSignedIn(user, 'Google');
+}
+
+// "Google" / "Facebook" from a Firebase provider id (google.com, facebook.com)
+function providerLabel(providerId) {
+    return providerId === 'facebook.com' ? 'Facebook' : 'Google';
+}
+
+function facebookLoginEnabled() {
+    return typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.facebookLogin === true;
 }
 
 function initFirebaseAuth() {
@@ -1053,9 +1071,13 @@ function initFirebaseAuth() {
 
     // Finish a redirect sign-in (only used when the popup was blocked)
     firebaseAuth.getRedirectResult().then(function(result) {
-        if (result && result.user) onGoogleSignedIn(result.user);
+        if (result && result.user) {
+            var pid = (result.additionalUserInfo && result.additionalUserInfo.providerId) ||
+                (result.credential && result.credential.providerId) || 'google.com';
+            onSocialSignedIn(result.user, providerLabel(pid));
+        }
     }).catch(function(err) {
-        if (err && err.code) showGoogleSignInError(err);
+        if (err && err.code) showSocialSignInError(err, providerLabel(err.credential && err.credential.providerId));
     });
 
     firebaseAuth.onAuthStateChanged(function(user) {
@@ -1082,27 +1104,40 @@ function initFirebaseAuth() {
 
 initFirebaseAuth();
 
-function showGoogleSignInError(err) {
+function showSocialSignInError(err, providerName) {
+    var name = providerName || 'Google';
     var code = (err && err.code) || '';
     if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request' ||
         code === 'auth/user-cancelled') {
-        return; // user just closed the Google window
+        return; // user just closed the sign-in window
     }
-    console.error('Google sign-in error:', err);
+    console.error(name + ' sign-in error:', err);
     var msg;
     if (code === 'auth/unauthorized-domain') {
-        msg = 'Google sign-in is not allowed on this website address yet (' + window.location.hostname +
+        msg = name + ' sign-in is not allowed on this website address yet (' + window.location.hostname +
             '). Add it in Firebase Console > Authentication > Settings > Authorized domains.';
     } else if (code === 'auth/operation-not-allowed') {
-        msg = 'Google sign-in is turned off for this site. Enable Google in Firebase Console > Authentication > Sign-in method.';
+        msg = name + ' sign-in is not turned on for this site yet. Please log in with your email and password' +
+            (name === 'Facebook' ? ' or Google.' : '.');
     } else if (code === 'auth/account-exists-with-different-credential') {
-        msg = 'An account with this email already exists. Please log in with your email and password.';
+        var email = (err && (err.email || (err.customData && err.customData.email))) || '';
+        msg = 'You already have a Bar Chinesca account' + (email ? ' with ' + email : ' with this email') +
+            '. Please sign in the way you did the first time (email and password' +
+            (name === 'Facebook' ? ' or Google' : ' or Facebook') + ').';
     } else if (code === 'auth/network-request-failed') {
         msg = 'Network error. Check your connection and try again.';
     } else {
-        msg = 'Google sign-in failed. ' + ((err && err.message) || 'Please try again.');
+        msg = name + ' sign-in failed. ' + ((err && err.message) || 'Please try again.');
     }
     alert(msg);
+}
+
+function showGoogleSignInError(err) {
+    showSocialSignInError(err, 'Google');
+}
+
+function showFacebookSignInError(err) {
+    showSocialSignInError(err, 'Facebook');
 }
 
 // Sign in with Google: popup first (works on desktop and mobile), redirect if the popup is blocked
@@ -1126,6 +1161,30 @@ function signInWithGoogle() {
             return;
         }
         showGoogleSignInError(err);
+    });
+}
+
+// Sign in with Facebook: same flow as Google (popup first, redirect if the popup is blocked)
+function signInWithFacebook() {
+    if (!firebaseAuth || typeof firebase === 'undefined') {
+        alert('Facebook sign-in is not available right now. Please refresh the page and try again.');
+        return;
+    }
+    var provider = new firebase.auth.FacebookAuthProvider();
+    provider.addScope('email');
+    provider.addScope('public_profile');
+    provider.setCustomParameters({ display: 'popup' });
+    // Must be called directly from the click so the browser allows the popup
+    firebaseAuth.signInWithPopup(provider).then(function(result) {
+        if (result && result.user) onSocialSignedIn(result.user, 'Facebook');
+    }).catch(function(err) {
+        var code = (err && err.code) || '';
+        if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment' ||
+            code === 'auth/web-storage-unsupported') {
+            firebaseAuth.signInWithRedirect(provider).catch(showFacebookSignInError);
+            return;
+        }
+        showFacebookSignInError(err);
     });
 }
 
@@ -1205,7 +1264,7 @@ function initSignOutButtons() {
     }
 }
 
-// Wire up the "Continue with Google" buttons (login + signup views)
+// Wire up the "Continue with Google" / "Continue with Facebook" buttons (login + signup views)
 window.initGoogleSignIn = function() {
     var buttons = document.querySelectorAll('.js-google-btn');
     for (var i = 0; i < buttons.length; i++) {
@@ -1213,6 +1272,25 @@ window.initGoogleSignIn = function() {
             if (e) e.preventDefault();
             signInWithGoogle();
         };
+    }
+    // Facebook buttons are shipped hidden; show them once Facebook is enabled in firebase-config.js
+    var fbOn = facebookLoginEnabled();
+    var fbWraps = document.querySelectorAll('.facebook-signin-container');
+    for (var j = 0; j < fbWraps.length; j++) {
+        fbWraps[j].hidden = !fbOn;
+    }
+    var fbButtons = document.querySelectorAll('.js-facebook-btn');
+    for (var k = 0; k < fbButtons.length; k++) {
+        fbButtons[k].onclick = function(e) {
+            if (e) e.preventDefault();
+            if (facebookLoginEnabled()) signInWithFacebook();
+        };
+    }
+    if (fbOn) {
+        var intros = document.querySelectorAll('.auth-form-intro[data-facebook-text]');
+        for (var m = 0; m < intros.length; m++) {
+            intros[m].textContent = intros[m].getAttribute('data-facebook-text');
+        }
     }
 };
 

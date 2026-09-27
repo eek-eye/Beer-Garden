@@ -3522,3 +3522,69 @@ body {
         transform: scaleY(0.85);
     }
 }
+
+/* ==========================================================================
+   "Continue with Facebook" (login page): Facebook blue, same size as the
+   Google button, neon-blue glow on hover to match the club theme.
+   Hidden until FIREBASE_CONFIG.facebookLogin is true.
+   ========================================================================== */
+.facebook-signin-container[hidden] {
+    display: none;
+}
+
+.google-signin-container + .facebook-signin-container {
+    margin-top: -0.25rem;
+}
+
+.btn-facebook {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 320px;
+    padding: 12px 20px;
+    background: #1877f2;
+    border: 1px solid #1877f2;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.btn-facebook:hover,
+.btn-facebook:focus-visible {
+    background: #166fe5;
+    border-color: #8fbcff;
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(59, 130, 255, 0.8), 0 0 20px rgba(59, 130, 255, 0.45);
+}
+
+.btn-facebook:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+}
+
+.btn-facebook:active {
+    background: #1464d8;
+}
+
+.btn-facebook-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-facebook-icon svg {
+    display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn-facebook {
+        transition: none;
+    }
+}

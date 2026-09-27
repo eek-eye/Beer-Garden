@@ -56,7 +56,7 @@
             <!-- Login form (email + password) -->
             <div id="loginForm" class="auth-form auth-form-page">
                 <h3>Login</h3>
-                <p class="auth-form-intro">Sign in with your email and password, or use Google below.</p>
+                <p class="auth-form-intro" data-facebook-text="Sign in with your email and password, or use Google or Facebook below.">Sign in with your email and password, or use Google below.</p>
                 <form id="loginFormElement" method="post" action="javascript:void(0);">
                     <div class="form-group">
                         <label for="loginEmail">Email *</label>
@@ -73,6 +73,12 @@
                     <button type="button" class="btn btn-google js-google-btn" aria-label="Continue with Google">
                         <span class="btn-google-icon"><svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V6.258H.957C.347 7.58 0 9.024 0 10.5c0 1.474.348 2.92.957 4.242l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.258L3.964 6.59C4.672 4.414 6.656 2.83 9 2.83z"/></svg></span>
                         Continue with Google
+                    </button>
+                </div>
+                <div class="google-signin-container facebook-signin-container" hidden>
+                    <button type="button" class="btn btn-facebook js-facebook-btn" aria-label="Continue with Facebook">
+                        <span class="btn-facebook-icon"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="12" fill="#ffffff"/><path fill="#1877F2" d="M13.4 24v-8.9h3l.45-3.5H13.4V9.4c0-1 .28-1.7 1.72-1.7h1.84V4.6c-.32-.04-1.4-.14-2.67-.14-2.64 0-4.45 1.61-4.45 4.57v2.57h-3v3.5h3V24z"/></svg></span>
+                        Continue with Facebook
                     </button>
                 </div>
                 <p class="auth-switch">Don't have an account? <a href="#" id="switchToSignup">Sign up</a></p>
@@ -106,6 +112,12 @@
                     <button type="button" class="btn btn-google js-google-btn" aria-label="Continue with Google">
                         <span class="btn-google-icon"><svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V6.258H.957C.347 7.58 0 9.024 0 10.5c0 1.474.348 2.92.957 4.242l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.258L3.964 6.59C4.672 4.414 6.656 2.83 9 2.83z"/></svg></span>
                         Continue with Google
+                    </button>
+                </div>
+                <div class="google-signin-container facebook-signin-container" hidden>
+                    <button type="button" class="btn btn-facebook js-facebook-btn" aria-label="Continue with Facebook">
+                        <span class="btn-facebook-icon"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="12" fill="#ffffff"/><path fill="#1877F2" d="M13.4 24v-8.9h3l.45-3.5H13.4V9.4c0-1 .28-1.7 1.72-1.7h1.84V4.6c-.32-.04-1.4-.14-2.67-.14-2.64 0-4.45 1.61-4.45 4.57v2.57h-3v3.5h3V24z"/></svg></span>
+                        Continue with Facebook
                     </button>
                 </div>
                 <p class="auth-switch">Already have an account? <a href="#" id="switchToLogin">Login</a></p>

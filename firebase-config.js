@@ -13,5 +13,8 @@ const FIREBASE_CONFIG = {
     storageBucket: 'bar-chinesca-mxli.firebasestorage.app',
     messagingSenderId: '177031938507',
     appId: '1:177031938507:web:62a7d75960e5ff4741f64e',
-    enabled: true
+    enabled: true,
+    // Facebook login: set to true only after Facebook is enabled in Firebase Console
+    // (Authentication > Sign-in method > Facebook, with the Meta App ID + App Secret)
+    facebookLogin: false
 };
