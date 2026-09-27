@@ -2,8 +2,8 @@
 // ============================================
 // Project: bar-chinesca-mxli (the bar's own project, separate from eekseye.com)
 // In Firebase Console: Authentication → Sign-in method, enable "Google" and "Email/Password"
-// In Authentication → Settings → Authorized domains, add: localhost, eekseye.com, www.eekseye.com, eek-eye.github.io
-// (Live site: https://eekseye.com/Beer-Garden/ — Google sign-in uses a popup, no OAuth client ID needed.)
+// In Authentication → Settings → Authorized domains, add: localhost, barchinesca.club, www.barchinesca.club (plus eek-eye.github.io, eekseye.com, www.eekseye.com)
+// (Live site: https://barchinesca.club/ — Google sign-in uses a popup, no OAuth client ID needed.)
 // ============================================
 
 const FIREBASE_CONFIG = {
