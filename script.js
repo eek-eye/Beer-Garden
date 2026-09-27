@@ -466,8 +466,8 @@ We'll contact you at ${formData.email} to confirm your reservation.
 You can also place your reservation directly at +52 686 364 2083.
     `.trim();
 
-    // Send order number to user's email
-    sendOrderNumberEmail(formData.email, formData.name, orderNumber, formattedDate, formData.time, formData.table, formData.guests);
+    // Confirmation email (the script reads the details from the database; does nothing if emails are off)
+    sendReservationEmail('confirm', orderNumber);
 
     // Show confirmation (in a real app, this would send to a server)
     alert(confirmationMessage);
@@ -891,91 +891,40 @@ function renderTableDropdown(reservedTables) {
 
 // Cancellation flow: handled by the inline script in cancel.html (single source of truth).
 
-// Function to send order number via email
-function sendOrderNumberEmail(email, name, orderNumber, date, time, table, guests) {
-    console.log('📧 Attempting to send email to:', email);
-    
-    // Check if email is enabled
-    if (typeof EMAIL_CONFIG === 'undefined' || !EMAIL_CONFIG.enabled) {
-        console.log('📧 Email sending is disabled.');
-        return;
-    }
-    
-    // Check if EmailJS is loaded
-    if (typeof emailjs === 'undefined') {
-        console.warn('❌ EmailJS library not loaded. Check if script is included in HTML.');
-        return;
-    }
-    
-    // Check if EmailJS is properly configured
-    if (EMAIL_CONFIG.publicKey === 'YOUR_PUBLIC_KEY' || 
-        EMAIL_CONFIG.serviceID === 'YOUR_SERVICE_ID' || 
-        EMAIL_CONFIG.templateID === 'YOUR_TEMPLATE_ID') {
-        console.log('📧 Email would be sent to:', email);
-        console.log('📧 Order Number:', orderNumber);
-        console.log('📧 Reservation Details:', {
-            name: name,
-            date: date,
-            time: time,
-            table: table <= 4 ? `VIP Table ${table}` : `Table ${table}`,
-            guests: guests
+// Reservation emails: POST to the Google Apps Script web app in email-config.js (webAppUrl).
+// Only the Firebase ID token, the order number and (for a cancel) the deleted booking's details are sent;
+// the script verifies the token and only emails that account's own address. text/plain = no CORS preflight.
+// Empty webAppUrl = emails off. Failures are only logged: the reservation/cancellation is already saved.
+function sendReservationEmail(type, orderNumber, details) {
+    var url = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG && EMAIL_CONFIG.webAppUrl) || '';
+    var user = firebaseAuth && firebaseAuth.currentUser;
+    if (!url || !user || typeof fetch !== 'function') return Promise.resolve(false);
+    return user.getIdToken().then(function(idToken) {
+        var payload = { type: type, orderNumber: String(orderNumber), idToken: idToken };
+        if (type === 'cancel' && details) {
+            payload.details = { name: details.name, date: details.date, time: details.time, guests: details.guests, table: details.table };
+        }
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload),
+            redirect: 'follow'
         });
-        console.log('⚠️ EmailJS not configured yet.');
-        console.log('📝 To enable email sending:');
-        console.log('   1. Sign up at https://www.emailjs.com/');
-        console.log('   2. Create service and template');
-        console.log('   3. Update email-config.js with your credentials');
-        return;
-    }
-    
-    // Ensure EmailJS is initialized
-    if (EMAIL_CONFIG.publicKey) {
-        emailjs.init(EMAIL_CONFIG.publicKey);
-    }
-    
-    // Email template parameters
-    const templateParams = {
-        to_email: email,
-        to_name: name,
-        order_number: orderNumber,
-        reservation_date: date,
-        reservation_time: time,
-        table_number: table <= 4 ? `VIP Table ${table}` : `Table ${table}`,
-        number_of_guests: guests,
-        from_name: 'Bar Chinesca Mxli'
-    };
-    
-    console.log('📧 Sending email with params:', templateParams);
-    
-    // Send email
-    emailjs.send(EMAIL_CONFIG.serviceID, EMAIL_CONFIG.templateID, templateParams)
-        .then(function(response) {
-            console.log('✅ Email sent successfully!', response.status, response.text);
-            console.log('📧 Order number', orderNumber, 'sent to', email);
-        }, function(error) {
-            console.error('❌ Email failed to send:', error);
-            console.error('Error details:', JSON.stringify(error, null, 2));
-            // Don't show error to user - reservation is still saved
-        });
+    }).then(function(res) {
+        return res.json();
+    }).then(function(result) {
+        if (result && result.ok) {
+            console.log('Reservation email (' + type + ')' + (result.sent ? ' sent' : ' already sent'));
+            return true;
+        }
+        console.warn('Reservation email not sent:', result && result.error);
+        return false;
+    }).catch(function(err) {
+        console.warn('Reservation email failed:', err);
+        return false;
+    });
 }
-
-// Test function to send email (for testing purposes)
-window.testSendEmail = function(testEmail) {
-    if (!testEmail) {
-        testEmail = prompt('Enter your email address for testing:');
-        if (!testEmail) return;
-    }
-    
-    const testOrderNumber = '123456';
-    const testName = 'Test User';
-    const testDate = 'Monday, January 28, 2026';
-    const testTime = '20:00';
-    const testTable = 5;
-    const testGuests = 2;
-    
-    console.log('🧪 Testing email to:', testEmail);
-    sendOrderNumberEmail(testEmail, testName, testOrderNumber, testDate, testTime, testTable, testGuests);
-};
+window.sendReservationEmail = sendReservationEmail;
 
 // Phone number click tracking (optional - for analytics)
 document.querySelectorAll('a[href^="tel:"]').forEach(link => {

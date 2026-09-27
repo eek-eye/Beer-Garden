@@ -190,7 +190,12 @@
                     return false;
                 }
                 // Delete the reservation + table lock and free the slot (one transaction)
-                return cancelBarReservation(currentOrderNumber).then(function() { return true; });
+                const cancelledOrder = currentOrderNumber;
+                return cancelBarReservation(cancelledOrder).then(function(res) {
+                    // Cancellation email (does nothing if emails are off; never blocks the cancel)
+                    if (typeof sendReservationEmail === 'function') sendReservationEmail('cancel', cancelledOrder, res);
+                    return true;
+                });
             }).then(function(done) {
                 if (!done) return;
                 showCancelThankYou();
@@ -225,6 +230,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="email-config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

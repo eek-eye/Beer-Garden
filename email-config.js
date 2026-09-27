@@ -1,34 +1,14 @@
-// EmailJS Configuration
+// Reservation emails (confirmation + cancellation)
 // ============================================
-// SETUP INSTRUCTIONS:
-// 1. Go to https://www.emailjs.com/ and sign up (free)
-// 2. Create an Email Service (Gmail/Outlook/etc.) - get Service ID
-// 3. Create an Email Template - get Template ID  
-// 4. Get your Public Key from Account > API Keys
-// 5. Replace the values below with your actual credentials
+// Sent by a Google Apps Script web app running on the bar's Google account
+// (source + setup: EMAIL_SETUP.md). The page sends only the customer's Firebase
+// sign-in token and the order number; the script checks the token, reads the
+// reservation from Firestore and emails the account's own address.
+//
+// webAppUrl: the deployed web app URL (https://script.google.com/macros/s/.../exec).
+// Leave it empty ('') to turn reservation emails off (nothing is sent, no errors).
 // ============================================
 
 const EMAIL_CONFIG = {
-    // Your EmailJS Public Key
-    // Found in: EmailJS Dashboard > Account > General > API Keys
-    publicKey: 'YOUR_PUBLIC_KEY',
-    
-    // Your EmailJS Service ID
-    // Found in: EmailJS Dashboard > Email Services > Your Service
-    serviceID: 'YOUR_SERVICE_ID',
-    
-    // Your EmailJS Template ID
-    // Found in: EmailJS Dashboard > Email Templates > Your Template
-    templateID: 'YOUR_TEMPLATE_ID',
-    
-    // Enable/disable email sending
-    enabled: true
+    webAppUrl: ''
 };
-
-// Initialize EmailJS when config is loaded
-if (typeof emailjs !== 'undefined' && EMAIL_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY') {
-    emailjs.init(EMAIL_CONFIG.publicKey);
-    console.log('✅ EmailJS initialized');
-} else if (EMAIL_CONFIG.publicKey === 'YOUR_PUBLIC_KEY') {
-    console.log('⚠️ EmailJS not configured. Update email-config.js with your credentials.');
-}
