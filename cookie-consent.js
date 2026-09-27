@@ -3,7 +3,7 @@
  * Essential (always on, no consent needed): Firebase Authentication + Cloud Firestore
  * (sign-in session and reservations), the copy of your profile kept in local storage,
  * the section-to-scroll-to in session storage, and this choice itself.
- * Optional (only after "Aceptar / Accept"): the decorative Google Fonts
+ * Optional (only after "Aceptar"): the decorative Google Fonts
  * (Noto Serif SC, Ma Shan Zheng). Without consent the site uses the fonts already on the device.
  * There are no analytics, ads, maps or social embeds (Maps / Facebook / Instagram are plain links).
  *
@@ -61,8 +61,8 @@
     var banner = null;
 
     function statusText(choice) {
-        if (choice === 'all') return 'Elección actual: aceptadas · Current choice: accepted';
-        if (choice === 'essential') return 'Elección actual: solo esenciales · Current choice: essential only';
+        if (choice === 'all') return 'Elección actual: aceptadas';
+        if (choice === 'essential') return 'Elección actual: solo esenciales';
         return '';
     }
 
@@ -70,23 +70,21 @@
         var el = document.createElement('div');
         el.className = 'cookie-banner';
         el.setAttribute('role', 'region');
-        el.setAttribute('aria-label', 'Aviso de cookies / Cookie notice');
+        el.setAttribute('aria-label', 'Aviso de cookies');
         el.innerHTML =
             '<div class="cookie-banner-seal" aria-hidden="true">饼</div>' +
             '<div class="cookie-banner-body">' +
-                '<p class="cookie-banner-title"><span>Cookies</span><a href="/privacy" class="cookie-banner-link">Privacidad / Privacy</a></p>' +
-                '<p lang="es">Solo usamos almacenamiento esencial (sesión y reservaciones). ' +
+                '<p class="cookie-banner-title"><span>Cookies</span><a href="/privacy" class="cookie-banner-link">Aviso de privacidad</a></p>' +
+                '<p>Solo usamos almacenamiento esencial (sesión y reservaciones). ' +
                     'Si aceptas, también cargamos fuentes decorativas de Google Fonts.</p>' +
-                '<p lang="en" class="cookie-banner-en">Essential storage only (sign-in and reservations). ' +
-                    'Accepting also loads decorative Google Fonts.</p>' +
                 '<p class="cookie-banner-status" aria-live="polite"></p>' +
                 '<div class="cookie-banner-actions">' +
-                    '<button type="button" class="cookie-btn cookie-btn-accept" data-cookie-choice="all">Aceptar / Accept</button>' +
+                    '<button type="button" class="cookie-btn cookie-btn-accept" data-cookie-choice="all">Aceptar</button>' +
                     '<button type="button" class="cookie-btn cookie-btn-reject" data-cookie-choice="essential" ' +
-                        'title="Solo esenciales / Essential only">Rechazar / Reject</button>' +
+                        'title="Solo esenciales">Rechazar</button>' +
                 '</div>' +
             '</div>' +
-            '<button type="button" class="cookie-banner-close" aria-label="Cerrar / Close">&times;</button>';
+            '<button type="button" class="cookie-banner-close" aria-label="Cerrar">&times;</button>';
 
         el.addEventListener('click', function (e) {
             var btn = e.target.closest('[data-cookie-choice]');
@@ -128,11 +126,19 @@
         banner.classList.toggle('has-choice', !!choice);
         banner.hidden = false;
         document.documentElement.classList.add('cookie-banner-open');
+        reserveSpace();
         if (focus) {
             var first = banner.querySelector('.cookie-btn');
             if (first) first.focus();
         }
     }
+
+    // Room under the footer so its last links can scroll above the banner while it is open
+    function reserveSpace() {
+        if (!banner || banner.hidden) return;
+        document.documentElement.style.setProperty('--cookie-banner-space', (banner.offsetHeight + 40) + 'px');
+    }
+    window.addEventListener('resize', reserveSpace);
 
     function hideBanner() {
         if (banner) banner.hidden = true;

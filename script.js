@@ -65,7 +65,7 @@ window.createTestOrder = function() {
     console.log('Order details:', orderDetails[orderKey]);
     console.log('\nYou can now use order number', orderKey, 'to test the cancellation flow.');
     
-    alert('Test order created!\n\nOrder Number: ' + orderKey + '\nTable: ' + (testTable <= 4 ? 'VIP Table ' : 'Table ') + testTable + '\nDate: ' + testDate + '\n\nYou can now cancel this reservation using the order number.');
+    alert('¡Orden de prueba creada!\n\nNúmero de orden: ' + orderKey + '\nMesa: ' + (testTable <= 4 ? 'Mesa VIP ' : 'Mesa ') + testTable + '\nFecha: ' + testDate + '\n\nYa puedes cancelar esta reservación con el número de orden.');
     
     return orderKey;
 };
@@ -175,8 +175,8 @@ tabBtns.forEach(btn => {
 //   barUserCounts/{uid}            how many tables the user holds (max 2, enforced by the security rules)
 // ============================================
 var MAX_TABLES_PER_ACCOUNT = 2;
-var TABLE_LIMIT_MESSAGE = 'You can only reserve 2 tables per account. Cancel an existing reservation to book another.';
-var SIGN_IN_TO_RESERVE_MESSAGE = 'Please <a href="/login">log in</a> to reserve a table. Each account can reserve up to 2 tables.';
+var TABLE_LIMIT_MESSAGE = 'Solo puedes reservar 2 mesas por cuenta. Cancela una de tus reservaciones para apartar otra.';
+var SIGN_IN_TO_RESERVE_MESSAGE = '<a href="/login">Inicia sesión</a> para reservar una mesa. Cada cuenta puede reservar hasta 2 mesas.';
 var firestoreDb = null;
 
 function localDateString(d) {
@@ -397,7 +397,7 @@ if (reservationForm) {
         
         // Check if the selected date is locked
         if (isDateLocked(formData.date)) {
-            alert('This date is no longer available for reservations. Reservations are locked at 7 PM on that day.');
+            alert('Esta fecha ya no está disponible para reservar. Las reservaciones se cierran a las 7:00 p. m. de ese día.');
             return;
         }
         
@@ -409,13 +409,13 @@ if (reservationForm) {
             const businessStartTime = 19 * 60; // 7 PM = 19:00 = 1140 minutes
             
             if (timeInMinutes < businessStartTime) {
-                alert('Error: Business hours start at 7:00 PM. Please select a time from 7:00 PM onwards.');
+                alert('Abrimos a las 7:00 p. m. Elige una hora a partir de las 7:00 p. m.');
                 return;
             }
         }
 
         if (!firestoreDb) {
-            alert('Reservations are not available right now. Please refresh the page and try again.');
+            alert('Las reservaciones no están disponibles en este momento. Recarga la página y vuelve a intentarlo.');
             return;
         }
 
@@ -425,7 +425,7 @@ if (reservationForm) {
     const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
     const day = parseInt(dateParts[2]);
     const dateObj = new Date(year, month, day);
-    const formattedDate = dateObj.toLocaleDateString('en-US', { 
+    const formattedDate = dateObj.toLocaleDateString('es-MX', { 
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
@@ -448,7 +448,7 @@ if (reservationForm) {
         if (code === 'bar/limit') {
             showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
         } else if (code === 'bar/table-taken') {
-            alert('This table is already reserved for this date. Table ' + formData.table + ' is locked with order number ' + err.orderNumber + '. Please select a different table.');
+            alert('Esta mesa ya está reservada para esa fecha (mesa ' + formData.table + ', orden ' + err.orderNumber + '). Elige otra mesa.');
             updateSeatingChartForDate(formData.date, true);
             updateTableDropdownForDate(formData.date);
         } else if (code === 'permission-denied') {
@@ -457,14 +457,14 @@ if (reservationForm) {
                 if (list.length >= MAX_TABLES_PER_ACCOUNT) {
                     showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
                 } else {
-                    alert('Sorry, we could not save your reservation. Please refresh the page and try again.');
+                    alert('Lo sentimos, no pudimos guardar tu reservación. Recarga la página y vuelve a intentarlo.');
                 }
             }).catch(function() {
-                alert('Sorry, we could not save your reservation. Please refresh the page and try again.');
+                alert('Lo sentimos, no pudimos guardar tu reservación. Recarga la página y vuelve a intentarlo.');
             });
         } else {
             console.warn('Reservation failed:', err);
-            alert('Sorry, we could not save your reservation. Please check your connection and try again.');
+            alert('Lo sentimos, no pudimos guardar tu reservación. Revisa tu conexión y vuelve a intentarlo.');
         }
     }).then(function() {
         reservationSubmitting = false;
@@ -477,22 +477,22 @@ if (reservationForm) {
 function onReservationBooked(formData, orderNumber, formattedDate) {
     // Create confirmation message
     const confirmationMessage = `
-Thank you for your reservation request, ${formData.name}!
+¡Gracias por tu solicitud de reservación, ${formData.name}!
 
-Your reservation details:
-- Order Number: ${orderNumber}
-- Date: ${formattedDate}
-- Time: ${formData.time}
-- Guests: ${formData.guests}
-- Table: ${formData.table}
-- Email: ${formData.email}
+Datos de tu reservación:
+- Número de orden: ${orderNumber}
+- Fecha: ${formattedDate}
+- Hora: ${formData.time}
+- Personas: ${formData.guests}
+- Mesa: ${formData.table}
+- Correo: ${formData.email}
 
-Please save your order number: ${orderNumber}
-You can use it to cancel your reservation if needed.
+Guarda tu número de orden: ${orderNumber}
+Lo necesitas si quieres cancelar tu reservación.
 
-We'll contact you at ${formData.email} to confirm your reservation.
+Te contactaremos en ${formData.email} para confirmar tu reservación.
 
-You can also place your reservation directly at +52 686 364 2083.
+También puedes reservar directamente al +52 686 364 2083.
     `.trim();
 
     // Confirmation email (the script reads the details from the database; does nothing if emails are off)
@@ -540,7 +540,7 @@ You can also place your reservation directly at +52 686 364 2083.
         font-size: 1.1rem;
         text-align: center;
     `;
-    successDiv.innerHTML = '✓ Reservation request submitted! We\'ll contact you to confirm.';
+    successDiv.innerHTML = '✓ ¡Solicitud de reservación enviada! Te contactaremos para confirmar.';
     document.body.appendChild(successDiv);
 
     // Remove success message after 5 seconds
@@ -613,9 +613,9 @@ for (let i = 1; i <= 50; i++) {
     const option = document.createElement('option');
     option.value = i;
     if (i <= 4) {
-        option.textContent = `VIP Table ${i}`;
+        option.textContent = `Mesa VIP ${i}`;
     } else {
-        option.textContent = `Table ${i}`;
+        option.textContent = `Mesa ${i}`;
     }
     if (tableSelect) tableSelect.appendChild(option);
 }
@@ -638,7 +638,7 @@ if (dateInput) dateInput.addEventListener('change', function() {
     if (selectedDate) {
         // Check if date is locked
         if (isDateLocked(selectedDate)) {
-            alert('This date is no longer available for reservations. Reservations are locked at 7 PM on that day.');
+            alert('Esta fecha ya no está disponible para reservar. Las reservaciones se cierran a las 7:00 p. m. de ese día.');
             this.value = '';
             return;
         }
@@ -655,14 +655,14 @@ if (dateInput) dateInput.addEventListener('change', function() {
             }
         });
         // Reset dropdown to show all tables
-        tableSelect.innerHTML = '<option value="">Select a table...</option>';
+        tableSelect.innerHTML = '<option value="">Selecciona una mesa...</option>';
         for (let i = 1; i <= 50; i++) {
             const option = document.createElement('option');
             option.value = i;
             if (i <= 4) {
-                option.textContent = `VIP Table ${i}`;
+                option.textContent = `Mesa VIP ${i}`;
             } else {
-                option.textContent = `Table ${i}`;
+                option.textContent = `Mesa ${i}`;
             }
             tableSelect.appendChild(option);
         }
@@ -674,7 +674,7 @@ const timeInput = document.getElementById('time');
 if (timeInput) {
     timeInput.setAttribute('min', '19:00');
     timeInput.setAttribute('max', '23:59'); // Note: Hours extend until 3 AM (next day)
-    timeInput.setAttribute('title', 'Business hours: 7:00 PM - 3:00 AM');
+    timeInput.setAttribute('title', 'Horario: 7:00 p. m. - 3:00 a. m.');
 }
 
 // Navbar background on scroll
@@ -867,12 +867,12 @@ function renderSeatingChart(reservedTables) {
                 <span class="reserved-x">✕</span>
                 ${reservationTime ? `<span class="reserved-time">${reservationTime}</span>` : ''}
             `;
-            seat.title = `Locked with order number: ${lock.orderNumber}${reservationTime ? ` | Time: ${reservationTime}` : ''}`;
+            seat.title = `Reservada (orden ${lock.orderNumber})${reservationTime ? ` · Hora: ${reservationTime}` : ''}`;
         } else {
             // Table is available - show number
             seat.classList.remove('reserved');
             seat.innerHTML = seatNumber.toString();
-            seat.title = 'Available';
+            seat.title = 'Disponible';
         }
     });
     highlightSelectedTable();
@@ -893,7 +893,7 @@ function renderTableDropdown(reservedTables) {
     const currentValue = tableSelect.value;
     
     // Clear existing options except the first "Select a table..." option
-    tableSelect.innerHTML = '<option value="">Select a table...</option>';
+    tableSelect.innerHTML = '<option value="">Selecciona una mesa...</option>';
     
     // Add all tables 1-50
     for (let i = 1; i <= 50; i++) {
@@ -903,9 +903,9 @@ function renderTableDropdown(reservedTables) {
             const option = document.createElement('option');
             option.value = i;
             if (i <= 4) {
-                option.textContent = `VIP Table ${i}`;
+                option.textContent = `Mesa VIP ${i}`;
             } else {
-                option.textContent = `Table ${i}`;
+                option.textContent = `Mesa ${i}`;
             }
             tableSelect.appendChild(option);
         }
@@ -989,7 +989,7 @@ function saveFirebaseUser(user) {
     var email = user.email || (socialProfile && socialProfile.email) || '';
     var parts = displayName.split(/\s+/).filter(Boolean);
     currentUser = {
-        firstName: parts[0] || (email ? email.split('@')[0] : '') || 'User',
+        firstName: parts[0] || (email ? email.split('@')[0] : '') || 'Usuario',
         lastName: parts.length > 1 ? parts.slice(1).join(' ') : '',
         displayName: displayName,
         email: email,
@@ -1013,7 +1013,7 @@ function onSocialSignedIn(user, providerName) {
     }
     if (typeof closeAuthModal === 'function') closeAuthModal();
     checkLoginStatus();
-    alert('Signed in with ' + (providerName || 'Google') + '! Welcome, ' + u.firstName + '!');
+    alert('¡Hola, ' + u.firstName + '! Iniciaste sesión con ' + (providerName || 'Google') + '.');
 }
 
 function onGoogleSignedIn(user) {
@@ -1041,7 +1041,7 @@ function initFirebaseAuth() {
         firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
     }
     firebaseAuth = firebase.auth();
-    try { firebaseAuth.useDeviceLanguage(); } catch (e) {}
+    try { firebaseAuth.languageCode = 'es'; } catch (e) {} // Firebase sign-in windows and messages in Spanish
     // Reservations database (pages that load firebase-firestore-compat.js)
     if (firebase.firestore) {
         try { firestoreDb = firebase.firestore(); } catch (e) { firestoreDb = null; }
@@ -1092,20 +1092,20 @@ function showSocialSignInError(err, providerName) {
     console.error(name + ' sign-in error:', err);
     var msg;
     if (code === 'auth/unauthorized-domain') {
-        msg = name + ' sign-in is not allowed on this website address yet (' + window.location.hostname +
-            '). Add it in Firebase Console > Authentication > Settings > Authorized domains.';
+        msg = 'El inicio de sesión con ' + name + ' todavía no está permitido en esta dirección (' + window.location.hostname +
+            '). Agrégala en Firebase Console > Authentication > Settings > Authorized domains.';
     } else if (code === 'auth/operation-not-allowed') {
-        msg = name + ' sign-in is not turned on for this site yet. Please log in with your email and password' +
-            (name === 'Facebook' ? ' or Google.' : '.');
+        msg = 'El inicio de sesión con ' + name + ' todavía no está activado en este sitio. Inicia sesión con tu correo y contraseña' +
+            (name === 'Facebook' ? ' o con Google.' : '.');
     } else if (code === 'auth/account-exists-with-different-credential') {
         var email = (err && (err.email || (err.customData && err.customData.email))) || '';
-        msg = 'You already have a Bar Chinesca account' + (email ? ' with ' + email : ' with this email') +
-            '. Please sign in the way you did the first time (email and password' +
-            (name === 'Facebook' ? ' or Google' : ' or Facebook') + ').';
+        msg = 'Ya tienes una cuenta de Bar Chinesca' + (email ? ' con ' + email : ' con este correo') +
+            '. Inicia sesión como lo hiciste la primera vez (correo y contraseña' +
+            (name === 'Facebook' ? ' o Google' : ' o Facebook') + ').';
     } else if (code === 'auth/network-request-failed') {
-        msg = 'Network error. Check your connection and try again.';
+        msg = 'Error de red. Revisa tu conexión y vuelve a intentarlo.';
     } else {
-        msg = name + ' sign-in failed. ' + ((err && err.message) || 'Please try again.');
+        msg = 'No se pudo iniciar sesión con ' + name + '. Vuelve a intentarlo.' + (code ? ' (' + code + ')' : '');
     }
     alert(msg);
 }
@@ -1121,7 +1121,7 @@ function showFacebookSignInError(err) {
 // Sign in with Google: popup first (works on desktop and mobile), redirect if the popup is blocked
 function signInWithGoogle() {
     if (!firebaseAuth || typeof firebase === 'undefined') {
-        alert('Google sign-in is not available right now. Please refresh the page and try again.');
+        alert('El inicio de sesión con Google no está disponible en este momento. Recarga la página y vuelve a intentarlo.');
         return;
     }
     var provider = new firebase.auth.GoogleAuthProvider();
@@ -1145,7 +1145,7 @@ function signInWithGoogle() {
 // Sign in with Facebook: same flow as Google (popup first, redirect if the popup is blocked)
 function signInWithFacebook() {
     if (!firebaseAuth || typeof firebase === 'undefined') {
-        alert('Facebook sign-in is not available right now. Please refresh the page and try again.');
+        alert('El inicio de sesión con Facebook no está disponible en este momento. Recarga la página y vuelve a intentarlo.');
         return;
     }
     var provider = new firebase.auth.FacebookAuthProvider();
@@ -1359,13 +1359,13 @@ function handleLogin(email, password) {
         firebaseAuth.signInWithEmailAndPassword(email, password)
             .then(function() {
                 if (!document.getElementById('authModal')) {
-                    showLoginPageMessage('Login successful. Redirecting…');
+                    showLoginPageMessage('Sesión iniciada. Redirigiendo…');
                     window.location.href = '/profile';
                     return;
                 }
                 closeAuthModal();
                 checkLoginStatus();
-                alert('Login successful! Welcome back.');
+                alert('¡Sesión iniciada! Qué gusto verte de nuevo.');
             })
             .catch(function(err) {
                 // Old browser-only account (made before accounts moved to Firebase): move it to Firebase now
@@ -1377,11 +1377,11 @@ function handleLogin(email, password) {
                     migrateLegacyAccount(legacy, email, password);
                     return;
                 }
-                if (err.code === 'auth/user-not-found') alert('No account with this email. Please sign up first.');
+                if (err.code === 'auth/user-not-found') alert('No hay ninguna cuenta con este correo. Primero regístrate.');
                 else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' ||
-                    err.code === 'auth/invalid-login-credentials') alert('Incorrect email or password. Please try again.');
-                else if (err.code === 'auth/invalid-email') alert('Invalid email address.');
-                else alert(err.message || 'Login failed. Please try again.');
+                    err.code === 'auth/invalid-login-credentials') alert('Correo o contraseña incorrectos. Vuelve a intentarlo.');
+                else if (err.code === 'auth/invalid-email') alert('El correo electrónico no es válido.');
+                else alert('No se pudo iniciar sesión. Vuelve a intentarlo.' + (err && err.code ? ' (' + err.code + ')' : ''));
             });
         return;
     }
@@ -1396,18 +1396,18 @@ function handleLogin(email, password) {
             };
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             if (!document.getElementById('authModal')) {
-                showLoginPageMessage('Login successful. Redirecting…');
+                showLoginPageMessage('Sesión iniciada. Redirigiendo…');
                 window.location.href = '/profile';
                 return;
             }
             closeAuthModal();
             checkLoginStatus();
-            alert('Login successful! Welcome back, ' + currentUser.firstName + '!');
+            alert('¡Sesión iniciada! Qué gusto verte de nuevo, ' + currentUser.firstName + '.');
         } else {
-            alert('Incorrect password. Please try again.');
+            alert('Contraseña incorrecta. Vuelve a intentarlo.');
         }
     } else {
-        alert('Account not found. Please create an account first.');
+        alert('No encontramos esa cuenta. Primero crea una cuenta.');
     }
 }
 
@@ -1425,18 +1425,18 @@ function migrateLegacyAccount(legacy, email, password) {
             delete accounts[email];
             localStorage.setItem('userAccounts', JSON.stringify(accounts));
             if (!document.getElementById('authModal')) {
-                showLoginPageMessage('Login successful. Redirecting…');
+                showLoginPageMessage('Sesión iniciada. Redirigiendo…');
                 window.location.href = '/profile';
                 return;
             }
             closeAuthModal();
             checkLoginStatus();
-            alert('Login successful! Welcome back.');
+            alert('¡Sesión iniciada! Qué gusto verte de nuevo.');
         })
         .catch(function(err) {
             accountSetupInProgress = false;
-            if (err.code === 'auth/email-already-in-use') alert('Incorrect email or password. Please try again.');
-            else alert(err.message || 'Login failed. Please try again.');
+            if (err.code === 'auth/email-already-in-use') alert('Correo o contraseña incorrectos. Vuelve a intentarlo.');
+            else alert('No se pudo iniciar sesión. Vuelve a intentarlo.' + (err && err.code ? ' (' + err.code + ')' : ''));
         });
 }
 
@@ -1453,7 +1453,7 @@ function showLoginPageMessage(text) {
 function createAccountAndLogIn(firstName, lastName, email, password) {
     userAccounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
     if (userAccounts[email]) {
-        alert('An account with this email already exists. Please login instead.');
+        alert('Ya existe una cuenta con este correo. Mejor inicia sesión.');
         return false;
     }
     var newUser = {
@@ -1473,20 +1473,20 @@ function createAccountAndLogIn(firstName, lastName, email, password) {
     };
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
     if (!document.getElementById('authModal')) {
-        showLoginPageMessage('Account created. Redirecting…');
+        showLoginPageMessage('Cuenta creada. Redirigiendo…');
         window.location.href = '/profile';
         return true;
     }
     closeAuthModal();
     checkLoginStatus();
-    alert('Account created.');
+    alert('Cuenta creada.');
     return true;
 }
 
 // Signup: first name, last name, email, password only. Account created and you're logged in (no code, no verification).
 function handleSignup(firstName, lastName, email, password) {
     if (password.length < 6) {
-        alert('Password must be at least 6 characters long.');
+        alert('La contraseña debe tener al menos 6 caracteres.');
         return;
     }
     if (firebaseAuth && typeof firebase !== 'undefined') {
@@ -1499,34 +1499,34 @@ function handleSignup(firstName, lastName, email, password) {
             .then(function() {
                 accountSetupInProgress = false;
                 if (!document.getElementById('authModal')) {
-                    showLoginPageMessage('Account created. Redirecting…');
+                    showLoginPageMessage('Cuenta creada. Redirigiendo…');
                     window.location.href = '/profile';
                     return;
                 }
                 closeAuthModal();
                 checkLoginStatus();
-                alert('Account created.');
+                alert('Cuenta creada.');
             })
             .catch(function(err) {
                 accountSetupInProgress = false;
                 if (err.code === 'auth/email-already-in-use') {
-                    alert('An account with this email already exists. Please login instead.');
+                    alert('Ya existe una cuenta con este correo. Mejor inicia sesión.');
                     return;
                 }
                 if (err.code === 'auth/weak-password') {
-                    alert('Password is too weak. Use at least 6 characters.');
+                    alert('La contraseña es muy débil. Usa al menos 6 caracteres.');
                     return;
                 }
                 if (err.code === 'auth/invalid-email') {
-                    alert('Invalid email address.');
+                    alert('El correo electrónico no es válido.');
                     return;
                 }
                 // Accounts must be real Firebase accounts (reservations are tied to them)
                 if (err.code === 'auth/network-request-failed') {
-                    alert('Network error. Check your connection and try again.');
+                    alert('Error de red. Revisa tu conexión y vuelve a intentarlo.');
                     return;
                 }
-                alert((err && err.message) || 'Could not create your account. Please try again.');
+                alert('No pudimos crear tu cuenta. Vuelve a intentarlo.' + (err && err.code ? ' (' + err.code + ')' : ''));
             });
         return;
     }
