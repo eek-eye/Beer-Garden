@@ -341,7 +341,7 @@ You can use it to cancel your reservation if needed.
 
 We'll contact you at ${formData.email} to confirm your reservation.
 
-You can also place your reservation directly at (123) 456-7890.
+You can also place your reservation directly at +52 686 364 2083.
     `.trim();
 
     // Send order number to user's email

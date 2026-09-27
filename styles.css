@@ -1451,3 +1451,13 @@ html {
     font-weight: bold;
     text-decoration: underline;
 }
+
+/* Phone/address links inside regular text: look exactly like the surrounding text */
+.inline-contact-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.inline-contact-link:hover {
+    text-decoration: underline;
+}
