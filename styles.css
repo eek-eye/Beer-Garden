@@ -1379,3 +1379,62 @@ html {
 .profile-icon.active {
     background: rgba(255, 255, 255, 0.3);
 }
+
+/* Header "Sign out" button (only visible when signed in) */
+.nav-signout {
+    display: none;
+    padding: 6px 16px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    line-height: 1.4;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.is-signed-in .nav-signout {
+    display: inline-block;
+}
+
+.nav-signout:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* Pages without a profile icon: keep the header layout unchanged while signed out */
+.nav-right-auth {
+    display: contents;
+}
+
+.is-signed-in .nav-right-auth {
+    display: flex;
+}
+
+/* Profile page Sign out button sits on a white background */
+.profile-logout-wrap .btn-secondary {
+    color: var(--black-color);
+    border-color: var(--black-color);
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.profile-logout-wrap .btn-secondary:hover {
+    background: var(--black-color);
+    color: var(--white-color);
+}
+
+/* Small phones: keep logo, Sign out, profile icon and menu on one row */
+@media (max-width: 480px) {
+    .nav-signout {
+        padding: 4px 9px;
+        font-size: 0.8rem;
+    }
+
+    .is-signed-in .nav-right {
+        gap: 0.6rem;
+    }
+
+    .is-signed-in .navbar .logo h1 {
+        font-size: 1.2rem;
+        white-space: nowrap;
+    }
+}

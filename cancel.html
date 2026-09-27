@@ -21,10 +21,13 @@
                 <li><a href="index.html">Contact</a></li>
                 <li id="navLoginItem"><a href="login.html">Login</a></li>
             </ul>
-            <div class="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
+            <div class="nav-right nav-right-auth">
+                <button type="button" class="btn btn-secondary nav-signout js-signout-btn" id="navSignOutBtn">Sign out</button>
+                <div class="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
             </div>
         </div>
     </nav>
@@ -215,6 +218,9 @@
             if (thankYou) thankYou.style.display = 'block';
         });
     </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

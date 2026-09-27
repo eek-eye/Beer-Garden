@@ -22,6 +22,7 @@
                 <li id="navLoginItem"><a href="login.html">Login</a></li>
             </ul>
             <div class="nav-right">
+                <button type="button" class="btn btn-secondary nav-signout js-signout-btn" id="navSignOutBtn">Sign out</button>
                 <a href="profile.html" class="profile-icon active" title="My Profile">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -61,7 +62,7 @@
                         <p>No reservations found.</p>
                     </div>
                 </div>
-                <p class="profile-logout-wrap"><button class="btn btn-secondary" id="logoutBtn">Logout</button></p>
+                <p class="profile-logout-wrap"><button class="btn btn-secondary" id="logoutBtn">Sign out</button></p>
             </div>
         </div>
     </section>
@@ -87,6 +88,7 @@
             // If Firebase restores or ends the Google/email session after load, re-render the page
             if (typeof firebaseAuth !== 'undefined' && firebaseAuth) {
                 firebaseAuth.onAuthStateChanged(function(user) {
+                    if (window.isSigningOut) return; // Sign out handles its own redirect
                     if ((user && !currentUser) || (!user && currentUser && currentUser.uid)) {
                         window.location.reload();
                     }

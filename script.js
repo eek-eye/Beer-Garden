@@ -860,19 +860,79 @@ function signInWithGoogle() {
 }
 
 // Sign out everywhere (Firebase + local session), then run callback
-function signOutUser(callback) {
-    var done = function() {
-        currentUser = null;
+var isSigningOut = false;
+function clearLocalSession() {
+    currentUser = null;
+    try {
         localStorage.removeItem('currentUser');
+        sessionStorage.removeItem('currentUser');
+        // Any Firebase auth leftovers kept in web storage (signOut normally clears these)
+        [localStorage, sessionStorage].forEach(function(store) {
+            for (var i = store.length - 1; i >= 0; i--) {
+                var key = store.key(i);
+                if (key && (key.indexOf('firebase:authUser:') === 0 || key.indexOf('firebase:pendingRedirect:') === 0 ||
+                    key.indexOf('firebase:redirectUser:') === 0)) {
+                    store.removeItem(key);
+                }
+            }
+        });
+    } catch (e) {}
+}
+function signOutUser(callback) {
+    isSigningOut = true;
+    window.isSigningOut = true;
+    var finished = false;
+    var done = function() {
+        if (finished) return;
+        finished = true;
+        clearLocalSession();
         if (typeof callback === 'function') callback();
     };
     if (firebaseAuth) {
         firebaseAuth.signOut().then(done, done);
+        setTimeout(done, 4000); // don't leave the user stuck if Firebase never answers
     } else {
         done();
     }
 }
 window.signOutUser = signOutUser;
+
+function isHomePage() {
+    return /(^|\/)(index(\.html)?)?$/.test(window.location.pathname || '');
+}
+
+// Header "Sign out" button: sign out, reset the header, go back to the home page
+function handleSignOutClick(e) {
+    if (e) e.preventDefault();
+    var btn = e && e.currentTarget;
+    if (btn) btn.disabled = true;
+    var prevUser = currentUser;
+    signOutUser(function() {
+        if (!isHomePage()) {
+            window.location.href = 'index.html';
+            return;
+        }
+        // Already on the home page: clear the prefilled reservation name/email and show Login again
+        var nameInput = document.getElementById('name');
+        var emailInput = document.getElementById('email');
+        if (prevUser) {
+            var prevName = ((prevUser.firstName || '') + ' ' + (prevUser.lastName || ''));
+            if (nameInput && nameInput.value === prevName) nameInput.value = '';
+            if (emailInput && emailInput.value === prevUser.email) emailInput.value = '';
+        }
+        isSigningOut = false;
+        window.isSigningOut = false;
+        checkLoginStatus();
+        if (btn) btn.disabled = false;
+    });
+}
+
+function initSignOutButtons() {
+    var buttons = document.querySelectorAll('.js-signout-btn');
+    for (var i = 0; i < buttons.length; i++) {
+        buttons[i].onclick = handleSignOutClick;
+    }
+}
 
 // Wire up the "Continue with Google" buttons (login + signup views)
 window.initGoogleSignIn = function() {
@@ -898,6 +958,9 @@ function checkLoginStatus() {
     if (navLoginItem) {
         navLoginItem.style.display = currentUser ? 'none' : '';
     }
+
+    // Show the header "Sign out" button only when signed in (see .nav-signout in styles.css)
+    document.documentElement.classList.toggle('is-signed-in', !!currentUser);
 
     // Show the Google profile photo in the navbar profile icon when signed in
     var profileIcons = document.querySelectorAll('.profile-icon');
@@ -1096,6 +1159,7 @@ function handleSignup(firstName, lastName, email, password) {
 // Initialize auth system when page loads
 document.addEventListener('DOMContentLoaded', function() {
     checkLoginStatus();
+    initSignOutButtons();
     if (typeof initGoogleSignIn === 'function') {
         setTimeout(initGoogleSignIn, 300);
     }
