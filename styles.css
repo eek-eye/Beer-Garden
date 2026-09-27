@@ -1849,6 +1849,45 @@ textarea {
     padding-top: 120px;
 }
 
+/* Cancel page: space between the two steps */
+.cancellation-step + .cancellation-step {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed rgba(212, 160, 23, 0.6);
+}
+
+/* Profile page: centered content that clears the lanterns */
+.profile-section {
+    min-height: 62vh;
+}
+
+.profile-section .container {
+    max-width: 860px;
+}
+
+#notLoggedIn {
+    text-align: center;
+}
+
+.profile-section a:not(.btn) {
+    color: var(--cn-red);
+}
+
+.profile-section::before {
+    left: max(12px, calc(50% - 520px));
+}
+
+.profile-section::after {
+    right: max(12px, calc(50% - 520px));
+}
+
+@media (max-width: 1100px) {
+    .profile-section::before,
+    .profile-section::after {
+        display: none;
+    }
+}
+
 /* ---------- Reservation box (dark lacquer card with gold trim) ---------- */
 .reservation-info {
     background:
