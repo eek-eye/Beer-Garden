@@ -591,6 +591,18 @@ for (let i = 1; i <= 50; i++) {
     if (tableSelect) tableSelect.appendChild(option);
 }
 
+// Seating chart: light up the table picked in the dropdown (visual only; booking logic is unchanged)
+function highlightSelectedTable() {
+    const select = document.getElementById('table');
+    const value = select ? select.value : '';
+    document.querySelectorAll('.vip-seat, .seat-circle, .seat-square').forEach(seat => {
+        seat.classList.toggle('is-selected', !!value && seat.dataset.tableNumber === value && !seat.classList.contains('reserved'));
+    });
+}
+if (tableSelect) tableSelect.addEventListener('change', highlightSelectedTable);
+const reservationFormEl = document.getElementById('reservationForm');
+if (reservationFormEl) reservationFormEl.addEventListener('reset', () => setTimeout(highlightSelectedTable, 0));
+
 // Update seating chart and dropdown when date changes
 if (dateInput) dateInput.addEventListener('change', function() {
     const selectedDate = this.value;
@@ -834,6 +846,7 @@ function renderSeatingChart(reservedTables) {
             seat.title = 'Available';
         }
     });
+    highlightSelectedTable();
 }
 
 // Function to update table dropdown based on selected date
@@ -873,6 +886,7 @@ function renderTableDropdown(reservedTables) {
     if (currentValue && !reservedTables.hasOwnProperty(currentValue)) {
         tableSelect.value = currentValue;
     }
+    highlightSelectedTable();
 }
 
 // Cancellation flow: handled by the inline script in cancel.html (single source of truth).
