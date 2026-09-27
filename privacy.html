@@ -10,10 +10,8 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/IMAGES/favicon-32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/IMAGES/icon-192.png">
     <link rel="apple-touch-icon" href="/IMAGES/apple-touch-icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&amp;display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&amp;text=%E9%85%92%E5%90%A7%E7%A6%8F&amp;display=swap">
+    <!-- Cookie consent: the decorative Google Fonts load only after "Aceptar / Accept" -->
+    <script src="cookie-consent.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -77,8 +75,13 @@
                 <h3>We do not sell your data</h3>
                 <p>We do not sell, rent or trade your personal data, and we do not use it for advertising. We only share it with Google as the service that stores it and sends our reservation emails, or if Mexican law requires us to.</p>
 
-                <h3>Cookies and local storage</h3>
-                <p>We do not use advertising or analytics cookies. To keep you signed in, your browser's local storage holds your Firebase sign-in session and a copy of your name, email and profile photo link. The site also uses session storage to remember which section to scroll to when you move between pages. Signing out clears the sign-in data. The site loads fonts from Google Fonts and the sign-in tools from Google, so those services receive your IP address when the page loads.</p>
+                <h3 id="cookies">Cookies and local storage</h3>
+                <p>We do not use advertising or analytics cookies, and there are no maps or social media embeds on the site (the Google Maps, Facebook and Instagram buttons are plain links). What the site stores in your browser:</p>
+                <ul>
+                    <li><strong>Essential (always on):</strong> your Firebase sign-in session and a copy of your name, email and profile photo link in local storage, so you stay signed in and can book and cancel tables; the section to scroll to when you move between pages (session storage); and your cookie choice. The sign-in and reservation tools are loaded from Google (Firebase), and the confirmation emails are sent through Google Apps Script. The site cannot work without these, so they do not need your consent. Signing out clears the sign-in data.</li>
+                    <li><strong>Optional (only if you accept):</strong> decorative fonts from <strong>Google Fonts</strong>. Loading them sends your IP address to Google. If you reject, the site uses the fonts already on your device.</li>
+                </ul>
+                <p>Your choice is saved in your browser and the notice is not shown again. You can change it at any time: <button type="button" class="privacy-cookie-settings" data-cookie-settings>Cookie settings / Configurar cookies</button> (also the "Cookies" link at the bottom of every page).</p>
 
                 <h3>How long we keep it</h3>
                 <p>A reservation is removed when you cancel it. Your account and any remaining reservations are kept until you ask us to delete them.</p>
@@ -109,7 +112,8 @@
                 <p><strong>Para qué:</strong> únicamente para administrar tu cuenta y tus reservaciones y, si hace falta, contactarte sobre ellas.</p>
                 <p><strong>Dónde se guardan:</strong> en Google Firebase (servidores de Google que pueden estar fuera de México). Solo tu cuenta puede ver tus reservaciones.</p>
                 <p><strong>Correos de reservación:</strong> cuando reservas o cancelas una mesa te enviamos un correo de confirmación a la dirección de tu cuenta. Los envía <strong>Google</strong> (Google Apps Script y Gmail) desde la cuenta de Google del bar, con tu nombre, correo y los datos de la reservación.</p>
-                <p><strong>No vendemos tus datos</strong> ni los usamos para publicidad. No usamos cookies de publicidad ni de analítica; el almacenamiento local del navegador solo se usa para mantener tu sesión iniciada.</p>
+                <p><strong>No vendemos tus datos</strong> ni los usamos para publicidad.</p>
+                <p id="cookies-es"><strong>Cookies:</strong> no usamos cookies de publicidad ni de analítica, ni mapas o publicaciones de redes sociales incrustados (los botones de Google Maps, Facebook e Instagram son enlaces). <strong>Esenciales (siempre activas):</strong> tu sesión de Firebase y una copia de tu nombre, correo y foto en el almacenamiento local para mantener tu sesión y tus reservaciones, la sección a la que te llevamos entre páginas y tu elección de cookies; no necesitan consentimiento. <strong>Opcionales (solo si aceptas):</strong> las fuentes decorativas de Google Fonts, que envían tu dirección IP a Google; si rechazas, usamos las fuentes de tu dispositivo. Puedes cambiar tu elección cuando quieras con <button type="button" class="privacy-cookie-settings" data-cookie-settings>Configurar cookies / Cookie settings</button> o con el enlace "Cookies" al pie de cada página.</p>
                 <p><strong>Tus derechos (ARCO):</strong> puedes pedir acceso, rectificación, cancelación u oposición al uso de tus datos.</p>
                 <p><strong>Eliminar tus datos:</strong> llámanos al <a href="tel:+526863642083">+52 686 364 2083</a> o envíanos un mensaje por <a href="https://www.facebook.com/p/BAR-chinesca-61565011852767/" target="_blank" rel="noopener noreferrer">Facebook</a> o <a href="https://www.instagram.com/barchinesca.nightclub.mxl/" target="_blank" rel="noopener noreferrer">Instagram</a> con el nombre y correo de tu cuenta. Borramos tu cuenta y tus reservaciones en un plazo máximo de <strong>30 días</strong> y te avisamos cuando esté hecho.</p>
             </article>
@@ -125,14 +129,19 @@
                 <a href="https://www.facebook.com/p/BAR-chinesca-61565011852767/" class="social-link social-facebook" target="_blank" rel="noopener noreferrer" aria-label="Bar Chinesca on Facebook (opens in a new tab)" title="Facebook"><svg viewBox="2 3 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 22v-8.2h2.8l.4-3.2h-3.2V8.6c0-.9.3-1.6 1.6-1.6h1.7V4.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.3H7.3v3.2h2.8V22z"/></svg></a>
                 <a href="https://www.instagram.com/barchinesca.nightclub.mxl/" class="social-link social-instagram" target="_blank" rel="noopener noreferrer" aria-label="Bar Chinesca on Instagram (opens in a new tab)" title="Instagram"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.3" fill="currentColor"/></svg></a>
             </div>
-            <p class="footer-legal"><a href="/privacy">Privacy Policy</a></p>
+            <p class="footer-legal"><a href="/privacy">Privacy Policy</a> <span aria-hidden="true">·</span> <button type="button" class="footer-cookie-link" data-cookie-settings>Cookies</button></p>
         </div>
     </footer>
 
     <script>
         // /privacy#delete-your-data: the address is cleaned to /privacy, but still jump to the section
+        // (the cookie notice's Privacy link asks for the cookies section through sessionStorage, no #hash)
         (function() {
             var id = window.__privacyAnchor;
+            try {
+                var asked = sessionStorage.getItem('barPrivacyAnchor');
+                if (asked) { sessionStorage.removeItem('barPrivacyAnchor'); if (!id) id = asked; }
+            } catch (e) {}
             var el = id && document.getElementById(id);
             if (el) setTimeout(function() { el.scrollIntoView(); }, 50);
         })();
