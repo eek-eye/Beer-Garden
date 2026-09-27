@@ -1,0 +1,169 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------
+    // eekseye.com storefront (eek-eye/eek-eye.github.io)
+    // Copied unchanged from ABANDONED_CHECKOUT_SETUP.md
+    // ------------------------------------------------------------------
+    match /abandoned_checkouts/{id} {
+      allow create: if request.resource.data.email is string
+        && request.resource.data.productId is string
+        && request.resource.data.purchased == false
+        && request.resource.data.timedEmailSent == false;
+      allow update: if false; // server/admin only
+      allow read: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Beer Garden (Bar Chinesca Mxli reservations, eek-eye/Beer-Garden)
+    //
+    //   barReservations/{orderNumber}  one reserved table; private to its owner
+    //   barTableLocks/{date_table}     "table T is taken on date D"; public, no personal data
+    //   barUserCounts/{uid}            number of reservations the user currently holds (max 2)
+    //
+    // Booking = one transaction/batch that creates the reservation + its lock and
+    // increments the counter. Cancelling = one batch that deletes the reservation +
+    // its lock and decrements the counter. Each write checks the others with
+    // getAfter()/existsAfter(), so none of the three can be written on its own.
+    // ------------------------------------------------------------------
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function barResPath(orderNumber) {
+      return /databases/$(database)/documents/barReservations/$(orderNumber);
+    }
+
+    function barLockPath(lockId) {
+      return /databases/$(database)/documents/barTableLocks/$(lockId);
+    }
+
+    function barCountPath(uid) {
+      return /databases/$(database)/documents/barUserCounts/$(uid);
+    }
+
+    function barLockId(date, table) {
+      return date + '_' + string(table);
+    }
+
+    // Tables the user held before this request (0 if they never booked)
+    function barCountBefore(uid) {
+      return exists(barCountPath(uid)) ? get(barCountPath(uid)).data.count : 0;
+    }
+
+    // The reservation date (YYYY-MM-DD) must not be in the past
+    // (1 day of slack so Mexicali "today" is always accepted whatever the UTC time)
+    function barDateNotPast(date) {
+      return timestamp.date(int(date[0:4]), int(date[5:7]), int(date[8:10]))
+             + duration.value(2, 'd') > request.time;
+    }
+
+    function barValidNewReservation(orderNumber) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['orderNumber', 'uid', 'email', 'name', 'date', 'time',
+                               'guests', 'table', 'status', 'createdAt'])
+        && d.keys().hasAll(['orderNumber', 'uid', 'email', 'name', 'date', 'time',
+                            'guests', 'table', 'status', 'createdAt'])
+        && orderNumber.matches('^[0-9]{6}$')
+        && d.orderNumber == orderNumber
+        && d.uid == request.auth.uid
+        && d.email is string && d.email.size() <= 200
+        && d.name is string && d.name.size() <= 200
+        && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && barDateNotPast(d.date)
+        && d.time is string && d.time.size() <= 10
+        && d.guests is string && d.guests.size() <= 10
+        && d.table is int && d.table >= 1 && d.table <= 50
+        && d.status == 'active'
+        && d.createdAt == request.time;
+    }
+
+    match /barReservations/{orderNumber} {
+      // Owner only. A missing doc may be probed so a fresh order number can be picked.
+      allow get: if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
+      // Queries must be limited to the user's own reservations (where uid == auth.uid)
+      allow list: if signedIn() && resource.data.uid == request.auth.uid;
+
+      allow create: if signedIn()
+        && barValidNewReservation(orderNumber)
+        // the table lock for this date+table is created in the same batch and points here
+        && existsAfter(barLockPath(barLockId(request.resource.data.date, request.resource.data.table)))
+        && !exists(barLockPath(barLockId(request.resource.data.date, request.resource.data.table)))
+        && getAfter(barLockPath(barLockId(request.resource.data.date, request.resource.data.table))).data.orderNumber == orderNumber
+        // the user's counter goes up by exactly one for this order, and never above 2
+        && getAfter(barCountPath(request.auth.uid)).data.count == barCountBefore(request.auth.uid) + 1
+        && getAfter(barCountPath(request.auth.uid)).data.count <= 2
+        && getAfter(barCountPath(request.auth.uid)).data.lastOrder == orderNumber;
+
+      // Cancel: owner deletes the reservation, its lock and decrements the counter together
+      allow delete: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && !existsAfter(barLockPath(barLockId(resource.data.date, resource.data.table)))
+        && getAfter(barCountPath(request.auth.uid)).data.count == barCountBefore(request.auth.uid) - 1
+        && getAfter(barCountPath(request.auth.uid)).data.lastOrder == orderNumber;
+
+      allow update: if false;
+    }
+
+    match /barTableLocks/{lockId} {
+      // Public so the seating chart can show taken tables; holds no personal data
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['date', 'table', 'time', 'orderNumber', 'createdAt'])
+        && request.resource.data.keys().hasAll(['date', 'table', 'time', 'orderNumber', 'createdAt'])
+        && request.resource.data.date is string
+        && request.resource.data.table is int
+        && request.resource.data.time is string && request.resource.data.time.size() <= 10
+        && request.resource.data.orderNumber is string
+        && request.resource.data.createdAt == request.time
+        && lockId == barLockId(request.resource.data.date, request.resource.data.table)
+        // only together with a brand-new reservation of this user for the same date+table
+        && !exists(barResPath(request.resource.data.orderNumber))
+        && existsAfter(barResPath(request.resource.data.orderNumber))
+        && getAfter(barResPath(request.resource.data.orderNumber)).data.uid == request.auth.uid
+        && getAfter(barResPath(request.resource.data.orderNumber)).data.date == request.resource.data.date
+        && getAfter(barResPath(request.resource.data.orderNumber)).data.table == request.resource.data.table;
+
+      // Only removed together with the owner's reservation (cancel)
+      allow delete: if signedIn()
+        && get(barResPath(resource.data.orderNumber)).data.uid == request.auth.uid
+        && !existsAfter(barResPath(resource.data.orderNumber));
+
+      allow update: if false; // a taken table can't be overwritten
+    }
+
+    match /barUserCounts/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+
+      // +1 only together with a new reservation of this user (max 2),
+      // -1 only together with deleting one of this user's reservations
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['count', 'lastOrder', 'updatedAt'])
+        && request.resource.data.count is int
+        && request.resource.data.lastOrder is string
+        && request.resource.data.updatedAt == request.time
+        && (
+          (
+            request.resource.data.count == barCountBefore(uid) + 1
+            && request.resource.data.count <= 2
+            && !exists(barResPath(request.resource.data.lastOrder))
+            && existsAfter(barResPath(request.resource.data.lastOrder))
+            && getAfter(barResPath(request.resource.data.lastOrder)).data.uid == uid
+          ) || (
+            request.resource.data.count == barCountBefore(uid) - 1
+            && request.resource.data.count >= 0
+            && exists(barResPath(request.resource.data.lastOrder))
+            && get(barResPath(request.resource.data.lastOrder)).data.uid == uid
+            && !existsAfter(barResPath(request.resource.data.lastOrder))
+          )
+        );
+
+      allow delete: if false;
+    }
+
+    // Everything else stays denied (no match = no access).
+  }
+}
