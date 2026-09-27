@@ -2,7 +2,7 @@
 
 If you added your domain to Firebase but still can't log in, check these:
 
-**Firebase project for this site:** `eeks-eye-2efd9` (https://console.firebase.google.com/project/eeks-eye-2efd9). Its web config is in `firebase-config.js`.
+**Firebase project for this site:** `bar-chinesca-mxli` (https://console.firebase.google.com/project/bar-chinesca-mxli). Its web config is in `firebase-config.js`.
 
 ---
 

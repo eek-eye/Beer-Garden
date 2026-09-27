@@ -3,20 +3,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ------------------------------------------------------------------
-    // eekseye.com storefront (eek-eye/eek-eye.github.io)
-    // Copied unchanged from ABANDONED_CHECKOUT_SETUP.md
-    // ------------------------------------------------------------------
-    match /abandoned_checkouts/{id} {
-      allow create: if request.resource.data.email is string
-        && request.resource.data.productId is string
-        && request.resource.data.purchased == false
-        && request.resource.data.timedEmailSent == false;
-      allow update: if false; // server/admin only
-      allow read: if false;
-    }
-
-    // ------------------------------------------------------------------
     // Beer Garden (Bar Chinesca Mxli reservations, eek-eye/Beer-Garden)
+    // Firebase project: bar-chinesca-mxli (this project holds only the bar's data)
     //
     //   barReservations/{orderNumber}  one reserved table; private to its owner
     //   barTableLocks/{date_table}     "table T is taken on date D"; public, no personal data
