@@ -342,10 +342,15 @@
     </section>
 
     <!-- Reviews: real reviews from the Google Maps place (place_id ChIJP4G9EQB714ARYeGJXlf0QI0), static HTML, text copied as written.
-         front.js: arrow buttons; swipe = native scroll-snap. -->
+         Rating and count as shown on Google Maps on Sep 27 2026. front.js: arrow buttons; swipe = native scroll-snap. -->
     <section id="reviews" class="reviews" aria-labelledby="reviewsTitle">
         <div class="container">
             <h2 id="reviewsTitle">Reviews</h2>
+            <p class="reviews-summary">
+                <span class="reviews-score">3,3</span>
+                <span class="reviews-meter" role="img" aria-label="3,3 de 5 estrellas" style="--rating: 3.3"><span aria-hidden="true">★★★★★</span></span>
+                <span class="reviews-count">de 5 en Google · 24 reseñas</span>
+            </p>
             <div class="reviews-slider">
                 <button type="button" class="reviews-arrow reviews-prev" aria-label="Reseña anterior" aria-controls="reviewsTrack"><span aria-hidden="true">&#8249;</span></button>
                 <div class="reviews-track" id="reviewsTrack" role="list" tabindex="0" aria-label="Reseñas de clientes en Google">
