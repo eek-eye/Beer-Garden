@@ -492,6 +492,8 @@ Lo necesitas si quieres cancelar tu reservación.
 
 Te contactaremos en ${formData.email} para confirmar tu reservación.
 
+💵 Te recomendamos pagar en efectivo. Los pagos con tarjeta tienen un cargo adicional del 15%.
+
 También puedes reservar directamente al +52 686 364 2083.
     `.trim();
 
@@ -540,7 +542,7 @@ También puedes reservar directamente al +52 686 364 2083.
         font-size: 1.1rem;
         text-align: center;
     `;
-    successDiv.innerHTML = '✓ ¡Solicitud de reservación enviada! Te contactaremos para confirmar.';
+    successDiv.innerHTML = '✓ ¡Solicitud de reservación enviada! Te contactaremos para confirmar.<br><span style="display:inline-block;margin-top:8px;font-size:0.95rem;">💵 Te recomendamos pagar en efectivo. Los pagos con tarjeta tienen un cargo adicional del 15%.</span>';
     document.body.appendChild(successDiv);
 
     // Remove success message after 5 seconds

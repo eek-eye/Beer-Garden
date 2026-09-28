@@ -5440,3 +5440,235 @@ html.cookie-banner-open .footer {
         transform: none;
     }
 }
+
+/* ==========================================================================
+   Reviews call to action: big gold-accented Google button + QR code
+   (neutral wording: any honest review is welcome; no incentives)
+   ========================================================================== */
+.reviews-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    max-width: 900px;
+    margin: 2rem auto 0;
+    padding: 30px 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(176, 18, 27, 0.32) 0%, rgba(14, 8, 10, 0.92) 60%, rgba(60, 40, 6, 0.4) 100%);
+    border: 1px solid rgba(212, 160, 23, 0.6);
+    box-shadow: 0 0 0 1px rgba(255, 35, 64, 0.2), 0 0 26px rgba(255, 35, 64, 0.22), inset 0 0 40px rgba(212, 160, 23, 0.06);
+}
+
+.reviews-cta-text {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.reviews-cta-title {
+    margin: 0 0 6px;
+    font-family: var(--cn-font-display);
+    font-weight: 900;
+    font-size: 1.9rem;
+    line-height: 1.2;
+    color: var(--cn-gold-light);
+    text-shadow: 0 0 10px rgba(242, 193, 78, 0.6), 0 0 24px rgba(255, 35, 64, 0.4);
+}
+
+.reviews-cta-sub {
+    margin: 0;
+    font-size: 1.08rem;
+    line-height: 1.6;
+    color: #f1e3cf;
+}
+
+.reviews-cta .reviews-actions {
+    justify-content: flex-start;
+    align-items: center;
+    margin-top: 1.3rem;
+    gap: 18px;
+}
+
+/* Bigger "Déjanos tu reseña en Google" with twinkling gold sparkles */
+.reviews-actions .reviews-write-big {
+    position: relative;
+    overflow: visible;
+    font-size: 1.25rem;
+    padding: 18px 34px;
+    border-width: 3px;
+    border-color: var(--cn-gold-light);
+    border-radius: 999px;
+    box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.25), 0 0 16px rgba(242, 193, 78, 0.55), 0 0 34px rgba(255, 35, 64, 0.45), inset 0 0 12px rgba(255, 255, 255, 0.16);
+}
+
+.reviews-actions .reviews-write-big .review-g-btn {
+    width: 24px;
+    height: 24px;
+}
+
+.reviews-actions .reviews-write-big::before,
+.reviews-actions .reviews-write-big::after {
+    content: '✦';
+    position: absolute;
+    color: var(--cn-gold-light);
+    text-shadow: 0 0 8px rgba(242, 193, 78, 0.95);
+    pointer-events: none;
+    animation: reviews-twinkle 2.4s ease-in-out infinite;
+}
+
+.reviews-actions .reviews-write-big::before {
+    top: -14px;
+    left: 14px;
+    font-size: 22px;
+}
+
+.reviews-actions .reviews-write-big::after {
+    bottom: -12px;
+    right: 18px;
+    font-size: 17px;
+    animation-delay: 1.2s;
+}
+
+.reviews-actions .reviews-write-big:hover,
+.reviews-actions .reviews-write-big:focus-visible {
+    border-color: #fff3c4;
+    box-shadow: 0 0 0 3px rgba(242, 193, 78, 0.4), 0 0 22px rgba(242, 193, 78, 0.8), 0 0 44px rgba(255, 35, 64, 0.6);
+}
+
+@keyframes reviews-twinkle {
+    0%, 100% { opacity: 0.35; transform: scale(0.8) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1.15) rotate(20deg); }
+}
+
+.reviews-qr {
+    flex: 0 0 auto;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+}
+
+.reviews-qr img {
+    display: block;
+    width: 150px;
+    height: 150px;
+    padding: 8px;
+    background: #ffffff;
+    border-radius: 10px;
+    border: 3px solid var(--cn-gold);
+    box-shadow: 0 0 14px rgba(242, 193, 78, 0.45);
+    image-rendering: pixelated;
+}
+
+.reviews-qr figcaption {
+    font-size: 0.9rem;
+    color: #e9d9c2;
+    letter-spacing: 0.03em;
+}
+
+.reviews-qr-download {
+    font-size: 0.85rem;
+    color: var(--cn-gold-light);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.reviews-qr-download:hover,
+.reviews-qr-download:focus-visible {
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(242, 193, 78, 0.8);
+}
+
+@media (max-width: 768px) {
+    .reviews-cta {
+        flex-direction: column;
+        gap: 22px;
+        padding: 24px 18px;
+        text-align: center;
+    }
+
+    .reviews-cta-text {
+        text-align: center;
+    }
+
+    .reviews-cta-title {
+        font-size: 1.6rem;
+    }
+
+    .reviews-cta .reviews-actions {
+        justify-content: center;
+    }
+
+    .reviews-actions .reviews-write-big {
+        font-size: 1.08rem;
+        padding: 16px 14px;
+    }
+
+    .reviews-qr img {
+        width: 128px;
+        height: 128px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reviews-actions .reviews-write-big::before,
+    .reviews-actions .reviews-write-big::after {
+        animation: none;
+        opacity: 0.9;
+    }
+}
+
+/* ==========================================================================
+   Cash notice (reservation form, footer on all pages, booking confirmation)
+   ========================================================================== */
+.cash-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 0 1.1rem;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(212, 160, 23, 0.16) 0%, rgba(176, 18, 27, 0.2) 100%);
+    border: 1px solid rgba(212, 160, 23, 0.6);
+    border-left: 4px solid var(--cn-gold);
+    color: #f6eadb;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.cash-notice-icon {
+    flex: 0 0 auto;
+    font-size: 1.3rem;
+    line-height: 1.15;
+}
+
+.cash-notice strong {
+    color: var(--cn-gold-light);
+    font-weight: 800;
+}
+
+.footer .cash-notice-footer {
+    display: inline-flex;
+    align-items: center;
+    max-width: 640px;
+    margin: 0.9rem auto 0.4rem;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border-left-width: 1px;
+    font-size: 0.9rem;
+    opacity: 1;
+}
+
+.footer .cash-notice-footer .cash-notice-icon {
+    font-size: 1.1rem;
+}
+
+@media (max-width: 600px) {
+    .footer .cash-notice-footer {
+        border-radius: 10px;
+        text-align: left;
+    }
+}
