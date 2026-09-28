@@ -6829,60 +6829,10 @@ html.lightbox-open {
     background: #2fd07a;
 }
 
-.profile-card-badge.is-noshow {
-    color: #ffd9d9;
-    background: rgba(176, 18, 27, 0.55);
-    border: 1px solid rgba(255, 120, 120, 0.55);
-}
-
-/* Countdown to the end of the arrival window (profile cards + booking confirmation) */
-.arrival-timer {
-    margin: 0.7rem auto 0;
-    padding: 0.55rem 0.8rem;
-    max-width: 320px;
-    border-radius: 10px;
-    text-align: center;
-    background: rgba(242, 193, 78, 0.1);
-    border: 1px solid rgba(242, 193, 78, 0.45);
-}
-
-.arrival-timer-label {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--cn-gold-light, #f2c14e);
-}
-
-.arrival-timer-value {
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    color: #fbeccb;
-}
-
-.arrival-timer-note {
-    margin: 0.2rem 0 0;
-    font-size: 0.82rem;
-    opacity: 0.85;
-}
-
-.arrival-timer.is-expired {
-    background: rgba(176, 18, 27, 0.35);
-    border-color: rgba(255, 120, 120, 0.6);
-}
-
-.arrival-timer.is-expired .arrival-timer-label {
-    color: #ff8a8a;
-    font-size: 1.05rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.checkin-dialog-timer .arrival-timer {
-    margin-top: 0.4rem;
-}
-
-.profile-card-checkin.is-expired .profile-card-checkin-title {
-    color: #ff8a8a;
+.profile-card-badge.is-unverified {
+    color: #e9e2d6;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 /* "¡Mesa verificada!" celebration (confetti.js) */

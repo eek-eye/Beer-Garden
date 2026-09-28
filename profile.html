@@ -201,16 +201,16 @@
             function todayMx() {
                 return window.barCheckin ? window.barCheckin.mexicaliDate() : new Date().toISOString().slice(0, 10);
             }
-            // Registros = verified at the door, or a no-show (not checked in 2 hours after the reserved time)
+            // Registros = verified at the door, or a night that is over (after 6:00 AM Mexicali the next morning)
             function isPast(r) {
-                return !!r.checkedIn || !!(window.barCheckin && window.barCheckin.isNoShow(r));
+                return !!r.checkedIn || !!(window.barCheckin && window.barCheckin.isPastNight(r));
             }
 
             // ---- active reservations (QR code, can still be cancelled) ----
             let activeSig = null;
             function renderActive(userReservations) {
                 if (!reservationsList) return;
-                const sig = userReservations.map(function(r) { return [r.orderNumber, r.date, r.time, r.table, r.guests, window.barCheckin ? window.barCheckin.deadlineOf(r) : ''].join('|'); }).sort().join(';');
+                const sig = userReservations.map(function(r) { return [r.orderNumber, r.date, r.time, r.table, r.guests].join('|'); }).sort().join(';');
                 if (sig === activeSig) return; // nothing changed (e.g. only the QR code was attached)
                 activeSig = sig;
                 if (userReservations.length === 0) {
@@ -229,7 +229,6 @@
                             <div class="profile-card-name">${esc(nameDisplay)}</div>
                             <div class="profile-card-guests">${esc(guestsDisplay(reservation.guests))}</div>
                             ${when ? `<div class="profile-card-when">${esc(when)}</div>` : ''}
-                            ${window.barCheckin ? window.barCheckin.timerHtml(reservation) : ''}
                             <div class="profile-card-checkin" data-order="${esc(reservation.orderNumber)}">
                                 <p class="profile-card-checkin-title">Código de entrada</p>
                                 <div class="checkin-qr"><p class="checkin-qr-loading">Generando código QR…</p></div>
@@ -241,7 +240,6 @@
                 });
                 html += '</div>';
                 reservationsList.innerHTML = html;
-                if (window.barCheckin) window.barCheckin.startTimers();
                 // QR check-in codes (attached the first time if the reservation has none yet)
                 userReservations.forEach(function(reservation) {
                     const box = reservationsList.querySelector('.profile-card-checkin[data-order="' + String(reservation.orderNumber).replace(/\D/g, '') + '"]');
@@ -259,18 +257,7 @@
                 });
             }
 
-            // Countdown reached zero: the QR stops working, then the card moves to "Registros"
-            if (reservationsList) reservationsList.addEventListener('bar:deadline', function(e) {
-                const card = e.target.closest('.reservation-card');
-                const box = card && card.querySelector('.profile-card-checkin');
-                if (box) {
-                    box.classList.add('is-expired');
-                    box.innerHTML = '<p class="profile-card-checkin-title">Código vencido</p><p class="profile-card-checkin-hint">Ya no sirve en la entrada.</p>';
-                }
-                setTimeout(function() { activeSig = null; refresh(); }, 4000);
-            });
-
-            // ---- "Registros": verified or no-show tables; no QR, no cancel button ----
+            // ---- "Registros": verified tables, or past nights without check-in; no QR, no cancel button ----
             function renderPast(items) {
                 if (!pastSection || !pastList) return;
                 if (items.length === 0) {
@@ -285,9 +272,9 @@
                     const at = formatTime(toMillis(r.checkedInAt));
                     const badge = r.checkedIn
                         ? `<div class="profile-card-badge is-verified">✓ ${at ? 'Verificada a las ' + esc(at) : 'Verificada'}</div>`
-                        : '<div class="profile-card-badge is-noshow">Cancelada por no presentarse</div>';
+                        : '<div class="profile-card-badge is-unverified">No verificada</div>';
                     html += `
-                        <div class="reservation-card profile-card-simple profile-card-past${r.checkedIn ? ' is-verified' : ' is-noshow'}" data-order="${esc(r.orderNumber)}">
+                        <div class="reservation-card profile-card-simple profile-card-past${r.checkedIn ? ' is-verified' : ' is-unverified'}" data-order="${esc(r.orderNumber)}">
                             <div class="profile-card-order">${esc(r.orderNumber)}</div>
                             <div class="profile-card-table">${esc(tableDisplay(r.table))}</div>
                             <div class="profile-card-guests">${esc(guestsDisplay(r.guests))}</div>
@@ -349,7 +336,7 @@
                 if (!reservationsLoaded) return;
                 const active = reservations.filter(function(r) { return !isPast(r); });
                 const past = reservations.filter(isPast);
-                // Codes whose reservation was already removed (cleanup at the next booking): verified or no-show
+                // Codes whose reservation was already removed (cleanup at the next booking): verified or not
                 checkins.forEach(function(c) {
                     const stillThere = reservations.some(function(r) {
                         return (r.checkinCode && r.checkinCode === c.code) || (String(r.orderNumber) === String(c.orderNumber) && r.date === c.date);
@@ -361,6 +348,8 @@
                 renderPast(past);
                 maybeCelebrate(reservations);
             }
+            // a page left open past 6:00 AM moves that night's reservation to "Registros"
+            setInterval(refresh, 60000);
             if (typeof whenAuthReady === 'function' && typeof firestoreDb !== 'undefined') {
                 whenAuthReady().then(function(user) {
                     if (!user || !firestoreDb) { renderActive([]); return; }

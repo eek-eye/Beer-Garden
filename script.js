@@ -199,12 +199,12 @@ function barLockId(date, table) {
     return date + '_' + parseInt(table, 10);
 }
 
-// ---- Arrival window (Mexicali, America/Tijuana) ----
-// A reservation's code works from 00:00 of its day (arriving early is fine) until 2 hours after
-// the reserved time (8:00 PM -> through 10:00 PM). After that the guest is a no-show: the code is
-// refused at the door and the table is released. Same calculation as the Firestore rules:
-// Mexicali uses UTC-7 from the 2nd Sunday of March to the 1st Sunday of November, UTC-8 otherwise.
-var BAR_ARRIVAL_GRACE_MS = 2 * 3600000;
+// ---- Service night (Mexicali, America/Tijuana) ----
+// A reservation's code works from 00:00 of its date (arriving early is fine) until 6:00 AM the next
+// morning (booked for 10 PM, arriving at 1 AM is fine). After that the night is over: the reservation
+// no longer holds a table and goes to the profile's Registros. Same calculation as the Firestore rules:
+// Mexicali uses UTC-7 from the 2nd Sunday of March to the 1st Sunday of November, UTC-8 otherwise;
+// the switch is at 2 AM, so midnight uses the previous day's offset and 6 AM the next day's.
 function barMxOffsetHours(date) {
     var y = +date.slice(0, 4), m = +date.slice(5, 7), d = +date.slice(8, 10);
     function isoDow(mm, dd) { var w = new Date(Date.UTC(y, mm - 1, dd)).getUTCDay(); return w === 0 ? 7 : w; }
@@ -212,34 +212,30 @@ function barMxOffsetHours(date) {
     var firstSundayNovember = 1 + (7 - isoDow(11, 1)) % 7;
     return ((m > 3 && m < 11) || (m === 3 && d >= secondSundayMarch) || (m === 11 && d < firstSundayNovember)) ? 7 : 8;
 }
+function barAddDays(date, n) {
+    return new Date(Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10) + n)).toISOString().slice(0, 10);
+}
+// 00:00 Mexicali on the reservation date
 function barDayStartMs(date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return NaN;
-    return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(date), 0);
+    return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(barAddDays(date, -1)), 0);
 }
-function barDeadlineMs(date, time) {
-    var t = /^(\d{1,2}):(\d{2})/.exec(time || '');
-    var minutes = t ? (+t[1]) * 60 + (+t[2]) : 23 * 60 + 59;
-    return barDayStartMs(date) + minutes * 60000 + BAR_ARRIVAL_GRACE_MS;
+// 6:00 AM Mexicali the morning after the reservation date
+function barNightEndMs(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return NaN;
+    var next = barAddDays(date, 1);
+    return Date.UTC(+next.slice(0, 4), +next.slice(5, 7) - 1, +next.slice(8, 10), barMxOffsetHours(next) + 6, 0);
 }
-// Stored deadline (deadlineAt) when the booking has one, otherwise the same calculation
-function barResDeadlineMs(r) {
-    if (!r) return NaN;
-    if (r.deadlineAt && typeof r.deadlineAt.toMillis === 'function') return r.deadlineAt.toMillis();
-    return barDeadlineMs(r.date, r.time);
-}
-// Not checked in and the arrival window is over
-function barIsNoShow(r, now) {
-    if (!r || r.checkedIn) return false;
-    var dl = barResDeadlineMs(r);
-    return isFinite(dl) && (now || Date.now()) > dl;
+// The reservation's night is over (after 6:00 AM Mexicali the next morning)
+function barIsPastNight(r, now) {
+    var end = barNightEndMs(r && r.date);
+    return isFinite(end) && (now || Date.now()) > end;
 }
 window.barArrival = {
-    GRACE_MS: BAR_ARRIVAL_GRACE_MS,
     offsetHours: barMxOffsetHours,
     dayStartMs: barDayStartMs,
-    deadlineMs: barDeadlineMs,
-    resDeadlineMs: barResDeadlineMs,
-    isNoShow: barIsNoShow
+    nightEndMs: barNightEndMs,
+    isPastNight: barIsPastNight
 };
 
 // Resolves with the Firebase user (or null) once Firebase has restored the session
@@ -279,7 +275,7 @@ window.getBarReservation = getBarReservation;
 
 // Cancel = delete the reservation + its table lock and decrement the user's counter, all at once.
 // Its QR check-in code (if any) is closed in the same transaction: "cancelled", or "expired" for the
-// past-date cleanup. A code that was already checked in stays "used" (checkedIn) either way.
+// past-night cleanup. A code that was already checked in stays "used" (checkedIn) either way.
 function cancelBarReservation(orderNumber, closeAs) {
     return whenAuthReady().then(function(user) {
         if (!user || !firestoreDb) throw barError('bar/signed-out');
@@ -299,12 +295,12 @@ function cancelBarReservation(orderNumber, closeAs) {
                 var count = x.countSnap.exists ? (x.countSnap.data().count || 0) : 0;
                 if (res.checkinCode) {
                     t.update(firestoreDb.collection('barCheckins').doc(res.checkinCode), {
-                        status: closeAs === 'expired' || closeAs === 'noshow' ? closeAs : 'cancelled',
+                        status: closeAs === 'expired' ? 'expired' : 'cancelled',
                         closedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
                 t.delete(resRef);
-                // after a no-show the table may already be released (or booked by someone else)
+                // only remove the lock if it is this reservation's own
                 if (x.lockSnap.exists && String(x.lockSnap.data().orderNumber) === String(orderNumber)) t.delete(x.lockRef);
                 t.set(countRef, {
                     count: Math.max(0, count - 1),
@@ -321,24 +317,23 @@ function cancelBarReservation(orderNumber, closeAs) {
 }
 window.cancelBarReservation = cancelBarReservation;
 
-// Reservations that no longer hold a table: past dates, and no-shows (not checked in 2 hours after
-// the reserved time). Cancel the user's own ones (frees their counter; the code is closed as
-// "expired" for a checked-in guest, "noshow" otherwise, so it stays in the profile's Registros).
-function barHoldsNoTable(r, today) {
-    return !!(r.date && r.date < today) || barIsNoShow(r);
+// Reservations whose night is over (after 6:00 AM Mexicali the next morning) no longer hold a table
+// and don't count against the 2-table limit. Cancel the user's own ones (frees their counter; the code
+// is closed as "expired" so it stays in the profile's Registros: verified or "No verificada").
+function barHoldsNoTable(r) {
+    return barIsPastNight(r);
 }
 function cancelPastReservations(uid) {
-    var today = localDateString(new Date());
     return getMyReservations(uid).then(function(list) {
-        var past = list.filter(function(r) { return barHoldsNoTable(r, today); });
+        var past = list.filter(function(r) { return barHoldsNoTable(r); });
         return past.reduce(function(p, r) {
             return p.then(function() {
-                return cancelBarReservation(r.orderNumber, r.checkedIn ? 'expired' : 'noshow').catch(function(err) {
+                return cancelBarReservation(r.orderNumber, 'expired').catch(function(err) {
                     console.warn('Could not clear past reservation', r.orderNumber, err && err.code);
                 });
             });
         }, Promise.resolve()).then(function() {
-            return list.filter(function(r) { return !barHoldsNoTable(r, today); });
+            return list.filter(function(r) { return !barHoldsNoTable(r); });
         });
     });
 }
@@ -349,8 +344,7 @@ function bookTableInFirestore(user, formData) {
     var lockRef = firestoreDb.collection('barTableLocks').doc(barLockId(formData.date, table));
     var countRef = firestoreDb.collection('barUserCounts').doc(user.uid);
     var attempts = 0;
-    var releaseTried = false;
-    var deadlineAt = firebase.firestore.Timestamp.fromMillis(barDeadlineMs(formData.date, formData.time));
+    var validUntil = firebase.firestore.Timestamp.fromMillis(barNightEndMs(formData.date));
     function attempt() {
         attempts++;
         var orderNumber = String(Math.floor(100000 + Math.random() * 900000));
@@ -358,10 +352,7 @@ function bookTableInFirestore(user, formData) {
         return firestoreDb.runTransaction(function(t) {
             return Promise.all([t.get(lockRef), t.get(countRef), t.get(resRef)]).then(function(snaps) {
                 if (snaps[0].exists) {
-                    var lock = snaps[0].data();
-                    // the guest holding it never arrived (2 h after their time): try to release it (the rules decide)
-                    if (!releaseTried && barIsNoShow(lock)) throw barError('bar/stale-lock', { orderNumber: lock.orderNumber });
-                    throw barError('bar/table-taken', { orderNumber: lock.orderNumber });
+                    throw barError('bar/table-taken', { orderNumber: snaps[0].data().orderNumber });
                 }
                 var count = snaps[1].exists ? (snaps[1].data().count || 0) : 0;
                 if (count >= MAX_TABLES_PER_ACCOUNT) throw barError('bar/limit');
@@ -378,22 +369,13 @@ function bookTableInFirestore(user, formData) {
                     table: table,
                     status: 'active',
                     createdAt: ts,
-                    deadlineAt: deadlineAt
+                    validUntil: validUntil
                 });
-                t.set(lockRef, { date: formData.date, table: table, time: formData.time, orderNumber: orderNumber, createdAt: ts, deadlineAt: deadlineAt });
+                t.set(lockRef, { date: formData.date, table: table, time: formData.time, orderNumber: orderNumber, createdAt: ts, validUntil: validUntil });
                 t.set(countRef, { count: count + 1, lastOrder: orderNumber, updatedAt: ts });
                 return orderNumber;
             });
         }).catch(function(err) {
-            if (err && err.code === 'bar/stale-lock') {
-                releaseTried = true;
-                return lockRef.delete().then(function() {
-                    invalidateTableLocks(formData.date);
-                    return attempt();
-                }, function() {
-                    throw barError('bar/table-taken', { orderNumber: err.orderNumber });
-                });
-            }
             // Random order number already used (by someone else it reads as permission-denied): pick another
             var retry = err && (err.code === 'bar/order-number-taken' || (err.code === 'permission-denied' && attempts < 2));
             if (retry && attempts < 5) return attempt();
@@ -424,7 +406,7 @@ function hideReservationMessage(kind) {
     el.setAttribute('data-kind', '');
 }
 
-// Show the limit message as soon as a signed-in user already holds 2 tables (today or later)
+// Show the limit message as soon as a signed-in user already holds 2 tables (nights not over yet)
 function updateReservationLimitNotice() {
     if (!document.getElementById('reservationForm')) return;
     var user = JSON.parse(localStorage.getItem('currentUser')) || null;
@@ -438,9 +420,8 @@ function updateReservationLimitNotice() {
         hideReservationMessage('limit');
         return;
     }
-    var today = localDateString(new Date());
     getMyReservations(fbUser.uid).then(function(list) {
-        var active = list.filter(function(r) { return !barHoldsNoTable(r, today); });
+        var active = list.filter(function(r) { return !barHoldsNoTable(r); });
         if (active.length >= MAX_TABLES_PER_ACCOUNT) {
             showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
         } else {
@@ -539,7 +520,7 @@ if (reservationForm) {
         } else if (code === 'permission-denied') {
             // The database refused the booking: most likely the per-account limit
             getMyReservations(fbUser.uid).then(function(list) {
-                if (list.length >= MAX_TABLES_PER_ACCOUNT) {
+                if (list.filter(function(r) { return !barHoldsNoTable(r); }).length >= MAX_TABLES_PER_ACCOUNT) {
                     showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
                 } else {
                     alert('Lo sentimos, no pudimos guardar tu reservación. Recarga la página y vuelve a intentarlo.');
