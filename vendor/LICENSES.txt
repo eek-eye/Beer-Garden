@@ -1,11 +1,10 @@
-Third-party files in this folder (both MIT License):
+Third-party files in this folder (MIT License):
 
-qrcode.js  - qrcode-generator 2.0.4, Copyright (c) 2009 Kazuhiko Arase, https://github.com/kazuhikoarase/qrcode-generator
-qr-scanner.umd.min.js, qr-scanner-worker.min.js - qr-scanner 1.4.2, https://github.com/nimiq/qr-scanner
+qrcode.js - qrcode-generator 2.0.4, https://github.com/kazuhikoarase/qrcode-generator
 
 MIT License
 
-Copyright (c) 2017 Nimiq, danimoh
+Copyright (c) 2009 Kazuhiko Arase
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

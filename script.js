@@ -1001,17 +1001,6 @@ var firebaseApp = null;
 var firebaseAuth = null;
 var accountSetupInProgress = false;
 
-// Where to go after signing in: the profile, or back to /verificar when staff came from there
-// (the flag is set by the /verificar login button and only lives while the login page is open)
-function afterLoginUrl() {
-    var next = null;
-    try { next = sessionStorage.getItem('barAfterLogin'); } catch (e) {}
-    return next === '/verificar' ? '/verificar' : '/profile';
-}
-if (!/(^|\/)login(\.html)?$/.test(window.location.pathname || '')) {
-    try { sessionStorage.removeItem('barAfterLogin'); } catch (e) {}
-}
-
 function isLoginPage() {
     return /(^|\/)login(\.html)?$/.test(window.location.pathname || '');
 }
@@ -1046,7 +1035,7 @@ function onSocialSignedIn(user, providerName) {
     var u = saveFirebaseUser(user);
     if (!u) return;
     if (isLoginPage()) {
-        window.location.href = afterLoginUrl();
+        window.location.href = '/profile';
         return;
     }
     if (typeof closeAuthModal === 'function') closeAuthModal();
@@ -1107,7 +1096,7 @@ function initFirebaseAuth() {
             checkLoginStatus();
             // (sign-up / account migration redirect themselves once the name is saved)
             if (isLoginPage() && !accountSetupInProgress) {
-                window.location.href = afterLoginUrl();
+                window.location.href = '/profile';
             }
         } else {
             // Not signed in to Firebase: drop any stored session, including old browser-only
@@ -1403,7 +1392,7 @@ function handleLogin(email, password) {
             .then(function() {
                 if (!document.getElementById('authModal')) {
                     showLoginPageMessage('Sesión iniciada. Redirigiendo…');
-                    window.location.href = afterLoginUrl();
+                    window.location.href = '/profile';
                     return;
                 }
                 closeAuthModal();
@@ -1440,7 +1429,7 @@ function handleLogin(email, password) {
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             if (!document.getElementById('authModal')) {
                 showLoginPageMessage('Sesión iniciada. Redirigiendo…');
-                window.location.href = afterLoginUrl();
+                window.location.href = '/profile';
                 return;
             }
             closeAuthModal();
@@ -1469,7 +1458,7 @@ function migrateLegacyAccount(legacy, email, password) {
             localStorage.setItem('userAccounts', JSON.stringify(accounts));
             if (!document.getElementById('authModal')) {
                 showLoginPageMessage('Sesión iniciada. Redirigiendo…');
-                window.location.href = afterLoginUrl();
+                window.location.href = '/profile';
                 return;
             }
             closeAuthModal();
@@ -1517,7 +1506,7 @@ function createAccountAndLogIn(firstName, lastName, email, password) {
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
     if (!document.getElementById('authModal')) {
         showLoginPageMessage('Cuenta creada. Redirigiendo…');
-        window.location.href = afterLoginUrl();
+        window.location.href = '/profile';
         return true;
     }
     closeAuthModal();
@@ -1543,7 +1532,7 @@ function handleSignup(firstName, lastName, email, password) {
                 accountSetupInProgress = false;
                 if (!document.getElementById('authModal')) {
                     showLoginPageMessage('Cuenta creada. Redirigiendo…');
-                    window.location.href = afterLoginUrl();
+                    window.location.href = '/profile';
                     return;
                 }
                 closeAuthModal();

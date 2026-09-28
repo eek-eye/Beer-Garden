@@ -62,16 +62,6 @@
         }
     }
 
-    function formatTimeEs(ts) {
-        var d = ts && typeof ts.toDate === 'function' ? ts.toDate() : (ts instanceof Date ? ts : null);
-        if (!d) return '';
-        try {
-            return d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: TZ });
-        } catch (e) {
-            return d.toTimeString().slice(0, 5);
-        }
-    }
-
     function tableLabel(t) {
         var n = parseInt(t, 10);
         return n <= 4 ? 'Mesa VIP ' + n : 'Mesa ' + n;
@@ -195,7 +185,6 @@
         shortCode: shortCode,
         serviceDate: serviceDate,
         formatDateEs: formatDateEs,
-        formatTimeEs: formatTimeEs,
         tableLabel: tableLabel,
         qrSvg: qrSvg,
         renderQr: renderQr,
