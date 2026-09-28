@@ -135,3 +135,42 @@
 
     start();
 })();
+
+/* Reviews row (#reviews): scroll-snap track, swipe is native scrolling.
+ * The arrows scroll one card at a time and are disabled at either end. */
+(function () {
+    'use strict';
+    var box = document.querySelector('.reviews-slider');
+    if (!box) return;
+    var track = box.querySelector('.reviews-track');
+    var prev = box.querySelector('.reviews-prev');
+    var next = box.querySelector('.reviews-next');
+    if (!track || !prev || !next) return;
+
+    function step() {
+        var card = track.querySelector('.review-card');
+        if (!card) return track.clientWidth;
+        var gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap) || 0;
+        return card.getBoundingClientRect().width + gap;
+    }
+
+    function update() {
+        var max = track.scrollWidth - track.clientWidth - 2;
+        prev.disabled = track.scrollLeft <= 2;
+        next.disabled = track.scrollLeft >= max;
+    }
+
+    prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: 'smooth' }); });
+    next.addEventListener('click', function () { track.scrollBy({ left: step(), behavior: 'smooth' }); });
+    track.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight') { e.preventDefault(); track.scrollBy({ left: step(), behavior: 'smooth' }); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); track.scrollBy({ left: -step(), behavior: 'smooth' }); }
+    });
+    var t = null;
+    track.addEventListener('scroll', function () {
+        if (t) return;
+        t = setTimeout(function () { t = null; update(); }, 80);
+    }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+})();

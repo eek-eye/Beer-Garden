@@ -1732,6 +1732,7 @@ textarea {
 /* ---------- Section headings: gold rule with a red 福 diamond ---------- */
 .reservations h2,
 .contact h2,
+.reviews h2,
 .cancellation h2,
 .login-page-title,
 .profile-section h2 {
@@ -1748,6 +1749,7 @@ textarea {
 
 .reservations h2::before,
 .contact h2::before,
+.reviews h2::before,
 .cancellation h2::before,
 .login-page-title::before,
 .profile-section h2::before {
@@ -1765,6 +1767,7 @@ textarea {
 
 .reservations h2::after,
 .contact h2::after,
+.reviews h2::after,
 .cancellation h2::after,
 .login-page-title::after,
 .profile-section h2::after {
@@ -2282,6 +2285,7 @@ textarea {
 
     .reservations h2,
     .contact h2,
+    .reviews h2,
     .cancellation h2,
     .profile-section h2 {
         font-size: 1.9rem;
@@ -3094,6 +3098,7 @@ body {
 /* ---------- Headings: bold, uppercase, neon ---------- */
 .reservations h2,
 .contact h2,
+.reviews h2,
 .cancellation h2,
 .login-page-title,
 .profile-section h2 {
@@ -3106,6 +3111,7 @@ body {
 
 .reservations h2:hover,
 .contact h2:hover,
+.reviews h2:hover,
 .cancellation h2:hover,
 .login-page-title:hover,
 .profile-section h2:hover {
@@ -3508,6 +3514,7 @@ body {
     .club-eq span,
     .reservations h2:hover,
     .contact h2:hover,
+    .reviews h2:hover,
     .cancellation h2:hover,
     .login-page-title:hover,
     .profile-section h2:hover {
@@ -5056,4 +5063,380 @@ body {
 /* While the cookie notice is open, the footer gets extra room so nothing stays hidden under it */
 html.cookie-banner-open .footer {
     padding-bottom: calc(2rem + var(--cookie-banner-space, 180px));
+}
+
+/* ==========================================================================
+   Reviews (index.html #reviews): real Google Maps reviews, static HTML.
+   Red / black / gold neon cards in a scroll-snap row: arrows on desktop,
+   native swipe on phones. Heading "Reviews" is the only English on the site.
+   ========================================================================== */
+.reviews {
+    padding: 80px 0 72px;
+    color: #f6eadb;
+    background:
+        var(--cn-lattice),
+        radial-gradient(ellipse at 50% 0%, rgba(212, 160, 23, 0.16) 0%, rgba(6, 4, 7, 0) 58%),
+        radial-gradient(ellipse at 0% 100%, rgba(255, 35, 64, 0.2) 0%, rgba(6, 4, 7, 0) 55%),
+        #070405;
+    background-size: 60px 60px, 100% 100%, 100% 100%, auto;
+    border-top: 14px solid transparent;
+    border-image: var(--cn-band) 14 0 0 0 / 14px 0 0 0 repeat;
+    position: relative;
+}
+
+.reviews h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1.4rem;
+    color: #fff6dc;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.5), 0 0 12px rgba(242, 193, 78, 0.9), 0 0 26px rgba(255, 35, 64, 0.65), 0 0 44px rgba(255, 35, 64, 0.4);
+}
+
+.reviews-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px 12px;
+    margin: 0 auto 2.2rem;
+    color: #e9d9c2;
+    font-size: 1.05rem;
+}
+
+.reviews-score {
+    font-family: var(--cn-font-display);
+    font-size: 2.1rem;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--cn-gold-light);
+    text-shadow: 0 0 10px rgba(242, 193, 78, 0.7), 0 0 22px rgba(255, 35, 64, 0.45);
+}
+
+/* Partial stars: gold layer clipped to --rating / 5 over a dim row */
+.reviews-meter {
+    position: relative;
+    display: inline-block;
+    font-size: 1.45rem;
+    line-height: 1;
+    letter-spacing: 2px;
+    color: rgba(242, 193, 78, 0.22);
+}
+
+.reviews-meter::before {
+    content: '★★★★★';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(var(--rating, 0) / 5 * 100%);
+    overflow: hidden;
+    white-space: nowrap;
+    color: var(--cn-gold-light);
+    text-shadow: 0 0 8px rgba(242, 193, 78, 0.75);
+}
+
+.reviews-count {
+    letter-spacing: 0.02em;
+}
+
+.reviews-slider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.reviews-track {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    gap: 22px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding: 10px 4px 18px;
+    scroll-padding: 0 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 160, 23, 0.6) transparent;
+}
+
+.reviews-track:focus-visible {
+    outline: 2px solid var(--cn-gold-light);
+    outline-offset: 4px;
+    border-radius: 8px;
+}
+
+.reviews-track::-webkit-scrollbar {
+    height: 6px;
+}
+
+.reviews-track::-webkit-scrollbar-thumb {
+    background: rgba(212, 160, 23, 0.55);
+    border-radius: 3px;
+}
+
+.review-card {
+    flex: 0 0 calc((100% - 44px) / 3);
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px 22px 18px;
+    border-radius: 8px;
+    background: linear-gradient(165deg, rgba(120, 10, 20, 0.42) 0%, rgba(14, 8, 10, 0.92) 55%, rgba(8, 5, 6, 0.96) 100%);
+    border: 1px solid rgba(212, 160, 23, 0.55);
+    border-top: 3px solid var(--cn-gold);
+    box-shadow: 0 0 0 1px rgba(255, 35, 64, 0.18), 0 0 20px rgba(255, 35, 64, 0.22), 0 14px 30px rgba(0, 0, 0, 0.55), inset 0 0 30px rgba(212, 160, 23, 0.05);
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.review-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 0 1px rgba(242, 193, 78, 0.45), 0 0 28px rgba(255, 35, 64, 0.4), 0 14px 30px rgba(0, 0, 0, 0.55);
+}
+
+.review-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.review-avatar {
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--cn-font-display);
+    font-weight: 900;
+    font-size: 1.15rem;
+    color: #2a0406;
+    background: radial-gradient(circle at 35% 30%, #ffe08a 0%, var(--cn-gold) 60%, #8a6408 100%);
+    box-shadow: 0 0 0 2px #7a0a0f, 0 0 12px rgba(242, 193, 78, 0.55);
+}
+
+.review-who {
+    min-width: 0;
+}
+
+.review-name {
+    margin: 0;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #fff3dc;
+    letter-spacing: 0.02em;
+}
+
+.review-source {
+    margin: 2px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: #cdb89c;
+}
+
+.review-g {
+    flex: 0 0 auto;
+    background: #ffffff;
+    border-radius: 50%;
+    padding: 2px;
+    box-sizing: content-box;
+}
+
+.review-stars {
+    display: flex;
+    gap: 3px;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.review-stars .is-on {
+    color: var(--cn-gold-light);
+    text-shadow: 0 0 8px rgba(242, 193, 78, 0.75);
+}
+
+.review-stars .is-off {
+    color: rgba(242, 193, 78, 0.22);
+}
+
+.review-text {
+    margin: 0;
+    flex: 1;
+    color: #eee0cc;
+    line-height: 1.6;
+    font-size: 0.98rem;
+    position: relative;
+    padding-left: 14px;
+    border-left: 2px solid rgba(255, 35, 64, 0.7);
+}
+
+.review-text p {
+    margin: 0;
+}
+
+.review-text-empty {
+    color: #b9a58b;
+    font-style: italic;
+    border-left-color: rgba(212, 160, 23, 0.4);
+}
+
+.review-scores {
+    margin: 0;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(212, 160, 23, 0.35);
+    font-size: 0.84rem;
+    color: #d9c19a;
+    letter-spacing: 0.02em;
+}
+
+.reviews-arrow {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--cn-gold);
+    background: rgba(10, 5, 6, 0.85);
+    color: var(--cn-gold-light);
+    font-size: 1.9rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 4px;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(242, 193, 78, 0.35), inset 0 0 8px rgba(255, 35, 64, 0.25);
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+
+.reviews-arrow:hover,
+.reviews-arrow:focus-visible {
+    background: var(--cn-red);
+    color: #fff8e7;
+    box-shadow: 0 0 12px rgba(255, 35, 64, 0.8), 0 0 26px rgba(242, 193, 78, 0.35);
+    outline: none;
+}
+
+.reviews-arrow:disabled {
+    opacity: 0.3;
+    cursor: default;
+    box-shadow: none;
+    background: rgba(10, 5, 6, 0.85);
+    color: var(--cn-gold-light);
+}
+
+.reviews-note {
+    margin: 1.2rem auto 0;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #a8957c;
+}
+
+.reviews-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 1.6rem;
+}
+
+.reviews-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.reviews-actions .reviews-write {
+    background: linear-gradient(135deg, #e0162f 0%, #b0121b 55%, #6d0009 100%);
+    border: 2px solid var(--cn-gold);
+    box-shadow: 0 0 10px rgba(255, 35, 64, 0.6), 0 0 22px rgba(242, 193, 78, 0.25), inset 0 0 10px rgba(255, 255, 255, 0.15);
+}
+
+.reviews-actions .reviews-write:hover,
+.reviews-actions .reviews-write:focus-visible {
+    background: linear-gradient(135deg, #ff2340 0%, #d0161f 55%, #8b0010 100%);
+    border-color: var(--cn-gold-light);
+}
+
+.reviews-actions .reviews-all {
+    color: var(--cn-gold-light);
+    border: 2px solid var(--cn-gold);
+    background: rgba(10, 5, 6, 0.7);
+    box-shadow: 0 0 8px rgba(242, 193, 78, 0.4), inset 0 0 8px rgba(242, 193, 78, 0.15);
+}
+
+.reviews-actions .reviews-all:hover,
+.reviews-actions .reviews-all:focus-visible {
+    background: rgba(212, 160, 23, 0.18);
+    color: #ffffff;
+    border-color: var(--cn-gold-light);
+    box-shadow: 0 0 12px rgba(242, 193, 78, 0.7), 0 0 26px rgba(255, 35, 64, 0.35);
+}
+
+.review-g-btn {
+    width: 18px;
+    height: 18px;
+}
+
+@media (max-width: 1024px) {
+    .review-card {
+        flex-basis: calc((100% - 22px) / 2);
+    }
+}
+
+@media (max-width: 768px) {
+    .reviews {
+        padding: 56px 0 52px;
+    }
+
+    .reviews h2 {
+        font-size: 1.9rem;
+    }
+
+    .reviews-slider {
+        gap: 0;
+    }
+
+    /* Phones: swipe the row; the next card peeks in so it is clear there is more */
+    .reviews-arrow {
+        display: none;
+    }
+
+    .reviews-track {
+        gap: 14px;
+        margin: 0 -20px;
+        padding: 8px 20px 16px;
+        scroll-padding: 0 20px;
+    }
+
+    .review-card {
+        flex-basis: 84%;
+        padding: 18px 18px 16px;
+    }
+
+    .reviews-actions .btn {
+        width: 100%;
+        max-width: 360px;
+        font-size: 0.98rem;
+        letter-spacing: 0.02em;
+        padding-left: 14px;
+        padding-right: 14px;
+        white-space: nowrap;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reviews-track {
+        scroll-behavior: auto;
+    }
+
+    .review-card,
+    .review-card:hover {
+        transition: none;
+        transform: none;
+    }
 }
