@@ -19,6 +19,8 @@ service cloud.firestore {
     //                                  key = lower-case, no accents, single spaces; edited only by the owner
     //   barStaffSessions/{uid}         shared-login sessions: one entry per device with the authorized name
     //                                  typed there; the scanner works for barAdmins accounts only with one
+    //   barStaffPresence/{id}          who has the scanner open (heartbeat), one doc per phone: s_{device} for the
+    //                                  shared login, g_{uid}_{device} for Google staff; read only by the owner
     //
     // Booking = one transaction/batch that creates the reservation + its lock and
     // increments the counter. Cancelling = one batch that deletes the reservation +
@@ -381,6 +383,52 @@ service cloud.firestore {
           )
         );
 
+      allow delete: if barOwner();
+    }
+
+    // Presence heartbeat: { kind, uid, device, ref, name, online, lastSeen }. lastSeen is always server time.
+    // Shared login (s_{device}): ref/name must be this device's session entry; "online" also needs the entry
+    // to be fresh and the name still on the list. Google staff (g_{uid}_{device}): ref = own email.
+    function barPresenceShapeOk() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['kind', 'uid', 'device', 'ref', 'name', 'online', 'lastSeen'])
+        && d.keys().hasAll(['kind', 'uid', 'device', 'ref', 'name', 'online', 'lastSeen'])
+        && d.uid == request.auth.uid
+        && d.device is string && d.device.matches('^[A-Za-z0-9]{16,40}$')
+        && d.ref is string && d.name is string && d.name.size() <= 100
+        && d.online is bool
+        && d.lastSeen == request.time;
+    }
+
+    function barPresenceSharedOk(pid) {
+      let d = request.resource.data;
+      let s = get(barSessionPath(request.auth.uid)).data;
+      return d.kind == 'shared'
+        && pid == 's_' + d.device
+        && barIsSharedAccount()
+        && exists(barSessionPath(request.auth.uid))
+        && d.device in s.devices
+        && d.ref == s.devices[d.device].nameKey
+        && d.name == s.devices[d.device].name
+        && (d.online == false || (
+          s.devices[d.device].at + duration.value(16, 'h') > request.time
+          && exists(barNamePath(d.ref))
+        ));
+    }
+
+    function barPresenceGoogleOk(pid) {
+      let d = request.resource.data;
+      return d.kind == 'google'
+        && barGoogleVerified()
+        && pid == 'g_' + request.auth.uid + '_' + d.device
+        && d.ref == request.auth.token.email.lower()
+        && (d.online == false || barGoogleStaff());
+    }
+
+    match /barStaffPresence/{pid} {
+      allow get, list: if barOwner();
+      allow create, update: if signedIn() && barPresenceShapeOk()
+        && (barPresenceSharedOk(pid) || barPresenceGoogleOk(pid));
       allow delete: if barOwner();
     }
 
