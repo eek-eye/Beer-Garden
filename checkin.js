@@ -2,8 +2,12 @@
  * QR check-in codes for reservations (Bar Chinesca Mxli)
  *
  *   barReservations/{orderNumber}.checkinCode = "BC-XXXXX-YYYYYYYYYYYYYYYY"
- *   barCheckins/{code}  { code, short, orderNumber, uid, date, time, guests, table,
- *                         status: active|cancelled|expired, checkedIn, checkedInAt, checkedInBy }
+ *   barCheckins/{code}  { code, short, orderNumber, uid, date, time, guests, table, deadlineAt,
+ *                         status: active|cancelled|expired|noshow, checkedIn, checkedInAt, checkedInBy }
+ *
+ * Arrival window: from 00:00 (Mexicali) of the reservation day until 2 hours after the reserved
+ * time (window.barArrival in script.js, same calculation as the Firestore rules). The profile and
+ * the booking confirmation show a countdown to that deadline ("Tiempo para llegar").
  *
  * The code is random (5 + 16 characters from a 31-letter alphabet, ~100 bits): it can't be
  * guessed from the order number. The owner attaches it right after booking (or later, the first
@@ -16,7 +20,6 @@
     var ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'; // no 0/O/1/I/L
     var CODE_RE = /^BC-[2-9A-HJKMNP-Z]{5}-[2-9A-HJKMNP-Z]{16}$/;
     var TZ = 'America/Tijuana'; // Mexicali
-    var NIGHT_ENDS_HOUR = 6;   // until 6 AM a check-in still counts for the previous night
 
     function randomChars(n) {
         var out = '';
@@ -36,9 +39,9 @@
         return code ? String(code).slice(0, 8) : '';
     }
 
-    // YYYY-MM-DD in Mexicali, `hoursBack` hours ago
-    function mexicaliDate(hoursBack) {
-        var d = new Date(Date.now() - (hoursBack || 0) * 3600000);
+    // YYYY-MM-DD in Mexicali at `ms` (default: now)
+    function mexicaliDate(ms) {
+        var d = new Date(ms == null ? Date.now() : ms);
         try {
             return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
         } catch (e) {
@@ -46,9 +49,96 @@
         }
     }
 
-    // The bar's "night": a 1:30 AM check-in belongs to the reservation of the evening before
-    function serviceDate() {
-        return mexicaliDate(NIGHT_ENDS_HOUR);
+    function arrival() {
+        return window.barArrival || null;
+    }
+
+    // Deadline (ms) of a reservation / code: reserved time + 2 h, Mexicali
+    function deadlineOf(res) {
+        var a = arrival();
+        return a ? a.resDeadlineMs(res) : NaN;
+    }
+
+    function isNoShow(res) {
+        var a = arrival();
+        return !!(a && a.isNoShow(res));
+    }
+
+    // "10:00 p.m." / "1:00 a.m." (Mexicali time)
+    function formatClockEs(ms) {
+        var h, m;
+        try {
+            var parts = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(ms));
+            parts.forEach(function (p) { if (p.type === 'hour') h = +p.value; if (p.type === 'minute') m = p.value; });
+        } catch (e) {
+            var d = new Date(ms); h = d.getHours(); m = String(d.getMinutes()).padStart(2, '0');
+        }
+        h = h % 24;
+        return (h % 12 === 0 ? 12 : h % 12) + ':' + m + ' ' + (h < 12 ? 'a.m.' : 'p.m.');
+    }
+
+    // "a las 10:00 p.m." / "a la 1:00 a.m."
+    function atClockEs(ms) {
+        var c = formatClockEs(ms);
+        return (/^1:/.test(c) ? 'a la ' : 'a las ') + c;
+    }
+
+    // "3 h 12 min 05 s" (with days when it's more than 24 h away)
+    function formatCountdown(ms) {
+        var total = Math.max(0, Math.floor(ms / 1000));
+        var d = Math.floor(total / 86400), h = Math.floor(total % 86400 / 3600);
+        var min = Math.floor(total % 3600 / 60), sec = total % 60;
+        var pad = function (n) { return String(n).padStart(2, '0'); };
+        var out = pad(min) + ' min ' + pad(sec) + ' s';
+        if (d > 0) return d + (d === 1 ? ' día ' : ' días ') + h + ' h ' + out;
+        if (h > 0) return h + ' h ' + out;
+        return out;
+    }
+
+    // "Tu mesa se libera a las 10:00 p.m. si no llegas." (+ the day when it isn't today)
+    function releaseNote(deadline) {
+        var day = mexicaliDate(deadline);
+        var when = atClockEs(deadline);
+        if (day !== mexicaliDate()) {
+            var p = day.split('-');
+            var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2], 12));
+            try { when += ' del ' + d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).replace(',', ''); } catch (e) { when += ' del ' + day; }
+        }
+        return 'Tu mesa se libera ' + when + ' si no llegas.';
+    }
+
+    // ---- countdown: one ticker for every .arrival-timer[data-deadline] on the page ----
+    var ticker = null;
+    function tickTimers() {
+        var now = Date.now();
+        var timers = document.querySelectorAll('.arrival-timer[data-deadline]:not(.is-expired):not(.is-stopped)');
+        Array.prototype.forEach.call(timers, function (el) {
+            var left = +el.getAttribute('data-deadline') - now;
+            var value = el.querySelector('.arrival-timer-value');
+            if (left > 0) {
+                if (value) value.textContent = formatCountdown(left);
+                return;
+            }
+            el.classList.add('is-expired');
+            el.querySelector('.arrival-timer-label').textContent = 'Vencida';
+            el.querySelector('.arrival-timer-note').textContent = 'Pasaron 2 horas de la hora reservada: la mesa se liberó.';
+            el.dispatchEvent(new CustomEvent('bar:deadline', { bubbles: true }));
+        });
+        if (!timers.length && ticker) { clearInterval(ticker); ticker = null; }
+    }
+    function startTicker() {
+        if (!ticker) ticker = setInterval(tickTimers, 1000);
+        tickTimers();
+    }
+
+    // HTML of a countdown for a reservation (call startTimers() after inserting it)
+    function timerHtml(res) {
+        var deadline = deadlineOf(res);
+        if (!isFinite(deadline)) return '';
+        return '<div class="arrival-timer" data-deadline="' + deadline + '" role="timer" aria-live="off">' +
+            '<p class="arrival-timer-label">Tiempo para llegar: <span class="arrival-timer-value">' + formatCountdown(deadline - Date.now()) + '</span></p>' +
+            '<p class="arrival-timer-note">' + releaseNote(deadline) + '</p>' +
+            '</div>';
     }
 
     function formatDateEs(date) {
@@ -99,8 +189,9 @@
         var user = currentFirebaseUser();
         var store = db();
         if (!user || !store || res.uid !== user.uid || !res.orderNumber) return Promise.resolve(null);
-        if (!res.date || res.date < serviceDate()) return Promise.resolve(null);
+        if (!res.date || isNoShow(res) || res.checkedIn) return Promise.resolve(null);
         var code = newCheckinCode();
+        var deadline = deadlineOf(res);
         var resRef = store.collection('barReservations').doc(String(res.orderNumber));
         var batch = store.batch();
         batch.update(resRef, { checkinCode: code });
@@ -115,7 +206,8 @@
             table: parseInt(res.table, 10),
             status: 'active',
             checkedIn: false,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            deadlineAt: firebase.firestore.Timestamp.fromMillis(deadline)
         });
         return batch.commit().then(function () {
             res.checkinCode = code;
@@ -148,6 +240,7 @@
                 '<div class="checkin-qr checkin-qr-large"><p class="checkin-qr-loading">Generando tu código QR…</p></div>' +
                 '<p class="checkin-code"></p>' +
                 '<p class="checkin-dialog-details"></p>' +
+                '<div class="checkin-dialog-timer"></div>' +
                 '<p class="checkin-dialog-hint">También lo encuentras en <a href="/profile">tu perfil</a>.</p>' +
                 '<button type="button" class="btn btn-primary checkin-dialog-close">Listo</button>';
             document.body.appendChild(dlg);
@@ -162,6 +255,8 @@
         dlg.querySelector('.checkin-dialog-details').textContent =
             'Orden ' + res.orderNumber + ' · ' + tableLabel(res.table) + ' · ' + formatDateEs(res.date) + ' · ' + res.time + ' · ' +
             res.guests + (String(res.guests) === '1' ? ' persona' : ' personas');
+        dlg.querySelector('.checkin-dialog-timer').innerHTML = timerHtml(res);
+        startTicker();
         if (!dlg.open) {
             if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
         }
@@ -183,7 +278,14 @@
         CODE_RE: CODE_RE,
         newCode: newCheckinCode,
         shortCode: shortCode,
-        serviceDate: serviceDate,
+        mexicaliDate: mexicaliDate,
+        deadlineOf: deadlineOf,
+        isNoShow: isNoShow,
+        formatClockEs: formatClockEs,
+        formatCountdown: formatCountdown,
+        releaseNote: releaseNote,
+        timerHtml: timerHtml,
+        startTimers: startTicker,
         formatDateEs: formatDateEs,
         tableLabel: tableLabel,
         qrSvg: qrSvg,

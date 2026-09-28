@@ -79,6 +79,10 @@
                     </div>
                 </div>
                 <p class="profile-cancel-hint">¿Necesitas cancelar? <a href="/cancel" class="profile-cancel-link">Cancelar una reservación</a></p>
+                <section class="profile-past" id="pastTables" hidden>
+                    <h3 class="profile-past-title">Registros</h3>
+                    <div id="pastTablesList"></div>
+                </section>
                 <p class="profile-logout-wrap"><button class="btn btn-secondary" id="logoutBtn">Cerrar sesión</button></p>
             </div>
         </div>
@@ -108,6 +112,7 @@
     <script src="script.js"></script>
     <script src="vendor/qrcode.js"></script>
     <script src="checkin.js"></script>
+    <script src="confetti.js"></script>
     <script>
         // Profile page: show reservations and logout ONLY when the user is logged in
         document.addEventListener('DOMContentLoaded', function() {
@@ -155,48 +160,88 @@
                 return;
             }
             
-            // This user's reservations from the shared database (barReservations where uid == signed-in user)
+            // This user's reservations from the shared database (barReservations where uid == signed-in user),
+            // kept live with onSnapshot so a check-in at the door shows up right away
             const reservationsList = document.getElementById('reservationsList');
+            const pastSection = document.getElementById('pastTables');
+            const pastList = document.getElementById('pastTablesList');
+            const TZ = 'America/Tijuana'; // Mexicali
+            const CELEBRATE_WINDOW_MS = 12 * 3600000; // only celebrate a check-in from the last 12 hours
             function esc(v) {
                 return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
                     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
                 });
             }
-            function renderReservations(userReservations) {
+            function tableDisplay(t) {
+                return Number(t) <= 4 ? `Mesa VIP ${t}` : `Mesa ${t}`;
+            }
+            function guestsDisplay(g) {
+                return `${g} ${String(g) === '1' ? 'persona' : 'personas'}`;
+            }
+            function whenDisplay(r) {
+                const dateEs = window.barCheckin ? window.barCheckin.formatDateEs(r.date) : (r.date || '');
+                return dateEs ? dateEs.charAt(0).toUpperCase() + dateEs.slice(1) + (r.time ? ' · ' + r.time : '') : '';
+            }
+            function toMillis(ts) {
+                if (!ts) return 0;
+                if (typeof ts.toMillis === 'function') return ts.toMillis();
+                if (typeof ts.seconds === 'number') return ts.seconds * 1000;
+                const n = new Date(ts).getTime();
+                return isNaN(n) ? 0 : n;
+            }
+            function formatTime(ms) {
+                if (!ms) return '';
+                try {
+                    return new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: TZ }).format(new Date(ms));
+                } catch (e) {
+                    const d = new Date(ms);
+                    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+                }
+            }
+            function todayMx() {
+                return window.barCheckin ? window.barCheckin.mexicaliDate() : new Date().toISOString().slice(0, 10);
+            }
+            // Registros = verified at the door, or a no-show (not checked in 2 hours after the reserved time)
+            function isPast(r) {
+                return !!r.checkedIn || !!(window.barCheckin && window.barCheckin.isNoShow(r));
+            }
+
+            // ---- active reservations (QR code, can still be cancelled) ----
+            let activeSig = null;
+            function renderActive(userReservations) {
                 if (!reservationsList) return;
+                const sig = userReservations.map(function(r) { return [r.orderNumber, r.date, r.time, r.table, r.guests, window.barCheckin ? window.barCheckin.deadlineOf(r) : ''].join('|'); }).sort().join(';');
+                if (sig === activeSig) return; // nothing changed (e.g. only the QR code was attached)
+                activeSig = sig;
                 if (userReservations.length === 0) {
                     reservationsList.innerHTML = '<p>No tienes reservaciones.</p>';
                     return;
                 }
-                userReservations.sort((a, b) => new Date(a.date) - new Date(b.date));
+                userReservations.sort((a, b) => String(a.date + ' ' + a.time).localeCompare(String(b.date + ' ' + b.time)));
                 let html = '<div class="reservations-grid profile-cards">';
                 userReservations.forEach(reservation => {
-                    const tableDisplay = reservation.table <= 4 ? 
-                        `Mesa VIP ${reservation.table}` : 
-                        `Mesa ${reservation.table}`;
                     const nameDisplay = reservation.name || (currentUser.firstName && currentUser.lastName ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.email) || '—';
-                    
-                    const upcoming = !!(window.barCheckin && reservation.date && reservation.date >= window.barCheckin.serviceDate());
-                    const dateEs = window.barCheckin ? window.barCheckin.formatDateEs(reservation.date) : '';
-                    const whenDisplay = dateEs ? dateEs.charAt(0).toUpperCase() + dateEs.slice(1) + (reservation.time ? ' · ' + reservation.time : '') : '';
+                    const when = whenDisplay(reservation);
                     html += `
-                        <div class="reservation-card profile-card-simple">
+                        <div class="reservation-card profile-card-simple" data-order="${esc(reservation.orderNumber)}">
                             <div class="profile-card-order">${esc(reservation.orderNumber)}</div>
-                            <div class="profile-card-table">${esc(tableDisplay)}</div>
+                            <div class="profile-card-table">${esc(tableDisplay(reservation.table))}</div>
                             <div class="profile-card-name">${esc(nameDisplay)}</div>
-                            <div class="profile-card-guests">${esc(reservation.guests)} ${reservation.guests === '1' ? 'persona' : 'personas'}</div>
-                            ${whenDisplay ? `<div class="profile-card-when">${esc(whenDisplay)}</div>` : ''}
-                            ${upcoming ? `<div class="profile-card-checkin" data-order="${esc(reservation.orderNumber)}">
+                            <div class="profile-card-guests">${esc(guestsDisplay(reservation.guests))}</div>
+                            ${when ? `<div class="profile-card-when">${esc(when)}</div>` : ''}
+                            ${window.barCheckin ? window.barCheckin.timerHtml(reservation) : ''}
+                            <div class="profile-card-checkin" data-order="${esc(reservation.orderNumber)}">
                                 <p class="profile-card-checkin-title">Código de entrada</p>
                                 <div class="checkin-qr"><p class="checkin-qr-loading">Generando código QR…</p></div>
                                 <p class="checkin-code"></p>
                                 <p class="profile-card-checkin-hint">Muéstralo en la puerta.</p>
-                            </div>` : ''}
+                            </div>
                         </div>
                     `;
                 });
                 html += '</div>';
                 reservationsList.innerHTML = html;
+                if (window.barCheckin) window.barCheckin.startTimers();
                 // QR check-in codes (attached the first time if the reservation has none yet)
                 userReservations.forEach(function(reservation) {
                     const box = reservationsList.querySelector('.profile-card-checkin[data-order="' + String(reservation.orderNumber).replace(/\D/g, '') + '"]');
@@ -206,10 +251,6 @@
                         if (code) {
                             window.barCheckin.renderQr(qr, code);
                             box.querySelector('.checkin-code').textContent = window.barCheckin.shortCode(code);
-                            if (reservation.checkedIn) {
-                                box.classList.add('is-checked-in');
-                                box.querySelector('.profile-card-checkin-hint').textContent = '✓ Ya registrada en la entrada';
-                            }
                         } else {
                             box.classList.add('is-noqr');
                             qr.innerHTML = '<p class="checkin-noqr"><strong>Sin QR por ahora.</strong> En la entrada da tu número de orden: <strong>' + esc(reservation.orderNumber) + '</strong>.</p>';
@@ -217,10 +258,128 @@
                     });
                 });
             }
-            if (typeof whenAuthReady === 'function' && typeof getMyReservations === 'function') {
+
+            // Countdown reached zero: the QR stops working, then the card moves to "Registros"
+            if (reservationsList) reservationsList.addEventListener('bar:deadline', function(e) {
+                const card = e.target.closest('.reservation-card');
+                const box = card && card.querySelector('.profile-card-checkin');
+                if (box) {
+                    box.classList.add('is-expired');
+                    box.innerHTML = '<p class="profile-card-checkin-title">Código vencido</p><p class="profile-card-checkin-hint">Ya no sirve en la entrada.</p>';
+                }
+                setTimeout(function() { activeSig = null; refresh(); }, 4000);
+            });
+
+            // ---- "Registros": verified or no-show tables; no QR, no cancel button ----
+            function renderPast(items) {
+                if (!pastSection || !pastList) return;
+                if (items.length === 0) {
+                    pastSection.hidden = true;
+                    pastList.innerHTML = '';
+                    return;
+                }
+                items.sort((a, b) => String(b.date + ' ' + b.time).localeCompare(String(a.date + ' ' + a.time)));
+                let html = '<div class="reservations-grid profile-cards">';
+                items.forEach(function(r) {
+                    const when = whenDisplay(r);
+                    const at = formatTime(toMillis(r.checkedInAt));
+                    const badge = r.checkedIn
+                        ? `<div class="profile-card-badge is-verified">✓ ${at ? 'Verificada a las ' + esc(at) : 'Verificada'}</div>`
+                        : '<div class="profile-card-badge is-noshow">Cancelada por no presentarse</div>';
+                    html += `
+                        <div class="reservation-card profile-card-simple profile-card-past${r.checkedIn ? ' is-verified' : ' is-noshow'}" data-order="${esc(r.orderNumber)}">
+                            <div class="profile-card-order">${esc(r.orderNumber)}</div>
+                            <div class="profile-card-table">${esc(tableDisplay(r.table))}</div>
+                            <div class="profile-card-guests">${esc(guestsDisplay(r.guests))}</div>
+                            ${when ? `<div class="profile-card-when">${esc(when)}</div>` : ''}
+                            ${badge}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                pastList.innerHTML = html;
+                pastSection.hidden = false;
+            }
+
+            // ---- confetti once per reservation (remembered on this device) ----
+            const celebratedNow = {};
+            let pendingCelebration = null;
+            function celebrateKey(r) {
+                return 'barMesaVerificada:' + r.orderNumber + ':' + (r.date || '');
+            }
+            function alreadyCelebrated(key) {
+                if (celebratedNow[key]) return true;
+                try { return localStorage.getItem(key) === '1'; } catch (e) { return false; }
+            }
+            function rememberCelebrated(key) {
+                celebratedNow[key] = true;
+                try { localStorage.setItem(key, '1'); } catch (e) { /* private mode: remembered for this visit only */ }
+            }
+            function maybeCelebrate(reservations) {
+                reservations.forEach(function(r) {
+                    if (!r.checkedIn) return;
+                    const key = celebrateKey(r);
+                    if (alreadyCelebrated(key)) return;
+                    const at = toMillis(r.checkedInAt);
+                    const recent = at ? (Date.now() - at < CELEBRATE_WINDOW_MS) : (r.date && r.date >= todayMx());
+                    rememberCelebrated(key); // old check-ins are marked too, so they never celebrate later
+                    if (!recent || typeof window.barCelebrate !== 'function') return;
+                    pendingCelebration = r;
+                });
+                flushCelebration();
+            }
+            function flushCelebration() {
+                if (!pendingCelebration || document.hidden) return; // wait until the guest is looking
+                const r = pendingCelebration;
+                pendingCelebration = null;
+                const at = formatTime(toMillis(r.checkedInAt));
+                window.barCelebrate({
+                    title: '¡Mesa verificada!',
+                    message: 'Bienvenido a Bar Chinesca',
+                    detail: tableDisplay(r.table) + ' · Orden ' + r.orderNumber + (at ? ' · ' + at : '')
+                });
+            }
+            document.addEventListener('visibilitychange', flushCelebration);
+
+            // ---- live data: reservations + this guest's own check-in codes (history after cleanup) ----
+            let reservations = [];
+            let checkins = [];
+            let reservationsLoaded = false;
+            function refresh() {
+                if (!reservationsLoaded) return;
+                const active = reservations.filter(function(r) { return !isPast(r); });
+                const past = reservations.filter(isPast);
+                // Codes whose reservation was already removed (cleanup at the next booking): verified or no-show
+                checkins.forEach(function(c) {
+                    const stillThere = reservations.some(function(r) {
+                        return (r.checkinCode && r.checkinCode === c.code) || (String(r.orderNumber) === String(c.orderNumber) && r.date === c.date);
+                    });
+                    if (stillThere) return;
+                    if (c.checkedIn || c.status === 'expired' || c.status === 'noshow') past.push(c);
+                });
+                renderActive(active);
+                renderPast(past);
+                maybeCelebrate(reservations);
+            }
+            if (typeof whenAuthReady === 'function' && typeof firestoreDb !== 'undefined') {
                 whenAuthReady().then(function(user) {
-                    return user ? getMyReservations(user.uid) : [];
-                }).then(renderReservations).catch(function(err) {
+                    if (!user || !firestoreDb) { renderActive([]); return; }
+                    firestoreDb.collection('barReservations').where('uid', '==', user.uid).onSnapshot(function(snap) {
+                        reservations = [];
+                        snap.forEach(function(d) { reservations.push(d.data()); });
+                        reservationsLoaded = true;
+                        refresh();
+                    }, function(err) {
+                        console.warn('Could not load your reservations:', err && err.code);
+                    });
+                    firestoreDb.collection('barCheckins').where('uid', '==', user.uid).onSnapshot(function(snap) {
+                        checkins = [];
+                        snap.forEach(function(d) { checkins.push(d.data()); });
+                        refresh();
+                    }, function(err) {
+                        console.warn('Could not load your past tables:', err && err.code);
+                    });
+                }).catch(function(err) {
                     console.warn('Could not load your reservations:', err && err.code);
                 });
             }

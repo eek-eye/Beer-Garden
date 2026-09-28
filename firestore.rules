@@ -58,6 +58,43 @@ service cloud.firestore {
       return code.matches('^BC-[2-9A-HJKMNP-Z]{5}-[2-9A-HJKMNP-Z]{16}$');
     }
 
+    // ---- Arrival window (Mexicali, America/Tijuana) ----
+    // Mexicali follows US daylight time: UTC-7 from the 2nd Sunday of March until the
+    // 1st Sunday of November, UTC-8 otherwise (decided by the reservation date; the bar
+    // opens at 7 PM, long after the 2 AM switch). Same calculation as checkin.js / the staff app.
+    function barMxOffsetMin(date) {
+      let y = int(date[0:4]);
+      let m = int(date[5:7]);
+      let d = int(date[8:10]);
+      let secondSundayMarch = 8 + (7 - timestamp.date(y, 3, 1).dayOfWeek()) % 7;
+      let firstSundayNovember = 1 + (7 - timestamp.date(y, 11, 1).dayOfWeek()) % 7;
+      return ((m > 3 && m < 11) || (m == 3 && d >= secondSundayMarch) || (m == 11 && d < firstSundayNovember)) ? 420 : 480;
+    }
+
+    // 00:00 Mexicali on the reservation date: arriving early the same day is fine
+    function barDayStart(date) {
+      return timestamp.date(int(date[0:4]), int(date[5:7]), int(date[8:10])) + duration.value(barMxOffsetMin(date), 'm');
+    }
+
+    // The code expires 2 hours after the reserved time (8:00 PM -> valid through 10:00 PM)
+    function barDeadline(date, time) {
+      return barDayStart(date) + duration.value(int(time[0:2]) * 60 + int(time[3:5]) + 120, 'm');
+    }
+
+    // Stored deadline (deadlineAt, written at booking and checked against barDeadline);
+    // bookings made before it existed use the same calculation
+    function barResDeadline(data) {
+      return data.get('deadlineAt', barDeadline(data.date, data.time));
+    }
+
+    function barInArrivalWindow(data) {
+      return request.time >= barDayStart(data.date) && request.time <= barResDeadline(data);
+    }
+
+    function barValidTime(time) {
+      return time is string && time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+    }
+
     function barLockId(date, table) {
       return date + '_' + string(table);
     }
@@ -77,7 +114,7 @@ service cloud.firestore {
     function barValidNewReservation(orderNumber) {
       let d = request.resource.data;
       return d.keys().hasOnly(['orderNumber', 'uid', 'email', 'name', 'date', 'time',
-                               'guests', 'table', 'status', 'createdAt'])
+                               'guests', 'table', 'status', 'createdAt', 'deadlineAt'])
         && d.keys().hasAll(['orderNumber', 'uid', 'email', 'name', 'date', 'time',
                             'guests', 'table', 'status', 'createdAt'])
         && orderNumber.matches('^[0-9]{6}$')
@@ -87,7 +124,10 @@ service cloud.firestore {
         && d.name is string && d.name.size() <= 200
         && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && barDateNotPast(d.date)
-        && d.time is string && d.time.size() <= 10
+        && barValidTime(d.time)
+        && (!('deadlineAt' in d) || d.deadlineAt == barDeadline(d.date, d.time))
+        // an arrival window that is already over can't be booked
+        && barDeadline(d.date, d.time) > request.time
         && d.guests is string && d.guests.size() <= 10
         && d.table is int && d.table >= 1 && d.table <= 50
         && d.status == 'active'
@@ -113,9 +153,11 @@ service cloud.firestore {
         && getAfter(barCountPath(request.auth.uid)).data.lastOrder == orderNumber;
 
       // Cancel: owner deletes the reservation, its lock and decrements the counter together
+      // (after a no-show the lock may already be released, or taken by another booking)
       allow delete: if signedIn()
         && resource.data.uid == request.auth.uid
-        && !existsAfter(barLockPath(barLockId(resource.data.date, resource.data.table)))
+        && (!existsAfter(barLockPath(barLockId(resource.data.date, resource.data.table)))
+            || getAfter(barLockPath(barLockId(resource.data.date, resource.data.table))).data.orderNumber != orderNumber)
         && getAfter(barCountPath(request.auth.uid)).data.count == barCountBefore(request.auth.uid) - 1
         && getAfter(barCountPath(request.auth.uid)).data.lastOrder == orderNumber;
 
@@ -131,11 +173,13 @@ service cloud.firestore {
           && existsAfter(barCheckinPath(request.resource.data.checkinCode))
           && getAfter(barCheckinPath(request.resource.data.checkinCode)).data.orderNumber == orderNumber
         ) ||
-        // (2) staff check the guest in at the door: once only
+        // (2) staff check the guest in at the door: once only, from 00:00 of the reservation
+        //     day until 2 hours after the reserved time
         (
           isAdmin()
           && resource.data.status == 'active'
           && resource.data.get('checkedIn', false) == false
+          && barInArrivalWindow(resource.data)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedIn', 'checkedInAt', 'checkedInBy'])
           && request.resource.data.checkedIn == true
           && request.resource.data.checkedInAt == request.time
@@ -147,12 +191,14 @@ service cloud.firestore {
     match /barCheckins/{code} {
       // The reservation's owner (profile QR) and staff; nobody else can read a code
       allow get: if signedIn() && (isAdmin() || (resource != null && resource.data.uid == request.auth.uid));
-      // Staff can look a code up by its short part (BC-XXXXX typed at the door)
-      allow list: if isAdmin();
+      // Staff can look a code up by its short part (BC-XXXXX typed at the door);
+      // a guest can list only their own codes (profile "Registros" history)
+      allow list: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
 
       // Owner creates the code for one of their own upcoming reservations (same batch sets checkinCode)
       allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['code', 'short', 'orderNumber', 'uid', 'date', 'time', 'guests', 'table', 'status', 'checkedIn', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['code', 'short', 'orderNumber', 'uid', 'date', 'time', 'guests', 'table', 'status', 'checkedIn', 'createdAt', 'deadlineAt'])
+        && (!('deadlineAt' in request.resource.data) || request.resource.data.deadlineAt == barDeadline(request.resource.data.date, request.resource.data.time))
         && request.resource.data.keys().hasAll(['code', 'short', 'orderNumber', 'uid', 'date', 'time', 'guests', 'table', 'status', 'checkedIn', 'createdAt'])
         && barValidCode(code)
         && request.resource.data.code == code
@@ -172,17 +218,19 @@ service cloud.firestore {
         && getAfter(barResPath(request.resource.data.orderNumber)).data.checkinCode == code;
 
       allow update: if signedIn() && (
-        // staff check-in: one time only, active codes only
+        // staff check-in: one time only, active codes only, inside the arrival window
         (
           isAdmin()
           && resource.data.status == 'active'
           && resource.data.checkedIn == false
+          && barInArrivalWindow(resource.data)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedIn', 'checkedInAt', 'checkedInBy'])
           && request.resource.data.checkedIn == true
           && request.resource.data.checkedInAt == request.time
           && request.resource.data.checkedInBy == request.auth.uid
         ) ||
-        // owner closes the code in the same batch that deletes the reservation (cancel / past-date cleanup)
+        // owner closes the code in the same batch that deletes the reservation
+        // (cancel / past-date cleanup / no-show: not checked in 2 hours after the reserved time)
         (
           resource.data.uid == request.auth.uid
           && resource.data.status == 'active'
@@ -190,7 +238,9 @@ service cloud.firestore {
           && request.resource.data.closedAt == request.time
           && !existsAfter(barResPath(resource.data.orderNumber))
           && (request.resource.data.status == 'cancelled'
-              || (request.resource.data.status == 'expired' && barDatePast(resource.data.date)))
+              || (request.resource.data.status == 'expired' && barDatePast(resource.data.date))
+              || (request.resource.data.status == 'noshow' && resource.data.checkedIn == false
+                  && request.time > barResDeadline(resource.data)))
         )
       );
 
@@ -208,7 +258,8 @@ service cloud.firestore {
       allow read: if true;
 
       allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['date', 'table', 'time', 'orderNumber', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['date', 'table', 'time', 'orderNumber', 'createdAt', 'deadlineAt'])
+        && (!('deadlineAt' in request.resource.data) || request.resource.data.deadlineAt == barDeadline(request.resource.data.date, request.resource.data.time))
         && request.resource.data.keys().hasAll(['date', 'table', 'time', 'orderNumber', 'createdAt'])
         && request.resource.data.date is string
         && request.resource.data.table is int
@@ -223,10 +274,18 @@ service cloud.firestore {
         && getAfter(barResPath(request.resource.data.orderNumber)).data.date == request.resource.data.date
         && getAfter(barResPath(request.resource.data.orderNumber)).data.table == request.resource.data.table;
 
-      // Only removed together with the owner's reservation (cancel)
-      allow delete: if signedIn()
-        && get(barResPath(resource.data.orderNumber)).data.uid == request.auth.uid
-        && !existsAfter(barResPath(resource.data.orderNumber));
+      // Removed together with the owner's reservation (cancel), or released by any signed-in
+      // user once the guest is a no-show (not checked in 2 hours after the reserved time)
+      allow delete: if signedIn() && (
+        (
+          get(barResPath(resource.data.orderNumber)).data.uid == request.auth.uid
+          && !existsAfter(barResPath(resource.data.orderNumber))
+        ) || (
+          exists(barResPath(resource.data.orderNumber))
+          && get(barResPath(resource.data.orderNumber)).data.get('checkedIn', false) == false
+          && request.time > barResDeadline(get(barResPath(resource.data.orderNumber)).data)
+        )
+      );
 
       allow update: if false; // a taken table can't be overwritten
     }

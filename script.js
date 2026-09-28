@@ -199,6 +199,49 @@ function barLockId(date, table) {
     return date + '_' + parseInt(table, 10);
 }
 
+// ---- Arrival window (Mexicali, America/Tijuana) ----
+// A reservation's code works from 00:00 of its day (arriving early is fine) until 2 hours after
+// the reserved time (8:00 PM -> through 10:00 PM). After that the guest is a no-show: the code is
+// refused at the door and the table is released. Same calculation as the Firestore rules:
+// Mexicali uses UTC-7 from the 2nd Sunday of March to the 1st Sunday of November, UTC-8 otherwise.
+var BAR_ARRIVAL_GRACE_MS = 2 * 3600000;
+function barMxOffsetHours(date) {
+    var y = +date.slice(0, 4), m = +date.slice(5, 7), d = +date.slice(8, 10);
+    function isoDow(mm, dd) { var w = new Date(Date.UTC(y, mm - 1, dd)).getUTCDay(); return w === 0 ? 7 : w; }
+    var secondSundayMarch = 8 + (7 - isoDow(3, 1)) % 7;
+    var firstSundayNovember = 1 + (7 - isoDow(11, 1)) % 7;
+    return ((m > 3 && m < 11) || (m === 3 && d >= secondSundayMarch) || (m === 11 && d < firstSundayNovember)) ? 7 : 8;
+}
+function barDayStartMs(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return NaN;
+    return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(date), 0);
+}
+function barDeadlineMs(date, time) {
+    var t = /^(\d{1,2}):(\d{2})/.exec(time || '');
+    var minutes = t ? (+t[1]) * 60 + (+t[2]) : 23 * 60 + 59;
+    return barDayStartMs(date) + minutes * 60000 + BAR_ARRIVAL_GRACE_MS;
+}
+// Stored deadline (deadlineAt) when the booking has one, otherwise the same calculation
+function barResDeadlineMs(r) {
+    if (!r) return NaN;
+    if (r.deadlineAt && typeof r.deadlineAt.toMillis === 'function') return r.deadlineAt.toMillis();
+    return barDeadlineMs(r.date, r.time);
+}
+// Not checked in and the arrival window is over
+function barIsNoShow(r, now) {
+    if (!r || r.checkedIn) return false;
+    var dl = barResDeadlineMs(r);
+    return isFinite(dl) && (now || Date.now()) > dl;
+}
+window.barArrival = {
+    GRACE_MS: BAR_ARRIVAL_GRACE_MS,
+    offsetHours: barMxOffsetHours,
+    dayStartMs: barDayStartMs,
+    deadlineMs: barDeadlineMs,
+    resDeadlineMs: barResDeadlineMs,
+    isNoShow: barIsNoShow
+};
+
 // Resolves with the Firebase user (or null) once Firebase has restored the session
 var authReadyResolve;
 var authReadyPromise = new Promise(function(resolve) { authReadyResolve = resolve; });
@@ -243,19 +286,26 @@ function cancelBarReservation(orderNumber, closeAs) {
         var resRef = firestoreDb.collection('barReservations').doc(String(orderNumber));
         var countRef = firestoreDb.collection('barUserCounts').doc(user.uid);
         return firestoreDb.runTransaction(function(t) {
-            return Promise.all([t.get(resRef), t.get(countRef)]).then(function(snaps) {
-                if (!snaps[0].exists) throw barError('bar/not-found');
-                var res = snaps[0].data();
+            return t.get(resRef).then(function(resSnap) {
+                if (!resSnap.exists) throw barError('bar/not-found');
+                var res = resSnap.data();
                 if (res.uid !== user.uid) throw barError('bar/not-found');
-                var count = snaps[1].exists ? (snaps[1].data().count || 0) : 0;
+                var lockRef = firestoreDb.collection('barTableLocks').doc(barLockId(res.date, res.table));
+                return Promise.all([t.get(countRef), t.get(lockRef)]).then(function(snaps) {
+                    return { res: res, countSnap: snaps[0], lockSnap: snaps[1], lockRef: lockRef };
+                });
+            }).then(function(x) {
+                var res = x.res;
+                var count = x.countSnap.exists ? (x.countSnap.data().count || 0) : 0;
                 if (res.checkinCode) {
                     t.update(firestoreDb.collection('barCheckins').doc(res.checkinCode), {
-                        status: closeAs === 'expired' ? 'expired' : 'cancelled',
+                        status: closeAs === 'expired' || closeAs === 'noshow' ? closeAs : 'cancelled',
                         closedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
                 t.delete(resRef);
-                t.delete(firestoreDb.collection('barTableLocks').doc(barLockId(res.date, res.table)));
+                // after a no-show the table may already be released (or booked by someone else)
+                if (x.lockSnap.exists && String(x.lockSnap.data().orderNumber) === String(orderNumber)) t.delete(x.lockRef);
                 t.set(countRef, {
                     count: Math.max(0, count - 1),
                     lastOrder: String(orderNumber),
@@ -271,19 +321,24 @@ function cancelBarReservation(orderNumber, closeAs) {
 }
 window.cancelBarReservation = cancelBarReservation;
 
-// Past-dated reservations no longer hold a table: cancel the user's own ones (frees their counter)
+// Reservations that no longer hold a table: past dates, and no-shows (not checked in 2 hours after
+// the reserved time). Cancel the user's own ones (frees their counter; the code is closed as
+// "expired" for a checked-in guest, "noshow" otherwise, so it stays in the profile's Registros).
+function barHoldsNoTable(r, today) {
+    return !!(r.date && r.date < today) || barIsNoShow(r);
+}
 function cancelPastReservations(uid) {
     var today = localDateString(new Date());
     return getMyReservations(uid).then(function(list) {
-        var past = list.filter(function(r) { return r.date && r.date < today; });
+        var past = list.filter(function(r) { return barHoldsNoTable(r, today); });
         return past.reduce(function(p, r) {
             return p.then(function() {
-                return cancelBarReservation(r.orderNumber, 'expired').catch(function(err) {
+                return cancelBarReservation(r.orderNumber, r.checkedIn ? 'expired' : 'noshow').catch(function(err) {
                     console.warn('Could not clear past reservation', r.orderNumber, err && err.code);
                 });
             });
         }, Promise.resolve()).then(function() {
-            return list.filter(function(r) { return !(r.date && r.date < today); });
+            return list.filter(function(r) { return !barHoldsNoTable(r, today); });
         });
     });
 }
@@ -294,13 +349,20 @@ function bookTableInFirestore(user, formData) {
     var lockRef = firestoreDb.collection('barTableLocks').doc(barLockId(formData.date, table));
     var countRef = firestoreDb.collection('barUserCounts').doc(user.uid);
     var attempts = 0;
+    var releaseTried = false;
+    var deadlineAt = firebase.firestore.Timestamp.fromMillis(barDeadlineMs(formData.date, formData.time));
     function attempt() {
         attempts++;
         var orderNumber = String(Math.floor(100000 + Math.random() * 900000));
         var resRef = firestoreDb.collection('barReservations').doc(orderNumber);
         return firestoreDb.runTransaction(function(t) {
             return Promise.all([t.get(lockRef), t.get(countRef), t.get(resRef)]).then(function(snaps) {
-                if (snaps[0].exists) throw barError('bar/table-taken', { orderNumber: snaps[0].data().orderNumber });
+                if (snaps[0].exists) {
+                    var lock = snaps[0].data();
+                    // the guest holding it never arrived (2 h after their time): try to release it (the rules decide)
+                    if (!releaseTried && barIsNoShow(lock)) throw barError('bar/stale-lock', { orderNumber: lock.orderNumber });
+                    throw barError('bar/table-taken', { orderNumber: lock.orderNumber });
+                }
                 var count = snaps[1].exists ? (snaps[1].data().count || 0) : 0;
                 if (count >= MAX_TABLES_PER_ACCOUNT) throw barError('bar/limit');
                 if (snaps[2].exists) throw barError('bar/order-number-taken');
@@ -315,13 +377,23 @@ function bookTableInFirestore(user, formData) {
                     guests: formData.guests,
                     table: table,
                     status: 'active',
-                    createdAt: ts
+                    createdAt: ts,
+                    deadlineAt: deadlineAt
                 });
-                t.set(lockRef, { date: formData.date, table: table, time: formData.time, orderNumber: orderNumber, createdAt: ts });
+                t.set(lockRef, { date: formData.date, table: table, time: formData.time, orderNumber: orderNumber, createdAt: ts, deadlineAt: deadlineAt });
                 t.set(countRef, { count: count + 1, lastOrder: orderNumber, updatedAt: ts });
                 return orderNumber;
             });
         }).catch(function(err) {
+            if (err && err.code === 'bar/stale-lock') {
+                releaseTried = true;
+                return lockRef.delete().then(function() {
+                    invalidateTableLocks(formData.date);
+                    return attempt();
+                }, function() {
+                    throw barError('bar/table-taken', { orderNumber: err.orderNumber });
+                });
+            }
             // Random order number already used (by someone else it reads as permission-denied): pick another
             var retry = err && (err.code === 'bar/order-number-taken' || (err.code === 'permission-denied' && attempts < 2));
             if (retry && attempts < 5) return attempt();
@@ -368,7 +440,7 @@ function updateReservationLimitNotice() {
     }
     var today = localDateString(new Date());
     getMyReservations(fbUser.uid).then(function(list) {
-        var active = list.filter(function(r) { return !(r.date && r.date < today); });
+        var active = list.filter(function(r) { return !barHoldsNoTable(r, today); });
         if (active.length >= MAX_TABLES_PER_ACCOUNT) {
             showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
         } else {
