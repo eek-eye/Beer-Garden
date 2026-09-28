@@ -11,7 +11,10 @@ service cloud.firestore {
     //   barUserCounts/{uid}            number of reservations the user currently holds (max 2)
     //   barCheckins/{code}             QR check-in code of one reservation (random, unguessable);
     //                                  owner + admins can read it, only admins can check it in
-    //   barAdmins/{uid}                staff allowlist (written only from the Firebase console)
+    //   barAdmins/{uid}                old staff allowlist by account (written only from the Firebase console;
+    //                                  kept for the shared staff login until the owner turns it off)
+    //   barStaffEmails/{email}         staff allowlist by Google email (lower-cased), edited only by the owner
+    //                                  in the staff app's "Personal" panel
     //
     // Booking = one transaction/batch that creates the reservation + its lock and
     // increments the counter. Cancelling = one batch that deletes the reservation +
@@ -38,12 +41,35 @@ service cloud.firestore {
       return /databases/$(database)/documents/barCheckins/$(code);
     }
 
-    // Staff who may verify QR codes at the door: fuchendeonze@gmail.com (verified Google email)
-    // plus anyone with a barAdmins/{uid} document (added by hand in the Firebase console)
+    // The bar's owner: fuchendeonze@gmail.com with a verified email
+    function barOwner() {
+      return signedIn()
+        && request.auth.token.email == 'fuchendeonze@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    // Signed in with Google (not email/password) and Google vouches for the email
+    function barGoogleVerified() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.auth.token.email is string;
+    }
+
+    // Individual staff: the owner added their Google email to barStaffEmails. Counts only for a Google
+    // sign-in with a verified email, so an email/password account created with a staff address gets nothing.
+    function barGoogleStaff() {
+      return barGoogleVerified()
+        && exists(/databases/$(database)/documents/barStaffEmails/$(request.auth.token.email.lower()));
+    }
+
+    // Staff who may verify QR codes at the door: the owner, anyone the owner added in "Personal"
+    // (Google sign-in), plus the old barAdmins/{uid} accounts (added by hand in the Firebase console)
     function isAdmin() {
       return signedIn() && (
-        (request.auth.token.email == 'fuchendeonze@gmail.com' && request.auth.token.email_verified == true)
+        barOwner()
         || exists(/databases/$(database)/documents/barAdmins/$(request.auth.uid))
+        || barGoogleStaff()
       );
     }
 
@@ -248,6 +274,28 @@ service cloud.firestore {
       // each user can check whether they are staff; the list is edited only in the Firebase console
       allow get: if signedIn() && request.auth.uid == uid;
       allow list, write: if false;
+    }
+
+    match /barStaffEmails/{email} {
+      // The owner sees and edits the whole list (staff app "Personal" panel)
+      allow get, list: if barOwner();
+      // A Google-signed-in user may look up their own entry (to open the scanner)
+      allow get: if barGoogleVerified() && request.auth.token.email.lower() == email;
+
+      // Owner adds one person: document id = lower-cased email, optional display name
+      allow create: if barOwner()
+        && request.resource.data.keys().hasOnly(['email', 'name', 'addedAt', 'addedBy'])
+        && request.resource.data.keys().hasAll(['email', 'name', 'addedAt', 'addedBy'])
+        && email.size() <= 254
+        && email.matches('^[a-z0-9._%+-]+@[a-z0-9-]+([.][a-z0-9-]+)*[.][a-z]{2,}$')
+        && request.resource.data.email == email
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60
+        && request.resource.data.addedAt == request.time
+        && request.resource.data.addedBy == request.auth.token.email;
+
+      // Owner removes access; entries are never edited in place (remove + add again)
+      allow delete: if barOwner();
+      allow update: if false;
     }
 
     match /barTableLocks/{lockId} {
