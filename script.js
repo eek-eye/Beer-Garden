@@ -1,6 +1,8 @@
 // Fixed header height (section links land just below it)
 function navScrollOffset() {
-    return 70;
+    // scrolled header (70px) + the tiled roof on top of it (--roof-h in styles.css)
+    const roof = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--roof-h')) || 0;
+    return 70 + roof;
 }
 
 // Store reservations by date

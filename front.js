@@ -6,14 +6,17 @@
 (function () {
     'use strict';
     var hero = document.querySelector('.front-hero');
-    var NAV_OFFSET = 70; // same offset as the section links in script.js (compact header height)
+    // same offset as the section links in script.js: compact header (70px) + the tiled roof (--roof-h in styles.css)
+    function navOffset() {
+        return 70 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--roof-h')) || 0);
+    }
 
     function scrollToY(y) {
         window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
     }
 
     function scrollToElement(el) {
-        scrollToY(el.getBoundingClientRect().top + window.pageYOffset - NAV_OFFSET);
+        scrollToY(el.getBoundingClientRect().top + window.pageYOffset - navOffset());
     }
 
     // "Tables" links: scroll to the seating chart (href="/" without JavaScript)

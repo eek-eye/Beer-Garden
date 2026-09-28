@@ -7217,43 +7217,6 @@ html.lightbox-open {
     border-image: none;
 }
 
-/* ---------- Contact: framed photo of the real gate ---------- */
-.contact-gate {
-    position: relative;
-    width: min(270px, 100%);
-    margin: 3.25rem auto 0;
-    padding-top: 22px;
-    text-align: center;
-}
-
-.contact-gate::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -16px;
-    right: -16px;
-    height: 30px;
-    background: var(--gate-roof) center / 100% 100% no-repeat;
-    z-index: 1;
-}
-
-.contact-gate img {
-    display: block;
-    width: 100%;
-    height: auto;
-    padding: 6px;
-    background: linear-gradient(135deg, #fff1b8 0%, #d4a017 30%, #8a5d0e 55%, #f2c14e 80%, #b8860b 100%);
-    box-shadow: 0 0 0 1px #3a0508, 0 14px 30px rgba(0, 0, 0, 0.6), 0 0 24px rgba(212, 160, 23, 0.18);
-}
-
-.contact-gate figcaption {
-    margin-top: 0.9rem;
-    font-family: var(--cn-font-display);
-    font-size: 0.9rem;
-    letter-spacing: 0.06em;
-    color: var(--cn-gold-light);
-}
-
 /* ---------- Footer: tiled eave with gold end caps ---------- */
 .footer {
     position: relative;
@@ -7341,15 +7304,6 @@ html.lightbox-open {
         width: 38px;
         height: 38px;
     }
-
-    .contact-gate {
-        width: min(240px, 100%);
-    }
-
-    .contact-gate::before {
-        left: -10px;
-        right: -10px;
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -7357,4 +7311,304 @@ html.lightbox-open {
         animation: none;
         display: none;
     }
+}
+
+
+/* ==========================================================================
+   Roof of the website: a slim glazed-tile roof with gold trim and upturned
+   gold-tipped eaves across the very top of every page, built into the fixed
+   header (.navbar::before = tiles, ::after = the two eave ends). The header
+   grows by --roof-h and the page is pushed down by the same amount, so the
+   links, logo badge, profile icon, hamburger and bookmarks keep their places.
+   ========================================================================== */
+:root {
+    --roof-h: 30px;
+    --roof-cap-w: 96px;
+    --roof-tile-w: 32px;
+    --roof-tiles: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='30' viewBox='0 0 32 30' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='t' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%233a5a4b'/%3E%3Cstop offset='1' stop-color='%2312201a'/%3E%3C/linearGradient%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.22'/%3E%3Cstop offset='.35' stop-color='%23fff' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='.35'/%3E%3C/linearGradient%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff1b8'/%3E%3Cstop offset='.45' stop-color='%23e2b33c'/%3E%3Cstop offset='1' stop-color='%238a5d0e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='30' fill='%230a120e'/%3E%3Crect width='32' height='3.4' fill='%23050806'/%3E%3Crect y='3.4' width='32' height='1' fill='%23d4a017'/%3E%3Crect x='2.5' y='4.4' width='11' height='17' fill='url(%23t)'/%3E%3Crect x='4.9' y='4.4' width='2.2' height='17' fill='%2386ab9a' opacity='.55'/%3E%3Crect x='12.5' y='4.4' width='1' height='17' fill='%23040706' opacity='.8'/%3E%3Crect x='18.5' y='4.4' width='11' height='17' fill='url(%23t)'/%3E%3Crect x='20.9' y='4.4' width='2.2' height='17' fill='%2386ab9a' opacity='.55'/%3E%3Crect x='28.5' y='4.4' width='1' height='17' fill='%23040706' opacity='.8'/%3E%3Crect y='9.6' width='32' height='.8' fill='%23030504' opacity='.6'/%3E%3Crect y='15.2' width='32' height='.8' fill='%23030504' opacity='.6'/%3E%3Crect y='10.4' width='32' height='.6' fill='%236f9584' opacity='.3'/%3E%3Crect y='16' width='32' height='.6' fill='%236f9584' opacity='.3'/%3E%3Crect y='20.5' width='32' height='6.5' fill='%230a120e'/%3E%3Ccircle cx='8' cy='23.4' r='3.5' fill='%2315241d' stroke='url(%23g)' stroke-width='1.1'/%3E%3Ccircle cx='8' cy='23.4' r='1.1' fill='%23f2c14e'/%3E%3Cpath d='M19 20.8H29L24 26.4Z' fill='%2315241d' stroke='%23c8921c' stroke-width='.9' stroke-linejoin='round'/%3E%3Crect width='32' height='27' fill='url(%23s)'/%3E%3Crect y='27' width='32' height='2' fill='url(%23g)'/%3E%3Crect y='29' width='32' height='1' fill='%232a1d06' opacity='.85'/%3E%3C/svg%3E");
+    --roof-eave-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='30' viewBox='0 0 96 30'%3E%3Cdefs%3E%3ClinearGradient id='t' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%233a5a4b'/%3E%3Cstop offset='1' stop-color='%2312201a'/%3E%3C/linearGradient%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.22'/%3E%3Cstop offset='.35' stop-color='%23fff' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='.35'/%3E%3C/linearGradient%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff1b8'/%3E%3Cstop offset='.45' stop-color='%23e2b33c'/%3E%3Cstop offset='1' stop-color='%238a5d0e'/%3E%3C/linearGradient%3E%3Cpattern id='p' width='32' height='30' patternUnits='userSpaceOnUse'%3E%3Crect width='32' height='30' fill='%230a120e'/%3E%3Crect width='32' height='3.4' fill='%23050806'/%3E%3Crect y='3.4' width='32' height='1' fill='%23d4a017'/%3E%3Crect x='2.5' y='4.4' width='11' height='17' fill='url(%23t)'/%3E%3Crect x='4.9' y='4.4' width='2.2' height='17' fill='%2386ab9a' opacity='.55'/%3E%3Crect x='12.5' y='4.4' width='1' height='17' fill='%23040706' opacity='.8'/%3E%3Crect x='18.5' y='4.4' width='11' height='17' fill='url(%23t)'/%3E%3Crect x='20.9' y='4.4' width='2.2' height='17' fill='%2386ab9a' opacity='.55'/%3E%3Crect x='28.5' y='4.4' width='1' height='17' fill='%23040706' opacity='.8'/%3E%3Crect y='9.6' width='32' height='.8' fill='%23030504' opacity='.6'/%3E%3Crect y='15.2' width='32' height='.8' fill='%23030504' opacity='.6'/%3E%3Crect y='10.4' width='32' height='.6' fill='%236f9584' opacity='.3'/%3E%3Crect y='16' width='32' height='.6' fill='%236f9584' opacity='.3'/%3E%3C/pattern%3E%3CclipPath id='c'%3E%3Cpath d='M96 0H3Q.5 0 .5 2.5V5.2Q16 7 32 15Q54 26 96 27Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23c)'%3E%3Crect width='96' height='30' fill='url(%23p)'/%3E%3Crect width='96' height='30' fill='url(%23s)'/%3E%3C/g%3E%3Cpath d='M.6 6Q16 8 32 16Q54 27 96 28' fill='none' stroke='%232a1d06' stroke-width='3.2' opacity='.6'/%3E%3Cpath d='M.6 6Q16 8 32 16Q54 27 96 28' fill='none' stroke='url(%23g)' stroke-width='2'/%3E%3Cpath d='M.6 5.5Q16 7.5 32 15.5Q54 26.5 96 27.4' fill='none' stroke='%23fff1b8' stroke-width='.5' opacity='.8'/%3E%3Cpath d='M10 7.6C4.5 7.8 1.4 5.8 1.6 2.6C1.8 .9 3.8 .5 4.8 1.8' fill='none' stroke='url(%23g)' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='4.4' cy='3.2' r='1.3' fill='%23f2c14e'/%3E%3C/svg%3E");
+    --roof-eave-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='30' viewBox='0 0 96 30'%3E%3Cdefs%3E%3ClinearGradient id='t' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%233a5a4b'/%3E%3Cstop offset='1' stop-color='%2312201a'/%3E%3C/linearGradient%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.22'/%3E%3Cstop offset='.35' stop-color='%23fff' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='.35'/%3E%3C/linearGradient%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff1b8'/%3E%3Cstop offset='.45' stop-color='%23e2b33c'/%3E%3Cstop offset='1' stop-color='%238a5d0e'/%3E%3C/linearGradient%3E%3Cpattern id='p' width='32' height='30' patternUnits='userSpaceOnUse'%3E%3Crect width='32' height='30' fill='%230a120e'/%3E%3Crect width='32' height='3.4' fill='%23050806'/%3E%3Crect y='3.4' width='32' height='1' fill='%23d4a017'/%3E%3Crect x='2.5' y='4.4' width='11' height='17' fill='url(%23t)'/%3E%3Crect x='4.9' y='4.4' width='2.2' height='17' fill='%2386ab9a' opacity='.55'/%3E%3Crect x='12.5' y='4.4' width='1' height='17' fill='%23040706' opacity='.8'/%3E%3Crect x='18.5' y='4.4' width='11' height='17' fill='url(%23t)'/%3E%3Crect x='20.9' y='4.4' width='2.2' height='17' fill='%2386ab9a' opacity='.55'/%3E%3Crect x='28.5' y='4.4' width='1' height='17' fill='%23040706' opacity='.8'/%3E%3Crect y='9.6' width='32' height='.8' fill='%23030504' opacity='.6'/%3E%3Crect y='15.2' width='32' height='.8' fill='%23030504' opacity='.6'/%3E%3Crect y='10.4' width='32' height='.6' fill='%236f9584' opacity='.3'/%3E%3Crect y='16' width='32' height='.6' fill='%236f9584' opacity='.3'/%3E%3C/pattern%3E%3CclipPath id='c'%3E%3Cpath d='M96 0H3Q.5 0 .5 2.5V5.2Q16 7 32 15Q54 26 96 27Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg transform='translate(96 0) scale(-1 1)'%3E%3Cg clip-path='url(%23c)'%3E%3Crect width='96' height='30' fill='url(%23p)'/%3E%3Crect width='96' height='30' fill='url(%23s)'/%3E%3C/g%3E%3Cpath d='M.6 6Q16 8 32 16Q54 27 96 28' fill='none' stroke='%232a1d06' stroke-width='3.2' opacity='.6'/%3E%3Cpath d='M.6 6Q16 8 32 16Q54 27 96 28' fill='none' stroke='url(%23g)' stroke-width='2'/%3E%3Cpath d='M.6 5.5Q16 7.5 32 15.5Q54 26.5 96 27.4' fill='none' stroke='%23fff1b8' stroke-width='.5' opacity='.8'/%3E%3Cpath d='M10 7.6C4.5 7.8 1.4 5.8 1.6 2.6C1.8 .9 3.8 .5 4.8 1.8' fill='none' stroke='url(%23g)' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='4.4' cy='3.2' r='1.3' fill='%23f2c14e'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+body {
+    padding-top: var(--roof-h);
+}
+
+.navbar {
+    padding-top: calc(1rem + var(--roof-h));
+}
+
+.navbar.navbar-badge {
+    padding-top: var(--roof-h);
+    height: calc(var(--hdr-h) + var(--roof-h));
+}
+
+.navbar::before,
+.navbar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    height: var(--roof-h);
+    pointer-events: none;
+    z-index: 6;
+}
+
+/* glazed tiles + a soft gold sheen in the middle */
+.navbar::before {
+    left: var(--roof-cap-w);
+    right: var(--roof-cap-w);
+    background-image:
+        radial-gradient(ellipse 40% 140% at 50% 0%, rgba(255, 241, 184, 0.16) 0%, rgba(255, 241, 184, 0) 70%),
+        var(--roof-tiles);
+    background-size: 100% 100%, var(--roof-tile-w) var(--roof-h);
+    background-repeat: no-repeat, round no-repeat;
+    background-position: 0 0, 0 0;
+}
+
+/* upturned eave ends with gold tips */
+.navbar::after {
+    left: 0;
+    right: 0;
+    background-image: var(--roof-eave-left), var(--roof-eave-right);
+    background-size: var(--roof-cap-w) var(--roof-h), var(--roof-cap-w) var(--roof-h);
+    background-position: left top, right top;
+    background-repeat: no-repeat, no-repeat;
+}
+
+/* desktop bookmarks and the phone menu move down with the header */
+.navbar .nav-menu {
+    margin-top: var(--roof-h);
+}
+
+@media (min-width: 769px) {
+    .navbar .nav-menu {
+        --bm-h: clamp(80px, calc((100vh - 84px - var(--roof-h)) / 5.87), 148px);
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --roof-h: 18px;
+        --roof-cap-w: 57.6px;
+        --roof-tile-w: 19.2px;
+    }
+}
+
+/* ==========================================================================
+   Wider gate + waving flags on both sides (red banners with a gold border,
+   福 / 酒 in gold). Big screens: tall gold poles beside the gate, clear of the
+   left bookmarks. Smaller screens: little flags on the roof corners.
+   ========================================================================== */
+.gate {
+    max-width: min(1000px, calc(100vw - 120px));
+}
+
+@media (max-width: 768px) {
+    .gate {
+        max-width: none;
+    }
+}
+
+.gate-flag {
+    position: absolute;
+    z-index: 1;
+    top: -46px;
+    width: 5px;
+    height: 64px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #6d4a0c 0%, #fff1b8 45%, #c8921c 70%, #6d4a0c 100%);
+    pointer-events: none;
+}
+
+.gate-flag-left { left: 14px; }
+.gate-flag-right { right: 14px; }
+
+/* gold finial */
+.gate-flag::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -9px;
+    width: 11px;
+    height: 11px;
+    margin-left: -5.5px;
+    border-radius: 50% 50% 45% 45%;
+    background: radial-gradient(circle at 35% 30%, #fff6d0 0%, #f2c14e 40%, #9a6b12 100%);
+    box-shadow: 0 0 6px rgba(242, 193, 78, 0.6);
+}
+
+.gate-flag-cloth {
+    --tail: polygon(0 0, 100% 0, 78% 50%, 100% 100%, 0 100%);
+    position: absolute;
+    top: 3px;
+    width: 44px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #fff1b8 0%, #e2b33c 45%, #9a6b12 100%);
+    clip-path: var(--tail);
+    animation: gate-flag-wave 3.2s ease-in-out infinite;
+    overflow: hidden;
+}
+
+/* the red field inside the gold border */
+.gate-flag-cloth::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 40%, rgba(0, 0, 0, 0.25) 100%),
+        linear-gradient(90deg, #8e0c14 0%, #d4252e 50%, #a50f18 100%);
+    clip-path: var(--tail);
+}
+
+/* moving light = the ripple of the cloth */
+.gate-flag-cloth::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 60%;
+    background: linear-gradient(90deg, rgba(255, 245, 210, 0) 0%, rgba(255, 245, 210, 0.3) 50%, rgba(255, 245, 210, 0) 100%);
+    animation: gate-flag-ripple 2.4s linear infinite;
+}
+
+.gate-flag-char {
+    position: relative;
+    z-index: 1;
+    font-family: var(--cn-font-display);
+    font-weight: 900;
+    font-size: 15px;
+    line-height: 1;
+    background: var(--gate-gold-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+
+/* small screens: flags point inwards over the roof corners */
+.gate-flag-left .gate-flag-cloth {
+    left: 100%;
+    --tail: polygon(0 0, 100% 0, 78% 50%, 100% 100%, 0 100%);
+    padding-right: 8px;
+    transform-origin: left center;
+}
+
+.gate-flag-right .gate-flag-cloth {
+    right: 100%;
+    --tail: polygon(0 0, 100% 0, 100% 100%, 0 100%, 22% 50%);
+    padding-left: 8px;
+    transform-origin: right center;
+    animation-delay: -1.4s;
+}
+
+.gate-flag-right .gate-flag-cloth::after {
+    animation-direction: reverse;
+    animation-delay: -1.1s;
+}
+
+.gate:has(.gate-flag) {
+    margin-top: 48px;
+}
+
+@keyframes gate-flag-wave {
+    0%, 100% { transform: perspective(220px) rotateY(0deg) skewY(0deg) scaleX(1); }
+    25% { transform: perspective(220px) rotateY(-16deg) skewY(-4deg) scaleX(0.96); }
+    50% { transform: perspective(220px) rotateY(6deg) skewY(2.5deg) scaleX(0.92); }
+    75% { transform: perspective(220px) rotateY(-9deg) skewY(-2deg) scaleX(0.97); }
+}
+
+@keyframes gate-flag-ripple {
+    0% { transform: translateX(-110%); }
+    100% { transform: translateX(190%); }
+}
+
+/* big screens: wider gate, tall poles standing beside it, flags waving outwards */
+@media (min-width: 1240px) {
+    .gate {
+        max-width: min(1100px, calc(100vw - 300px));
+    }
+
+    .gate:has(.gate-flag) {
+        margin-top: 0;
+    }
+
+    .gate-flag {
+        top: -26px;
+        bottom: -12px;
+        height: auto;
+        width: 7px;
+    }
+
+    .gate-flag::before {
+        top: -13px;
+        width: 15px;
+        height: 15px;
+        margin-left: -7.5px;
+    }
+
+    /* stone foot of the pole */
+    .gate-flag::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        width: 24px;
+        height: 10px;
+        margin-left: -12px;
+        border-radius: 2px 2px 0 0;
+        background: linear-gradient(180deg, #e2b33c 0, #e2b33c 2px, #3b2c22 2px, #1c140f 100%);
+    }
+
+    .gate-flag-left { left: auto; right: calc(100% + 22px); }
+    .gate-flag-right { right: auto; left: calc(100% + 22px); }
+
+    .gate-flag-cloth {
+        top: 10px;
+        width: 76px;
+        height: 104px;
+    }
+
+    .gate-flag-char {
+        font-size: 30px;
+    }
+
+    .gate-flag-left .gate-flag-cloth {
+        left: auto;
+        right: 100%;
+        --tail: polygon(0 0, 100% 0, 100% 100%, 0 100%, 24% 50%);
+        padding: 0 0 0 16px;
+        transform-origin: right center;
+    }
+
+    .gate-flag-right .gate-flag-cloth {
+        right: auto;
+        left: 100%;
+        --tail: polygon(0 0, 100% 0, 76% 50%, 100% 100%, 0 100%);
+        padding: 0 16px 0 0;
+        transform-origin: left center;
+    }
+
+    .gate-flag-cloth::before {
+        inset: 3px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gate-flag-cloth,
+    .gate-flag-cloth::after {
+        animation: none;
+    }
+
+    .gate-flag-cloth::after {
+        display: none;
+    }
+}
+
+/* privacy anchors land below the header + roof */
+.privacy-card h3[id] {
+    scroll-margin-top: calc(96px + var(--roof-h));
 }
