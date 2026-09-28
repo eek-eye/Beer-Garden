@@ -1,3 +1,9 @@
+// Fixed header height + the cash-savings bar above it (section links land just below both)
+function navScrollOffset() {
+    var bar = document.querySelector('.cash-bar');
+    return 70 + (bar ? bar.offsetHeight : 0);
+}
+
 // Store reservations by date
 let reservations = JSON.parse(localStorage.getItem('reservations')) || {};
 // Store order details with order numbers
@@ -492,7 +498,7 @@ Lo necesitas si quieres cancelar tu reservación.
 
 Te contactaremos en ${formData.email} para confirmar tu reservación.
 
-💵 Te recomendamos pagar en efectivo. Los pagos con tarjeta tienen un cargo adicional del 15%.
+💵 ¡Te ahorras del 10% al 15% en tu compra al pagar en efectivo!
 
 También puedes reservar directamente al +52 686 364 2083.
     `.trim();
@@ -542,7 +548,7 @@ También puedes reservar directamente al +52 686 364 2083.
         font-size: 1.1rem;
         text-align: center;
     `;
-    successDiv.innerHTML = '✓ ¡Solicitud de reservación enviada! Te contactaremos para confirmar.<br><span style="display:inline-block;margin-top:8px;font-size:0.95rem;">💵 Te recomendamos pagar en efectivo. Los pagos con tarjeta tienen un cargo adicional del 15%.</span>';
+    successDiv.innerHTML = '✓ ¡Solicitud de reservación enviada! Te contactaremos para confirmar.<br><span style="display:inline-block;margin-top:8px;font-size:0.95rem;">💵 ¡Te ahorras del <strong>10% al 15%</strong> en tu compra al pagar en efectivo!</span>';
     document.body.appendChild(successDiv);
 
     // Remove success message after 5 seconds
@@ -693,7 +699,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         if (!href || href === '#') return; // plain "#" links (e.g. Sign up / Login switch) have their own handlers
         const target = document.querySelector(href);
         if (target) {
-            const offsetTop = target.offsetTop - 70; // Account for fixed navbar
+            const offsetTop = target.offsetTop - navScrollOffset(); // Account for fixed navbar
             window.scrollTo({
                 top: offsetTop,
                 behavior: 'smooth'
@@ -711,7 +717,7 @@ document.querySelectorAll('a[data-section]').forEach(function(link) {
         var target = isHomePage() && document.getElementById(id);
         if (target) {
             e.preventDefault();
-            window.scrollTo({ top: target.offsetTop - 70, behavior: 'smooth' });
+            window.scrollTo({ top: target.offsetTop - navScrollOffset(), behavior: 'smooth' });
             return;
         }
         try { sessionStorage.setItem('barScrollToSection', id); } catch (err) {}
@@ -739,7 +745,7 @@ document.querySelectorAll('a[data-section]').forEach(function(link) {
         var root = document.documentElement;
         var prev = root.style.scrollBehavior;
         root.style.scrollBehavior = 'auto'; // jump instantly (html has scroll-behavior: smooth)
-        window.scrollTo(0, Math.max(0, target.offsetTop - 70));
+        window.scrollTo(0, Math.max(0, target.offsetTop - navScrollOffset()));
         root.style.scrollBehavior = prev;
     }
     land();
@@ -757,7 +763,7 @@ window.addEventListener('hashchange', function() {
     if (isHomePage()) {
         var target = id && document.getElementById(id);
         if (target && target.tagName === 'SECTION') {
-            window.scrollTo({ top: Math.max(0, target.offsetTop - 70), behavior: 'smooth' });
+            window.scrollTo({ top: Math.max(0, target.offsetTop - navScrollOffset()), behavior: 'smooth' });
         }
         history.replaceState(null, '', window.location.pathname);
     } else if (window.location.pathname === '/' && (id === 'reservations' || id === 'contact')) {

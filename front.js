@@ -13,7 +13,8 @@
     }
 
     function scrollToElement(el) {
-        scrollToY(el.getBoundingClientRect().top + window.pageYOffset - NAV_OFFSET);
+        var bar = document.querySelector('.cash-bar'); // the savings bar sits above the fixed header
+        scrollToY(el.getBoundingClientRect().top + window.pageYOffset - NAV_OFFSET - (bar ? bar.offsetHeight : 0));
     }
 
     // "Tables" links: scroll to the seating chart (href="/" without JavaScript)

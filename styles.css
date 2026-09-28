@@ -5621,54 +5621,288 @@ html.cookie-banner-open .footer {
 }
 
 /* ==========================================================================
-   Cash notice (reservation form, footer on all pages, booking confirmation)
+   Cash savings notice (reservation form, footer on all pages, booking confirmation)
+   Celebratory gold + money-green accent, still in the red/black/gold theme.
    ========================================================================== */
 .cash-notice {
+    --cash-green: #2fd07a;
+    --cash-green-deep: #0f7a43;
+    position: relative;
     display: flex;
-    align-items: flex-start;
-    gap: 10px;
+    align-items: center;
+    gap: 12px;
     margin: 0 0 1.1rem;
-    padding: 12px 14px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, rgba(212, 160, 23, 0.16) 0%, rgba(176, 18, 27, 0.2) 100%);
-    border: 1px solid rgba(212, 160, 23, 0.6);
-    border-left: 4px solid var(--cn-gold);
-    color: #f6eadb;
-    font-size: 0.95rem;
-    line-height: 1.5;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background:
+        radial-gradient(ellipse at 0% 50%, rgba(47, 208, 122, 0.22) 0%, rgba(47, 208, 122, 0) 55%),
+        linear-gradient(135deg, rgba(212, 160, 23, 0.2) 0%, rgba(20, 60, 36, 0.35) 55%, rgba(176, 18, 27, 0.18) 100%);
+    border: 1.5px solid rgba(242, 193, 78, 0.75);
+    box-shadow: 0 0 0 1px rgba(47, 208, 122, 0.25), 0 0 16px rgba(47, 208, 122, 0.22), 0 0 22px rgba(242, 193, 78, 0.18), inset 0 0 18px rgba(242, 193, 78, 0.08);
+    color: #fff6e2;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.45;
     text-align: left;
 }
 
 .cash-notice-icon {
     flex: 0 0 auto;
-    font-size: 1.3rem;
-    line-height: 1.15;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 1.35rem;
+    line-height: 1;
+    background: radial-gradient(circle at 35% 30%, #fff1b8 0%, var(--cn-gold-light) 45%, #a37a0c 100%);
+    box-shadow: 0 0 0 2px var(--cash-green-deep), 0 0 12px rgba(47, 208, 122, 0.55), 0 0 18px rgba(242, 193, 78, 0.45);
 }
 
-.cash-notice strong {
-    color: var(--cn-gold-light);
-    font-weight: 800;
+.cash-notice-text {
+    min-width: 0;
+}
+
+.cash-notice .cash-notice-pct {
+    display: inline-block;
+    padding: 1px 9px;
+    margin: 0 2px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #3ee08a 0%, #149a55 100%);
+    color: #ffffff;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 0 1.5px var(--cn-gold-light), 0 0 10px rgba(47, 208, 122, 0.6);
 }
 
 .footer .cash-notice-footer {
     display: inline-flex;
-    align-items: center;
     max-width: 640px;
     margin: 0.9rem auto 0.4rem;
-    padding: 8px 16px;
+    padding: 8px 18px 8px 8px;
     border-radius: 999px;
-    border-left-width: 1px;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     opacity: 1;
 }
 
 .footer .cash-notice-footer .cash-notice-icon {
+    width: 34px;
+    height: 34px;
     font-size: 1.1rem;
 }
 
 @media (max-width: 600px) {
     .footer .cash-notice-footer {
-        border-radius: 10px;
+        border-radius: 12px;
+        padding: 10px 14px 10px 10px;
         text-align: left;
+    }
+}
+
+/* ==========================================================================
+   Cash savings bar: always visible, fixed at the very top of every page,
+   the fixed header sits right under it (nothing covers the round badge).
+   ========================================================================== */
+:root {
+    --cash-bar-h: 32px;
+}
+
+body {
+    padding-top: var(--cash-bar-h);
+}
+
+.cash-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1001; /* above the header (1000), below the sign-in modal (2000) */
+    height: var(--cash-bar-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    overflow: hidden;
+    background:
+        linear-gradient(100deg, rgba(255, 255, 255, 0) 30%, rgba(255, 244, 200, 0.18) 45%, rgba(255, 255, 255, 0) 60%) -150% 0 / 60% 100% no-repeat,
+        linear-gradient(90deg, #0b4d2c 0%, #0f6b3c 22%, #13854a 50%, #0f6b3c 78%, #0b4d2c 100%);
+    border-bottom: 2px solid var(--cn-gold-light);
+    box-shadow: 0 0 12px rgba(47, 208, 122, 0.45), 0 2px 8px rgba(0, 0, 0, 0.5);
+    animation: cash-bar-shine 5s ease-in-out infinite;
+}
+
+@keyframes cash-bar-shine {
+    0%, 55% { background-position: -150% 0, 0 0; }
+    100% { background-position: 250% 0, 0 0; }
+}
+
+.cash-bar-text {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: clamp(12px, 3.35vw, 15.5px);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #fffbea;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+}
+
+.cash-bar-icon {
+    font-size: 1.15em;
+    line-height: 1;
+}
+
+.cash-bar-pct {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #ffe38a 0%, var(--cn-gold-light) 50%, #c8920f 100%);
+    color: #3a0a06;
+    font-weight: 900;
+    text-shadow: none;
+    box-shadow: 0 0 8px rgba(242, 193, 78, 0.75);
+}
+
+.navbar,
+.navbar.scrolled,
+.navbar.navbar-badge,
+.navbar.navbar-badge.scrolled {
+    top: var(--cash-bar-h);
+}
+
+/* the fixed bookmark tabs (desktop) and the phone menu move down with the header */
+.navbar .nav-menu {
+    margin-top: var(--cash-bar-h);
+}
+
+@media (max-width: 380px) {
+    .cash-bar {
+        padding: 0 6px;
+    }
+
+    .cash-bar-text {
+        gap: 4px;
+        letter-spacing: 0;
+    }
+
+    .cash-bar-pct {
+        padding: 1px 6px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cash-bar {
+        animation: none;
+    }
+}
+
+/* ---------- Hero slide 1: pay cash and save ---------- */
+.front-slide-cash .front-slide-title .cash-hero-pct {
+    display: inline-block;
+    padding: 0 12px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #3ee08a 0%, #139a54 100%);
+    color: #ffffff;
+    font-weight: inherit;
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 0 2px var(--cn-gold-light), 0 0 18px rgba(47, 208, 122, 0.7);
+}
+
+.front-slide-cash .front-slide-sub {
+    color: #fff1c9;
+    text-shadow: 0 0 10px rgba(242, 193, 78, 0.5);
+}
+
+.front-slide-cash .front-slide-sub span {
+    color: #6ff0a8;
+    text-shadow: 0 0 10px rgba(47, 208, 122, 0.65);
+}
+
+.front-ribbon.ribbon-cash {
+    background: linear-gradient(180deg, #2fd07a, #0f7a43);
+    color: #fffbea;
+    filter: drop-shadow(0 0 10px rgba(47, 208, 122, 0.7)) drop-shadow(0 0 2px rgba(242, 193, 78, 0.9));
+}
+
+.art-cash .front-circle img {
+    transform-origin: 50% 55%;
+    transform: scale(1.35);
+    filter: saturate(1.1);
+}
+
+.pop-cash {
+    top: -8%;
+    right: -12%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 46%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff1b8 0%, var(--cn-gold-light) 40%, #b8860b 100%);
+    border: 4px solid #0f7a43;
+    box-shadow: 0 0 0 3px var(--cn-gold-light), 0 0 26px rgba(47, 208, 122, 0.75), 0 10px 22px rgba(0, 0, 0, 0.6);
+    color: #3a0a06;
+    text-align: center;
+    transform: rotate(10deg);
+    animation: pop-cash-bob 3.2s ease-in-out infinite;
+}
+
+.pop-cash-emoji {
+    font-size: clamp(1.4rem, 2.6vw, 2.2rem);
+    line-height: 1;
+}
+
+.pop-cash b {
+    display: block;
+    font-family: var(--cn-font-display);
+    font-weight: 900;
+    font-size: clamp(1rem, 2vw, 1.6rem);
+    line-height: 1.05;
+    white-space: nowrap;
+}
+
+.pop-cash small {
+    display: block;
+    font-family: var(--front-hand);
+    font-size: clamp(0.85rem, 1.5vw, 1.2rem);
+    line-height: 1;
+    color: #0f5a33;
+}
+
+@keyframes pop-cash-bob {
+    0%, 100% { transform: rotate(10deg) translateY(0); }
+    50% { transform: rotate(6deg) translateY(-6px); }
+}
+
+@media (max-width: 768px) {
+    .pop-cash {
+        right: -16%;
+        width: 50%;
+    }
+
+    .pop-cash-emoji {
+        font-size: 1.3rem;
+    }
+
+    .pop-cash b {
+        font-size: 1rem;
+    }
+
+    .pop-cash small {
+        font-size: 0.85rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pop-cash {
+        animation: none;
     }
 }

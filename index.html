@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="cash-bar" role="note"><p class="cash-bar-text"><span class="cash-bar-icon" aria-hidden="true">💵</span> ¡Te ahorras del <strong class="cash-bar-pct">10% al 15%</strong> al pagar en efectivo!</p></div>
     <!-- Navigation: round logo badge on a gold line, links split around it (front page only).
          The .nav-menu below is still the left-edge bookmark tabs (desktop) / hamburger menu (phones). -->
     <nav class="navbar navbar-badge">
@@ -75,7 +76,18 @@
     <!-- Hero slideshow (front.js: autoplay, arrows, dots, swipe, endless loop) -->
     <section class="front-hero" aria-roledescription="carrusel" aria-label="Bar Chinesca Mxli">
         <div class="front-slides" aria-live="off">
-            <div class="front-slide is-active" role="group" aria-roledescription="diapositiva" aria-label="1 / 4">
+            <div class="front-slide front-slide-cash is-active" role="group" aria-roledescription="diapositiva" aria-label="1 / 5">
+                <div class="front-slide-text">
+                    <h2 class="front-slide-title"><span>¡Paga en efectivo y ahorra!</span> <span class="front-slide-title-alt">Te ahorras del <strong class="cash-hero-pct">10% al 15%</strong></span></h2>
+                    <p class="front-slide-sub">en tu compra al pagar en efectivo <span>💵 Tu noche rinde más</span></p>
+                    <a href="#reservations" class="front-ribbon ribbon-cash">Reservar mi mesa</a>
+                </div>
+                <div class="front-slide-art art-cash">
+                    <div class="front-circle"><img src="IMAGES/Chinesca.webp" alt="" width="1600" height="1236"></div>
+                    <span class="front-pop pop-cash" aria-hidden="true"><span class="pop-cash-emoji">💵</span><b>10% al 15%</b><small>de ahorro</small></span>
+                </div>
+            </div>
+            <div class="front-slide" role="group" aria-roledescription="diapositiva" aria-label="2 / 5">
                 <div class="front-slide-text">
                     <h2 class="front-slide-title"><span>¡Tu mesa te espera!</span> <span class="front-slide-title-alt">La noche empieza aquí.</span></h2>
                     <p class="front-slide-sub">Reserva en línea en segundos <span>Elige tu mesa en el mapa</span></p>
@@ -86,7 +98,7 @@
                     <img class="front-pop pop-logo" src="IMAGES/bar-chinesca-logo.webp" alt="" width="491" height="242">
                 </div>
             </div>
-            <div class="front-slide" role="group" aria-roledescription="diapositiva" aria-label="2 / 4">
+            <div class="front-slide" role="group" aria-roledescription="diapositiva" aria-label="3 / 5">
                 <div class="front-slide-text">
                     <h2 class="front-slide-title"><span>Noches de neón en La Chinesca.</span> <span class="front-slide-title-alt">El corazón del centro.</span></h2>
                     <p class="front-slide-sub">Abrimos de lunes a domingo <span>7:00 p. m. – 3:00 a. m.</span></p>
@@ -97,7 +109,7 @@
                     <span class="front-pop pop-lanterns" aria-hidden="true"><i></i><i></i></span>
                 </div>
             </div>
-            <div class="front-slide" role="group" aria-roledescription="diapositiva" aria-label="3 / 4">
+            <div class="front-slide" role="group" aria-roledescription="diapositiva" aria-label="4 / 5">
                 <div class="front-slide-text">
                     <h2 class="front-slide-title"><span>Mesas VIP para tu grupo.</span> <span class="front-slide-title-alt">Trae a toda la banda.</span></h2>
                     <p class="front-slide-sub">Hasta 2 mesas por cuenta <span>¿Más mesas? Llámanos</span></p>
@@ -108,7 +120,7 @@
                     <span class="front-pop pop-vip" aria-hidden="true">VIP</span>
                 </div>
             </div>
-            <div class="front-slide" role="group" aria-roledescription="diapositiva" aria-label="4 / 4">
+            <div class="front-slide" role="group" aria-roledescription="diapositiva" aria-label="5 / 5">
                 <div class="front-slide-text">
                     <h2 class="front-slide-title"><span>¿Dudas? Llámanos.</span> <span class="front-slide-title-alt">Con gusto te atendemos.</span></h2>
                     <p class="front-slide-sub">C. Juárez 22, Primera, Mexicali <span>+52 686 364 2083</span></p>
@@ -123,10 +135,11 @@
         <button type="button" class="front-arrow front-prev" aria-label="Diapositiva anterior"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <button type="button" class="front-arrow front-next" aria-label="Diapositiva siguiente"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div class="front-dots" role="group" aria-label="Diapositivas">
-            <button type="button" class="front-dot is-active" aria-label="1 / 4" aria-current="true"></button>
-            <button type="button" class="front-dot" aria-label="2 / 4"></button>
-            <button type="button" class="front-dot" aria-label="3 / 4"></button>
-            <button type="button" class="front-dot" aria-label="4 / 4"></button>
+            <button type="button" class="front-dot is-active" aria-label="1 / 5" aria-current="true"></button>
+            <button type="button" class="front-dot" aria-label="2 / 5"></button>
+            <button type="button" class="front-dot" aria-label="3 / 5"></button>
+            <button type="button" class="front-dot" aria-label="4 / 5"></button>
+            <button type="button" class="front-dot" aria-label="5 / 5"></button>
         </div>
     </section>
 
@@ -331,7 +344,7 @@
                         </select>
                     </div>
                     
-                    <p class="cash-notice cash-notice-form" id="cashNoticeForm" role="note"><span class="cash-notice-icon" aria-hidden="true">💵</span> <span class="cash-notice-text"><strong>Te recomendamos pagar en efectivo.</strong> Los pagos con tarjeta tienen un cargo adicional del 15%.</span></p>
+                    <p class="cash-notice cash-notice-form" id="cashNoticeForm" role="note"><span class="cash-notice-icon" aria-hidden="true">💵</span> <span class="cash-notice-text">¡Te ahorras del <strong class="cash-notice-pct">10% al 15%</strong> en tu compra al pagar en efectivo!</span></p>
                     <button type="submit" class="btn btn-primary">Enviar solicitud de reservación</button>
                     <div id="reservationLimitMessage" class="login-page-message reservation-limit-message" role="alert" aria-live="polite" style="display: none;"></div>
                     <div class="cancel-link-container">
@@ -480,7 +493,7 @@
         <div class="container">
             <p>&copy; 2024 Bar Chinesca Mxli. Todos los derechos reservados.</p>
             <p>Reservaciones al <a href="tel:+526863642083">+52 686 364 2083</a></p>
-            <p class="cash-notice cash-notice-footer"><span class="cash-notice-icon" aria-hidden="true">💵</span> <span class="cash-notice-text"><strong>Te recomendamos pagar en efectivo.</strong> Los pagos con tarjeta tienen un cargo adicional del 15%.</span></p>
+            <p class="cash-notice cash-notice-footer"><span class="cash-notice-icon" aria-hidden="true">💵</span> <span class="cash-notice-text">¡Te ahorras del <strong class="cash-notice-pct">10% al 15%</strong> en tu compra al pagar en efectivo!</span></p>
             <p><a href="https://www.google.com/maps/search/?api=1&amp;query=Bar+Chinesca%2C+C.+Ju%C3%A1rez+22%2C+Primera%2C+21100+Mexicali%2C+B.C.&amp;query_place_id=ChIJP4G9EQB714ARYeGJXlf0QI0" target="_blank" rel="noopener noreferrer">C. Juárez 22, Primera, 21100 Mexicali, B.C.</a></p>
             <div class="social-links footer-social">
                 <a href="https://www.facebook.com/p/BAR-chinesca-61565011852767/" class="social-link social-facebook" target="_blank" rel="noopener noreferrer" aria-label="Bar Chinesca en Facebook (se abre en una pestaña nueva)" title="Facebook"><svg viewBox="2 3 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 22v-8.2h2.8l.4-3.2h-3.2V8.6c0-.9.3-1.6 1.6-1.6h1.7V4.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.3H7.3v3.2h2.8V22z"/></svg></a>
