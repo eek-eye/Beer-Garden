@@ -6572,3 +6572,139 @@ html.lightbox-open {
     object-fit: cover;
     object-position: 50% 45%;
 }
+
+/* ==========================================================================
+   Gallery page (/galeria) + "Galería" links
+   Desktop: camera icon in the badge header (wide screens) and in the Redes flyout;
+   phones: its own item in the menu; every page: footer link.
+   ========================================================================== */
+.gallery.gallery-page {
+    min-height: 100vh;
+    padding: 120px 0 120px;
+    border-top: 0;
+}
+
+.gallery-page .front-lights {
+    z-index: 0;
+}
+
+.gallery-page .fl-beam {
+    height: 70%;
+    opacity: 0.24;
+}
+
+.gallery-page .fl-laser {
+    height: 80%;
+}
+
+.gallery-page .fl-floor {
+    bottom: -12%;
+    height: 34%;
+}
+
+.gallery-cta {
+    max-width: 640px;
+    margin: 2.4rem auto 0;
+    padding: 26px 22px 30px;
+    text-align: center;
+    border: 1px solid rgba(255, 45, 149, 0.55);
+    border-top: 3px solid var(--nc-pink);
+    border-radius: 10px;
+    background: var(--club-glass);
+    box-shadow: 0 0 0 1px rgba(161, 59, 255, 0.22), 0 0 26px rgba(255, 45, 149, 0.25), 0 14px 32px rgba(0, 0, 0, 0.55);
+}
+
+.gallery-cta-title {
+    margin: 0 0 6px;
+    font-family: var(--front-hand);
+    font-size: 2rem;
+    line-height: 1.1;
+    color: #fff4e3;
+    text-shadow: 0 0 12px rgba(255, 45, 149, 0.75);
+}
+
+.gallery-cta-sub {
+    margin: 0 0 18px;
+    color: var(--club-muted);
+    line-height: 1.5;
+}
+
+.gallery-cta-sub strong {
+    color: #7dffb6;
+    text-shadow: 0 0 8px rgba(18, 165, 117, 0.6);
+}
+
+/* menu item: phones only (desktop keeps its four bookmarks) */
+.nav-menu li.nav-tab-gallery {
+    --bm-bg: linear-gradient(180deg, #5b1a8e 0%, #2a0a45 100%);
+    --bm-ink: #fbeccb;
+    --bm-char: var(--cn-gold-light);
+}
+
+.nav-menu li.nav-tab-gallery::before {
+    content: '画' / '';
+}
+
+@media (min-width: 769px) {
+    .nav-menu li.nav-tab-gallery {
+        display: none;
+    }
+}
+
+/* Redes flyout: "Galería" after the three networks (desktop; phones have the menu item) */
+.nav-social-flyout .nav-flyout-gallery {
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(242, 193, 78, 0.55);
+    border-radius: 0 0 3px 3px;
+}
+
+@media (max-width: 768px) {
+    .nav-social-flyout .nav-flyout-gallery {
+        display: none;
+    }
+}
+
+/* footer link on every page */
+.footer .footer-gallery {
+    margin: 0.4rem 0 0.9rem;
+}
+
+.footer .footer-gallery-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    border: 1px solid rgba(255, 45, 149, 0.7);
+    border-radius: 999px;
+    background: rgba(255, 45, 149, 0.1);
+    color: #ffd6ec;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    box-shadow: 0 0 10px rgba(255, 45, 149, 0.35), inset 0 0 8px rgba(255, 45, 149, 0.15);
+    transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.footer .footer-gallery-link:hover,
+.footer .footer-gallery-link:focus-visible {
+    background: rgba(255, 45, 149, 0.25);
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(255, 45, 149, 0.8), 0 0 30px rgba(161, 59, 255, 0.4);
+    outline: none;
+}
+
+.footer .footer-gallery-link:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+    .gallery.gallery-page {
+        padding: 104px 0 96px;
+    }
+
+    .gallery-cta-title {
+        font-size: 1.7rem;
+    }
+}
