@@ -166,3 +166,14 @@
         init();
     }
 })();
+
+// Footer copyright: always the current year (the HTML says 2026 for visitors without JavaScript)
+(function () {
+    function setYear() {
+        var y = String(new Date().getFullYear());
+        var els = document.querySelectorAll('.footer-year');
+        for (var i = 0; i < els.length; i++) { if (els[i].textContent !== y) els[i].textContent = y; }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setYear);
+    else setYear();
+})();
