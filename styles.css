@@ -5086,55 +5086,9 @@ html.cookie-banner-open .footer {
 
 .reviews h2 {
     font-size: 2.5rem;
-    margin-bottom: 1.4rem;
+    margin-bottom: 2.2rem;
     color: #fff6dc;
     text-shadow: 0 0 4px rgba(255, 255, 255, 0.5), 0 0 12px rgba(242, 193, 78, 0.9), 0 0 26px rgba(255, 35, 64, 0.65), 0 0 44px rgba(255, 35, 64, 0.4);
-}
-
-.reviews-summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 6px 12px;
-    margin: 0 auto 2.2rem;
-    color: #e9d9c2;
-    font-size: 1.05rem;
-}
-
-.reviews-score {
-    font-family: var(--cn-font-display);
-    font-size: 2.1rem;
-    font-weight: 900;
-    line-height: 1;
-    color: var(--cn-gold-light);
-    text-shadow: 0 0 10px rgba(242, 193, 78, 0.7), 0 0 22px rgba(255, 35, 64, 0.45);
-}
-
-/* Partial stars: gold layer clipped to --rating / 5 over a dim row */
-.reviews-meter {
-    position: relative;
-    display: inline-block;
-    font-size: 1.45rem;
-    line-height: 1;
-    letter-spacing: 2px;
-    color: rgba(242, 193, 78, 0.22);
-}
-
-.reviews-meter::before {
-    content: '★★★★★';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: calc(var(--rating, 0) / 5 * 100%);
-    overflow: hidden;
-    white-space: nowrap;
-    color: var(--cn-gold-light);
-    text-shadow: 0 0 8px rgba(242, 193, 78, 0.75);
-}
-
-.reviews-count {
-    letter-spacing: 0.02em;
 }
 
 .reviews-slider {
