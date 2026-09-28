@@ -2594,7 +2594,7 @@ textarea {
     --bm-char: var(--cn-gold-light);
 }
 
-.nav-menu li:nth-child(4) {
+.nav-menu li#navLoginItem {
     --bm-edge: #8b0000;
     --bm-bg: linear-gradient(180deg, #f9dc7c 0%, #d9a520 100%);
     --bm-ink: #7a0a0f;
@@ -2606,7 +2606,7 @@ textarea {
 .nav-menu li:nth-child(1)::before { content: '订' / ''; }
 .nav-menu li:nth-child(2)::before { content: '址' / ''; }
 .nav-menu li:nth-child(3)::before { content: '社' / ''; }
-.nav-menu li:nth-child(4)::before { content: '登' / ''; }
+.nav-menu li#navLoginItem::before { content: '登' / ''; }
 
 .nav-menu li {
     position: relative;
@@ -5709,106 +5709,6 @@ html.cookie-banner-open .footer {
     }
 }
 
-/* ==========================================================================
-   Cash savings bar: always visible, fixed at the very top of every page,
-   the fixed header sits right under it (nothing covers the round badge).
-   ========================================================================== */
-:root {
-    --cash-bar-h: 32px;
-}
-
-body {
-    padding-top: var(--cash-bar-h);
-}
-
-.cash-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1001; /* above the header (1000), below the sign-in modal (2000) */
-    height: var(--cash-bar-h);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 10px;
-    overflow: hidden;
-    background:
-        linear-gradient(100deg, rgba(255, 255, 255, 0) 30%, rgba(255, 244, 200, 0.18) 45%, rgba(255, 255, 255, 0) 60%) -150% 0 / 60% 100% no-repeat,
-        linear-gradient(90deg, #0b4d2c 0%, #0f6b3c 22%, #13854a 50%, #0f6b3c 78%, #0b4d2c 100%);
-    border-bottom: 2px solid var(--cn-gold-light);
-    box-shadow: 0 0 12px rgba(47, 208, 122, 0.45), 0 2px 8px rgba(0, 0, 0, 0.5);
-    animation: cash-bar-shine 5s ease-in-out infinite;
-}
-
-@keyframes cash-bar-shine {
-    0%, 55% { background-position: -150% 0, 0 0; }
-    100% { background-position: 250% 0, 0 0; }
-}
-
-.cash-bar-text {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-    font-family: 'Georgia', 'Times New Roman', serif;
-    font-size: clamp(12px, 3.35vw, 15.5px);
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    color: #fffbea;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
-}
-
-.cash-bar-icon {
-    font-size: 1.15em;
-    line-height: 1;
-}
-
-.cash-bar-pct {
-    display: inline-block;
-    padding: 1px 8px;
-    border-radius: 999px;
-    background: linear-gradient(180deg, #ffe38a 0%, var(--cn-gold-light) 50%, #c8920f 100%);
-    color: #3a0a06;
-    font-weight: 900;
-    text-shadow: none;
-    box-shadow: 0 0 8px rgba(242, 193, 78, 0.75);
-}
-
-.navbar,
-.navbar.scrolled,
-.navbar.navbar-badge,
-.navbar.navbar-badge.scrolled {
-    top: var(--cash-bar-h);
-}
-
-/* the fixed bookmark tabs (desktop) and the phone menu move down with the header */
-.navbar .nav-menu {
-    margin-top: var(--cash-bar-h);
-}
-
-@media (max-width: 380px) {
-    .cash-bar {
-        padding: 0 6px;
-    }
-
-    .cash-bar-text {
-        gap: 4px;
-        letter-spacing: 0;
-    }
-
-    .cash-bar-pct {
-        padding: 1px 6px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .cash-bar {
-        animation: none;
-    }
-}
-
 /* ---------- Hero slide 1: pay cash and save ---------- */
 .front-slide-cash .front-slide-title .cash-hero-pct {
     display: inline-block;
@@ -6634,35 +6534,17 @@ html.lightbox-open {
     text-shadow: 0 0 8px rgba(18, 165, 117, 0.6);
 }
 
-/* menu item: phones only (desktop keeps its four bookmarks) */
+/* Galería bookmark (4th of 5: Reservaciones, Ubicación, Redes, Galería, Iniciar sesión):
+   black lacquer with gold letters and a red tassel, on desktop and in the phone menu */
 .nav-menu li.nav-tab-gallery {
-    --bm-bg: linear-gradient(180deg, #5b1a8e 0%, #2a0a45 100%);
-    --bm-ink: #fbeccb;
+    --bm-bg: linear-gradient(180deg, #2a1414 0%, #0b0707 100%);
+    --bm-ink: var(--cn-gold-light);
     --bm-char: var(--cn-gold-light);
+    --bm-tassel: var(--bm-tassel-red);
 }
 
 .nav-menu li.nav-tab-gallery::before {
     content: '画' / '';
-}
-
-@media (min-width: 769px) {
-    .nav-menu li.nav-tab-gallery {
-        display: none;
-    }
-}
-
-/* Redes flyout: "Galería" after the three networks (desktop; phones have the menu item) */
-.nav-social-flyout .nav-flyout-gallery {
-    margin-top: 4px;
-    padding-top: 10px;
-    border-top: 1px dashed rgba(242, 193, 78, 0.55);
-    border-radius: 0 0 3px 3px;
-}
-
-@media (max-width: 768px) {
-    .nav-social-flyout .nav-flyout-gallery {
-        display: none;
-    }
 }
 
 /* footer link on every page */
@@ -6706,5 +6588,65 @@ html.lightbox-open {
 
     .gallery-cta-title {
         font-size: 1.7rem;
+    }
+}
+
+/* ==========================================================================
+   Five desktop bookmarks: the size follows the screen height so all five tabs
+   (and their tassels) fit below the header without overlapping, e.g. 1280x720,
+   1366x768. Full size (148px) from about 955px of height; everything inside the
+   tab (character, text, notch, frame, tassel) scales with --bm-h.
+   ========================================================================== */
+@media (min-width: 769px) {
+    .navbar .nav-menu {
+        --bm-h: clamp(80px, calc((100vh - 84px) / 5.87), 148px);
+        top: 80px;
+        gap: calc(var(--bm-h) * 0.18);
+    }
+
+    .nav-menu > li > a,
+    .nav-menu > li > a:hover,
+    .nav-menu > li > a.active {
+        height: var(--bm-h);
+        padding: calc(var(--bm-h) * 0.25) 0 calc(var(--bm-h) * 0.14) 10px;
+        font-size: clamp(9.5px, calc(var(--bm-h) * 0.078), 11.5px);
+        letter-spacing: 0.04em;
+        clip-path: polygon(0 0, 100% 0, 100% 100%, calc(50% + 5px) calc(100% - var(--bm-h) * 0.075), 0 100%);
+    }
+
+    .nav-menu > li > a::before {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, calc(50% + 5px) calc(100% - var(--bm-h) * 0.075), 0 100%);
+    }
+
+    .nav-menu > li > a::after,
+    .nav-menu > li > a:hover::after,
+    .nav-menu > li > a.active::after {
+        bottom: calc(var(--bm-h) * 0.128);
+    }
+
+    .nav-menu li::before {
+        display: block;
+        top: calc(var(--bm-h) * 0.085);
+        font-size: clamp(12px, calc(var(--bm-h) * 0.115), 17px);
+    }
+
+    .nav-menu li::after {
+        top: calc(var(--bm-h) * 0.91);
+        left: calc(32px - var(--bm-h) * 0.054);
+        width: calc(var(--bm-h) * 0.108);
+        height: calc(var(--bm-h) * 0.237);
+    }
+}
+
+/* very short screens (under 700px high): no character, the text gets the whole tab */
+@media (min-width: 769px) and (max-height: 699px) {
+    .nav-menu li::before {
+        display: none;
+    }
+
+    .nav-menu > li > a,
+    .nav-menu > li > a:hover,
+    .nav-menu > li > a.active {
+        padding-top: calc(var(--bm-h) * 0.1);
     }
 }

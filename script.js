@@ -1,7 +1,6 @@
-// Fixed header height + the cash-savings bar above it (section links land just below both)
+// Fixed header height (section links land just below it)
 function navScrollOffset() {
-    var bar = document.querySelector('.cash-bar');
-    return 70 + (bar ? bar.offsetHeight : 0);
+    return 70;
 }
 
 // Store reservations by date
