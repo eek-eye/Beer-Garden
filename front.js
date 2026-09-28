@@ -175,3 +175,86 @@
     window.addEventListener('resize', update);
     update();
 })();
+
+/* Gallery (#galeria): masonry of nightlife photos + lightbox in a native <dialog>.
+ * Opens on click / Enter; Esc, the × button or a click outside the photo closes it;
+ * arrows, keyboard ←/→ and swipe change the photo (endless loop). The address never changes. */
+(function () {
+    'use strict';
+    var grid = document.querySelector('.gallery-grid');
+    var box = document.getElementById('galleryLightbox');
+    if (!grid || !box || typeof box.showModal !== 'function') return;
+    var items = Array.prototype.slice.call(grid.querySelectorAll('.gallery-item'));
+    var img = box.querySelector('.lightbox-img');
+    var text = box.querySelector('.lightbox-text');
+    var countEl = box.querySelector('.lightbox-count');
+    var count = items.length;
+    var current = 0;
+    var opener = null;
+    if (!count) return;
+
+    function thumb(i) { return items[i].querySelector('img'); }
+
+    function render(i) {
+        current = ((i % count) + count) % count;
+        var t = thumb(current);
+        img.removeAttribute('loading');
+        img.src = t.getAttribute('src');
+        img.alt = t.alt;
+        img.setAttribute('width', t.getAttribute('width'));
+        img.setAttribute('height', t.getAttribute('height'));
+        text.textContent = items[current].querySelector('figcaption').textContent;
+        countEl.textContent = (current + 1) + ' / ' + count;
+        img.style.animation = 'none';
+        void img.offsetWidth; // replay the fade-in
+        img.style.animation = '';
+        [current + 1, current - 1].forEach(function (n) { // warm up the neighbours
+            var pre = new Image();
+            pre.src = thumb(((n % count) + count) % count).getAttribute('src');
+        });
+    }
+
+    function open(i) {
+        opener = document.activeElement;
+        render(i);
+        document.documentElement.classList.add('lightbox-open');
+        box.showModal();
+        box.querySelector('.lightbox-close').focus();
+    }
+
+    function close() { if (box.open) box.close(); }
+
+    items.forEach(function (it, i) {
+        it.querySelector('.gallery-open').addEventListener('click', function () { open(i); });
+    });
+    box.querySelector('.lightbox-close').addEventListener('click', close);
+    box.querySelector('.lightbox-next').addEventListener('click', function () { render(current + 1); });
+    box.querySelector('.lightbox-prev').addEventListener('click', function () { render(current - 1); });
+    box.addEventListener('click', function (e) { if (e.target === box) close(); }); // click on the dark area
+    box.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight') { e.preventDefault(); render(current + 1); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); render(current - 1); }
+    });
+    box.addEventListener('close', function () {
+        document.documentElement.classList.remove('lightbox-open');
+        if (opener && typeof opener.focus === 'function') opener.focus({ preventScroll: true });
+        opener = null;
+    });
+
+    // Swipe (touch / pen)
+    var sx = null, sy = null, sid = null;
+    box.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse') return;
+        sx = e.clientX; sy = e.clientY; sid = e.pointerId;
+    });
+    box.addEventListener('pointerup', function (e) {
+        if (sx === null || e.pointerId !== sid) return;
+        var dx = e.clientX - sx, dy = e.clientY - sy;
+        sx = sy = sid = null;
+        if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy) * 1.2) render(current + (dx < 0 ? 1 : -1));
+    });
+    box.addEventListener('pointercancel', function () { sx = sy = sid = null; });
+
+    // Tests / debugging
+    window.barGallery = { open: open, close: close, next: function () { render(current + 1); }, prev: function () { render(current - 1); }, current: function () { return current; }, count: count, isOpen: function () { return box.open; } };
+})();

@@ -1733,6 +1733,7 @@ textarea {
 .reservations h2,
 .contact h2,
 .reviews h2,
+.gallery h2,
 .cancellation h2,
 .login-page-title,
 .profile-section h2 {
@@ -1750,6 +1751,7 @@ textarea {
 .reservations h2::before,
 .contact h2::before,
 .reviews h2::before,
+.gallery h2::before,
 .cancellation h2::before,
 .login-page-title::before,
 .profile-section h2::before {
@@ -1768,6 +1770,7 @@ textarea {
 .reservations h2::after,
 .contact h2::after,
 .reviews h2::after,
+.gallery h2::after,
 .cancellation h2::after,
 .login-page-title::after,
 .profile-section h2::after {
@@ -2286,6 +2289,7 @@ textarea {
     .reservations h2,
     .contact h2,
     .reviews h2,
+    .gallery h2,
     .cancellation h2,
     .profile-section h2 {
         font-size: 1.9rem;
@@ -3099,6 +3103,7 @@ body {
 .reservations h2,
 .contact h2,
 .reviews h2,
+.gallery h2,
 .cancellation h2,
 .login-page-title,
 .profile-section h2 {
@@ -3112,6 +3117,7 @@ body {
 .reservations h2:hover,
 .contact h2:hover,
 .reviews h2:hover,
+.gallery h2:hover,
 .cancellation h2:hover,
 .login-page-title:hover,
 .profile-section h2:hover {
@@ -3515,6 +3521,7 @@ body {
     .reservations h2:hover,
     .contact h2:hover,
     .reviews h2:hover,
+    .gallery h2:hover,
     .cancellation h2:hover,
     .login-page-title:hover,
     .profile-section h2:hover {
@@ -5905,4 +5912,663 @@ body {
     .pop-cash {
         animation: none;
     }
+}
+
+/* ==========================================================================
+   Nightclub vibe: hero light rig (beams, lasers, dance-floor glow, equalizer),
+   gallery "La Noche en Chinesca" + lightbox, neon flicker on headings,
+   gentle strobe on the main calls to action, photo backdrops in sections.
+   CSS only (transform / opacity animations); everything stops with reduced motion.
+   Photos: Unsplash License (free use), illustrative, not photos of the bar.
+   ========================================================================== */
+:root {
+    --nc-pink: #ff2d95;
+    --nc-purple: #a13bff;
+    --nc-blue: #1f5bff;
+    --nc-cyan: #19d3ff;
+    --nc-red: #ff2340;
+    --nc-black: #050207;
+}
+
+/* ---------- Hero: deeper black stage with neon washes ---------- */
+.front-hero {
+    background:
+        radial-gradient(ellipse 60% 45% at 70% 44%, rgba(255, 45, 149, 0.2), transparent 70%),
+        radial-gradient(ellipse 55% 50% at 25% 52%, rgba(176, 18, 27, 0.34), transparent 70%),
+        radial-gradient(ellipse 45% 40% at 92% 8%, rgba(31, 91, 255, 0.2), transparent 70%),
+        radial-gradient(ellipse 45% 40% at 6% 10%, rgba(161, 59, 255, 0.22), transparent 70%),
+        radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.65) 100%),
+        var(--front-burlap),
+        linear-gradient(180deg, #0b050a 0%, #07030a 60%, var(--nc-black) 100%);
+}
+
+.front-slides {
+    z-index: 1;
+}
+
+.front-dots {
+    z-index: 2;
+}
+
+.front-lights {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* moving spotlight beams from the ceiling */
+.fl-beam {
+    position: absolute;
+    top: -4%;
+    left: var(--x);
+    width: clamp(150px, 19vw, 280px);
+    height: 120%;
+    transform-origin: 50% 0;
+    transform: translateX(-50%) rotate(var(--a));
+    clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+    background: linear-gradient(180deg, var(--c) 0%, rgba(0, 0, 0, 0) 82%);
+    opacity: 0.3;
+    animation: fl-sweep var(--d, 8s) ease-in-out infinite alternate;
+    animation-delay: var(--dl, 0s);
+    will-change: transform;
+}
+
+.fl-beam:nth-child(1) { --x: 8%;  --c: rgba(255, 45, 149, 0.9); --a: -26deg; --b: 16deg;  --d: 7.5s; }
+.fl-beam:nth-child(2) { --x: 30%; --c: rgba(161, 59, 255, 0.85); --a: 20deg;  --b: -18deg; --d: 9s;   --dl: -3s; }
+.fl-beam:nth-child(3) { --x: 52%; --c: rgba(255, 35, 64, 0.8);  --a: -14deg; --b: 22deg;  --d: 6.5s; --dl: -1.5s; }
+.fl-beam:nth-child(4) { --x: 74%; --c: rgba(31, 91, 255, 0.85); --a: 24deg;  --b: -20deg; --d: 8.5s; --dl: -4.5s; }
+.fl-beam:nth-child(5) { --x: 94%; --c: rgba(242, 193, 78, 0.7); --a: 12deg;  --b: -26deg; --d: 10s;  --dl: -2s; }
+
+@keyframes fl-sweep {
+    from { transform: translateX(-50%) rotate(var(--a)); }
+    to { transform: translateX(-50%) rotate(var(--b)); }
+}
+
+/* thin laser lines that fan out, flash and fade */
+.fl-laser {
+    position: absolute;
+    top: -2%;
+    left: var(--x);
+    width: 2px;
+    height: 150%;
+    transform-origin: 50% 0;
+    transform: rotate(var(--a));
+    background: linear-gradient(180deg, var(--c) 0%, rgba(0, 0, 0, 0) 80%);
+    box-shadow: 0 0 6px var(--c), 0 0 14px var(--c);
+    opacity: 0;
+    animation: fl-laser var(--d, 5s) ease-in-out infinite;
+    animation-delay: var(--dl, 0s);
+    will-change: transform, opacity;
+}
+
+.fl-laser:nth-child(6) { --x: 50%; --c: #ff2d95; --a: -58deg; --b: -12deg; --d: 5.2s; }
+.fl-laser:nth-child(7) { --x: 50%; --c: #19d3ff; --a: 56deg;  --b: 10deg;  --d: 6.1s; --dl: -2.4s; }
+.fl-laser:nth-child(8) { --x: 22%; --c: #6dff2e; --a: -40deg; --b: 30deg;  --d: 7.3s; --dl: -4s; }
+.fl-laser:nth-child(9) { --x: 80%; --c: #ff2340; --a: 44deg;  --b: -30deg; --d: 6.7s; --dl: -1s; }
+
+@keyframes fl-laser {
+    0% { opacity: 0; transform: rotate(var(--a)); }
+    12% { opacity: 0.55; }
+    46% { opacity: 0.55; transform: rotate(var(--b)); }
+    56% { opacity: 0; transform: rotate(var(--b)); }
+    100% { opacity: 0; transform: rotate(var(--a)); }
+}
+
+/* dance-floor glow that pulses at the bottom of the stage */
+.fl-floor {
+    position: absolute;
+    left: -10%;
+    right: -10%;
+    bottom: -28%;
+    height: 58%;
+    background:
+        radial-gradient(ellipse 45% 50% at 30% 50%, rgba(255, 45, 149, 0.5), transparent 70%),
+        radial-gradient(ellipse 42% 50% at 72% 50%, rgba(31, 91, 255, 0.42), transparent 70%),
+        radial-gradient(ellipse 30% 40% at 50% 60%, rgba(161, 59, 255, 0.4), transparent 70%);
+    opacity: 0.55;
+    animation: fl-floor 1.9s ease-in-out infinite alternate;
+    will-change: opacity, transform;
+}
+
+@keyframes fl-floor {
+    from { opacity: 0.35; transform: scaleX(0.95); }
+    to { opacity: 0.85; transform: scaleX(1.05); }
+}
+
+/* equalizer along the bottom edge of the hero */
+.front-eq {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(3px, 0.7vw, 8px);
+    height: 58px;
+    padding: 0 3%;
+    opacity: 0.42;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+}
+
+.front-eq i {
+    flex: 1 1 0;
+    max-width: 16px;
+    height: 100%;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(0deg, #ff2340 0%, #ff2d95 45%, #a13bff 75%, #19d3ff 100%);
+    transform-origin: 50% 100%;
+    transform: scaleY(0.3);
+    animation: club-eq 0.9s ease-in-out infinite alternate;
+}
+
+.front-eq i:nth-child(3n+1) { animation-duration: 0.7s; }
+.front-eq i:nth-child(3n+2) { animation-duration: 0.95s; animation-delay: -0.3s; }
+.front-eq i:nth-child(3n) { animation-duration: 0.6s; animation-delay: -0.5s; }
+.front-eq i:nth-child(4n) { animation-duration: 1.15s; animation-delay: -0.2s; }
+.front-eq i:nth-child(5n) { animation-duration: 0.82s; animation-delay: -0.65s; }
+.front-eq i:nth-child(7n) { animation-duration: 0.66s; animation-delay: -0.1s; }
+
+/* nightlife photos in the round frames (slides 3-5) */
+.front-slide-art .front-circle img.front-photo {
+    transform: none;
+    object-position: 50% 50%;
+}
+
+.art-roof .front-circle img.front-photo {
+    object-position: 50% 40%;
+}
+
+.art-street .front-circle img.front-photo {
+    object-position: 38% 50%;
+}
+
+.front-circle {
+    box-shadow: 0 0 0 6px rgba(176, 18, 27, 0.9), 0 0 0 7px rgba(242, 193, 78, 0.6), 0 0 34px rgba(255, 45, 149, 0.45), 0 0 70px rgba(161, 59, 255, 0.3), 0 18px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- Calls to action: gentle strobe + light sweep ---------- */
+.front-ribbon::before,
+.front-ribbon::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+}
+
+.front-ribbon::before {
+    inset: 0;
+    background: #ffffff;
+    opacity: 0;
+    animation: cta-strobe 5s linear infinite;
+}
+
+.front-ribbon::after {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 42%;
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0) 100%);
+    transform: translateX(-130%);
+    animation: cta-shine 5s ease-in-out infinite;
+}
+
+@keyframes cta-strobe {
+    0%, 85%, 88%, 91%, 100% { opacity: 0; }
+    86.5% { opacity: 0.26; }
+    89.5% { opacity: 0.18; }
+}
+
+@keyframes cta-shine {
+    0%, 62% { transform: translateX(-130%); }
+    82%, 100% { transform: translateX(340%); }
+}
+
+#reservationForm button[type="submit"] {
+    animation: cta-glow-strobe 5s linear infinite;
+}
+
+#reservationForm button[type="submit"]:hover,
+#reservationForm button[type="submit"]:focus-visible {
+    animation: none;
+}
+
+@keyframes cta-glow-strobe {
+    0%, 84%, 88%, 92%, 100% {
+        box-shadow: 0 0 8px rgba(255, 45, 149, 0.6), 0 0 22px rgba(255, 35, 64, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.18);
+    }
+    86%, 90% {
+        box-shadow: 0 0 12px #ffffff, 0 0 28px rgba(255, 45, 149, 0.95), 0 0 56px rgba(255, 35, 64, 0.6), inset 0 0 16px rgba(255, 255, 255, 0.4);
+    }
+}
+
+/* ---------- Neon flicker on the section headings ---------- */
+.reservations h2,
+.gallery h2,
+.reviews h2,
+.contact h2,
+.cancellation h2,
+.login-page-title,
+.profile-section h2 {
+    animation: neon-title-flicker 7s linear infinite;
+}
+
+.gallery h2 { animation-duration: 6.3s; }
+.reviews h2 { animation-duration: 8.1s; animation-delay: -2s; }
+.contact h2 { animation-duration: 9.4s; animation-delay: -5s; }
+
+/* ---------- Photo backdrops (very dim) ---------- */
+.reviews {
+    background-color: #070405;
+    background-image:
+        var(--cn-lattice),
+        radial-gradient(ellipse at 50% 0%, rgba(212, 160, 23, 0.16) 0%, rgba(6, 4, 7, 0) 58%),
+        radial-gradient(ellipse at 0% 100%, rgba(255, 35, 64, 0.2) 0%, rgba(6, 4, 7, 0) 55%),
+        radial-gradient(ellipse at 100% 60%, rgba(161, 59, 255, 0.16) 0%, rgba(6, 4, 7, 0) 50%),
+        linear-gradient(180deg, rgba(7, 4, 5, 0.96) 0%, rgba(7, 4, 5, 0.84) 45%, rgba(7, 4, 5, 0.97) 100%),
+        url('IMAGES/noche-escenario.webp');
+    background-size: 60px 60px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, cover;
+    background-position: 0 0, center, center, center, center, center 40%;
+    background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+}
+
+.contact {
+    background-color: var(--nc-black);
+    background-image:
+        var(--cn-lattice),
+        radial-gradient(ellipse at 50% 0%, rgba(255, 35, 64, 0.28) 0%, rgba(6, 4, 7, 0) 60%),
+        radial-gradient(ellipse at 100% 100%, rgba(161, 59, 255, 0.16) 0%, rgba(6, 4, 7, 0) 50%),
+        linear-gradient(180deg, rgba(5, 2, 7, 0.95) 0%, rgba(5, 2, 7, 0.82) 50%, rgba(5, 2, 7, 0.96) 100%),
+        url('IMAGES/noche-faroles.webp');
+    background-size: 60px 60px, 100% 100%, 100% 100%, 100% 100%, cover;
+    background-position: 0 0, center, center, center, center 35%;
+    background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+}
+
+/* ---------- Gallery: La Noche en Chinesca ---------- */
+.gallery {
+    position: relative;
+    overflow: hidden;
+    padding: 80px 0 64px;
+    color: #f6eadb;
+    background-color: var(--nc-black);
+    background-image:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255, 45, 149, 0.22), transparent 70%),
+        radial-gradient(ellipse 50% 45% at 0% 100%, rgba(161, 59, 255, 0.22), transparent 70%),
+        radial-gradient(ellipse 50% 45% at 100% 85%, rgba(31, 91, 255, 0.18), transparent 70%),
+        var(--cn-lattice);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 60px 60px;
+    border-top: 14px solid transparent;
+    border-image: var(--cn-band) 14 0 0 0 / 14px 0 0 0 repeat;
+}
+
+.gallery .container {
+    position: relative;
+    z-index: 1;
+}
+
+.gallery h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.gallery-sub {
+    max-width: 640px;
+    margin: 0 auto 2.2rem;
+    font-family: var(--front-hand);
+    font-size: 1.55rem;
+    line-height: 1.2;
+    text-align: center;
+    color: #ff6cb8;
+    text-shadow: 0 0 10px rgba(255, 45, 149, 0.6);
+}
+
+.gallery-lasers {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.gallery-lasers span {
+    position: absolute;
+    top: -20%;
+    left: var(--x);
+    width: 2px;
+    height: 150%;
+    transform-origin: 50% 0;
+    transform: rotate(var(--a));
+    background: linear-gradient(180deg, var(--c), rgba(0, 0, 0, 0) 75%);
+    box-shadow: 0 0 8px var(--c);
+    opacity: 0.22;
+    animation: gl-laser var(--d) ease-in-out infinite alternate;
+}
+
+.gallery-lasers span:nth-child(1) { --x: 6%;  --c: #ff2d95; --a: -35deg; --b: -10deg; --d: 9s; }
+.gallery-lasers span:nth-child(2) { --x: 94%; --c: #19d3ff; --a: 35deg;  --b: 8deg;   --d: 11s; }
+.gallery-lasers span:nth-child(3) { --x: 50%; --c: #a13bff; --a: -20deg; --b: 20deg;  --d: 13s; }
+
+@keyframes gl-laser {
+    from { transform: rotate(var(--a)); }
+    to { transform: rotate(var(--b)); }
+}
+
+/* masonry: CSS columns keep every photo uncropped */
+.gallery-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    column-count: 3;
+    column-gap: 18px;
+}
+
+.gallery-item {
+    position: relative;
+    margin: 0 0 18px;
+    break-inside: avoid;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 45, 149, 0.45);
+    background: #0d0810;
+    box-shadow: 0 0 0 1px rgba(161, 59, 255, 0.22), 0 10px 26px rgba(0, 0, 0, 0.6);
+    transform: translateZ(0);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+
+.gallery-open {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+}
+
+.gallery-open img {
+    display: block;
+    width: 100%;
+    height: auto;
+    transition: transform 0.6s ease, filter 0.3s ease;
+}
+
+.gallery-item figcaption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 28px 14px 10px;
+    font-family: var(--front-hand);
+    font-size: 1.3rem;
+    line-height: 1.1;
+    color: #fff4e3;
+    text-shadow: 0 0 8px rgba(255, 45, 149, 0.85), 0 2px 0 rgba(0, 0, 0, 0.8);
+    background: linear-gradient(0deg, rgba(5, 2, 7, 0.88) 0%, rgba(5, 2, 7, 0) 100%);
+    pointer-events: none;
+}
+
+.gallery-item:hover,
+.gallery-item:has(.gallery-open:focus-visible) {
+    border-color: #ff8cc8;
+    box-shadow: 0 0 0 1px var(--nc-pink), 0 0 18px rgba(255, 45, 149, 0.75), 0 0 44px rgba(161, 59, 255, 0.45), 0 10px 26px rgba(0, 0, 0, 0.6);
+    transform: translateY(-3px);
+}
+
+.gallery-item:hover img,
+.gallery-item:has(.gallery-open:focus-visible) img {
+    transform: scale(1.05);
+    filter: saturate(1.2) brightness(1.08);
+}
+
+.gallery-open:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: -3px;
+}
+
+.gallery-note {
+    margin: 0.6rem 0 0;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #a996ad;
+}
+
+/* ---------- Lightbox (native <dialog>, top layer) ---------- */
+html.lightbox-open {
+    overflow: hidden;
+}
+
+.lightbox {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 60px 84px;
+    border: 0;
+    background: transparent;
+    color: #ffffff;
+    overflow: hidden;
+    touch-action: pan-y;
+}
+
+.lightbox[open] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox::backdrop {
+    background: rgba(4, 2, 6, 0.95);
+}
+
+.lightbox-figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0;
+}
+
+.lightbox-img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(1200px, 100%);
+    max-height: calc(100vh - 170px);
+    max-height: calc(100dvh - 170px);
+    border-radius: 10px;
+    border: 2px solid rgba(255, 45, 149, 0.75);
+    box-shadow: 0 0 24px rgba(255, 45, 149, 0.55), 0 0 64px rgba(161, 59, 255, 0.35);
+    animation: lb-in 0.35s ease;
+}
+
+.lightbox-caption {
+    margin-top: 14px;
+    font-family: var(--front-hand);
+    font-size: 1.6rem;
+    line-height: 1.1;
+    text-align: center;
+    color: #fff4e3;
+    text-shadow: 0 0 10px rgba(255, 45, 149, 0.85);
+}
+
+.lightbox-count {
+    margin-left: 8px;
+    font-family: var(--cn-font-display);
+    font-size: 0.95rem;
+    color: var(--cn-gold-light);
+    text-shadow: none;
+}
+
+.lightbox-btn {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(242, 193, 78, 0.85);
+    background: rgba(13, 8, 7, 0.65);
+    color: var(--cn-gold-light);
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lightbox-btn:hover,
+.lightbox-btn:focus-visible {
+    background: var(--cn-red);
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(255, 35, 64, 0.8), 0 0 30px rgba(255, 45, 149, 0.45);
+    transform: scale(1.06);
+    outline: none;
+}
+
+.lightbox-btn:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.lightbox-close {
+    top: 16px;
+    right: 16px;
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.lightbox-prev,
+.lightbox-next {
+    top: 50%;
+    margin-top: -26px;
+}
+
+.lightbox-prev { left: 18px; }
+.lightbox-next { right: 18px; }
+
+@keyframes lb-in {
+    from { opacity: 0; transform: scale(0.94); }
+    to { opacity: 1; transform: none; }
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 768px) {
+    .fl-beam:nth-child(2),
+    .fl-beam:nth-child(4),
+    .fl-laser:nth-child(8),
+    .fl-laser:nth-child(9) {
+        display: none;
+    }
+
+    .fl-beam {
+        opacity: 0.26;
+    }
+
+    .front-eq {
+        height: 40px;
+        opacity: 0.36;
+    }
+
+    .gallery {
+        padding: 60px 0 48px;
+    }
+
+    .gallery h2 {
+        font-size: 1.9rem;
+    }
+
+    .gallery-sub {
+        font-size: 1.3rem;
+        margin-bottom: 1.6rem;
+    }
+
+    .gallery-grid {
+        column-count: 2;
+        column-gap: 10px;
+    }
+
+    .gallery-item {
+        margin-bottom: 10px;
+        border-radius: 10px;
+    }
+
+    .gallery-item figcaption {
+        padding: 22px 9px 7px;
+        font-size: 1.05rem;
+    }
+
+    .lightbox {
+        padding: 64px 10px 96px;
+    }
+
+    .lightbox-img {
+        max-height: calc(100vh - 210px);
+        max-height: calc(100dvh - 210px);
+    }
+
+    .lightbox-caption {
+        font-size: 1.35rem;
+    }
+
+    .lightbox-prev,
+    .lightbox-next {
+        top: auto;
+        bottom: 22px;
+        margin-top: 0;
+    }
+
+    .lightbox-prev { left: calc(50% - 70px); }
+    .lightbox-next { right: calc(50% - 70px); }
+
+    .lightbox-close {
+        top: 12px;
+        right: 12px;
+    }
+}
+
+/* ---------- Reduced motion: everything holds still ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .fl-beam,
+    .fl-laser,
+    .fl-floor,
+    .front-eq i,
+    .gallery-lasers span,
+    .front-ribbon::before,
+    .front-ribbon::after,
+    #reservationForm button[type="submit"],
+    .reservations h2,
+    .gallery h2,
+    .reviews h2,
+    .contact h2,
+    .cancellation h2,
+    .login-page-title,
+    .profile-section h2,
+    .lightbox-img {
+        animation: none;
+    }
+
+    .fl-laser {
+        opacity: 0.3;
+    }
+
+    .front-ribbon::after {
+        display: none;
+    }
+
+    .gallery-item,
+    .gallery-open img {
+        transition: none;
+    }
+}
+
+/* portrait photos get a 3:4 frame in the grid so the columns balance (the lightbox shows the whole photo) */
+.gallery-item.is-tall .gallery-open img {
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    object-position: 50% 45%;
 }

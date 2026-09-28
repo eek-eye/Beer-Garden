@@ -75,6 +75,12 @@
 
     <!-- Hero slideshow (front.js: autoplay, arrows, dots, swipe, endless loop) -->
     <section class="front-hero" aria-roledescription="carrusel" aria-label="Bar Chinesca Mxli">
+        <div class="front-lights" aria-hidden="true">
+            <span class="fl-beam"></span><span class="fl-beam"></span><span class="fl-beam"></span><span class="fl-beam"></span><span class="fl-beam"></span>
+            <span class="fl-laser"></span><span class="fl-laser"></span><span class="fl-laser"></span><span class="fl-laser"></span>
+            <span class="fl-floor"></span>
+        </div>
+        <div class="front-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <div class="front-slides" aria-live="off">
             <div class="front-slide front-slide-cash is-active" role="group" aria-roledescription="diapositiva" aria-label="1 / 5">
                 <div class="front-slide-text">
@@ -105,7 +111,7 @@
                     <a href="/" data-front-scroll="tables" class="front-ribbon ribbon-jade">Ver mesas</a>
                 </div>
                 <div class="front-slide-art art-sign">
-                    <div class="front-circle"><img src="IMAGES/Chinesca.webp" alt="" width="1600" height="1236" loading="lazy"></div>
+                    <div class="front-circle"><img class="front-photo" src="IMAGES/noche-laser.webp" alt="" width="1400" height="787" loading="lazy" decoding="async"></div>
                     <span class="front-pop pop-lanterns" aria-hidden="true"><i></i><i></i></span>
                 </div>
             </div>
@@ -116,7 +122,7 @@
                     <a href="#reservations" class="front-ribbon ribbon-gold">Apartar VIP</a>
                 </div>
                 <div class="front-slide-art art-roof">
-                    <div class="front-circle"><img src="IMAGES/Chinesca.webp" alt="" width="1600" height="1236" loading="lazy"></div>
+                    <div class="front-circle"><img class="front-photo" src="IMAGES/noche-pista-roja.webp" alt="" width="1400" height="933" loading="lazy" decoding="async"></div>
                     <span class="front-pop pop-vip" aria-hidden="true">VIP</span>
                 </div>
             </div>
@@ -127,7 +133,7 @@
                     <a href="tel:+526863642083" class="front-ribbon ribbon-pink">Llamar</a>
                 </div>
                 <div class="front-slide-art art-street">
-                    <div class="front-circle"><img src="IMAGES/Chinesca.webp" alt="" width="1600" height="1236" loading="lazy"></div>
+                    <div class="front-circle"><img class="front-photo" src="IMAGES/noche-dj-rojo.webp" alt="" width="1400" height="933" loading="lazy" decoding="async"></div>
                     <span class="front-pop pop-seal" aria-hidden="true">福</span>
                 </div>
             </div>
@@ -353,6 +359,76 @@
                 </form>
             </div>
         </div>
+    </section>
+
+    <!-- Gallery: generic nightlife photos (Unsplash License, free use; credits kept outside the site).
+         Illustrative only, not photos of the bar. front.js: lightbox in a native <dialog>, no address change. -->
+    <section id="galeria" class="gallery" aria-labelledby="galleryTitle">
+        <div class="gallery-lasers" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="container">
+            <h2 id="galleryTitle">La Noche en Chinesca</h2>
+            <p class="gallery-sub">Luces, música y ambiente de fiesta en el corazón de La Chinesca</p>
+            <div class="gallery-grid">
+                <figure class="gallery-item">
+                    <button type="button" class="gallery-open" data-index="0" aria-label="Ampliar foto: Láser y luces">
+                        <img src="IMAGES/noche-laser.webp" alt="Rayos láser rojos y rosas sobre una pista de baile" width="1400" height="787" loading="lazy" decoding="async">
+                    </button>
+                    <figcaption>Láser y luces</figcaption>
+                </figure>
+                <figure class="gallery-item is-tall">
+                    <button type="button" class="gallery-open" data-index="1" aria-label="Ampliar foto: Noches de fiesta">
+                        <img src="IMAGES/noche-baile.webp" alt="Gente bailando entre humo y luces de colores" width="984" height="1400" loading="lazy" decoding="async">
+                    </button>
+                    <figcaption>Noches de fiesta</figcaption>
+                </figure>
+                <figure class="gallery-item">
+                    <button type="button" class="gallery-open" data-index="2" aria-label="Ampliar foto: El DJ en cabina">
+                        <img src="IMAGES/noche-dj-rojo.webp" alt="DJ mezclando en cabina bajo luz roja" width="1400" height="933" loading="lazy" decoding="async">
+                    </button>
+                    <figcaption>El DJ en cabina</figcaption>
+                </figure>
+                <figure class="gallery-item is-tall">
+                    <button type="button" class="gallery-open" data-index="3" aria-label="Ampliar foto: Brindis de medianoche">
+                        <img src="IMAGES/noche-coctel.webp" alt="Cóctel rojo con un gran cubo de hielo" width="1050" height="1400" loading="lazy" decoding="async">
+                    </button>
+                    <figcaption>Brindis de medianoche</figcaption>
+                </figure>
+                <figure class="gallery-item">
+                    <button type="button" class="gallery-open" data-index="4" aria-label="Ampliar foto: La pista llena">
+                        <img src="IMAGES/noche-pista-roja.webp" alt="Multitud bailando con las manos arriba bajo luces rojas" width="1400" height="933" loading="lazy" decoding="async">
+                    </button>
+                    <figcaption>La pista llena</figcaption>
+                </figure>
+                <figure class="gallery-item">
+                    <button type="button" class="gallery-open" data-index="5" aria-label="Ampliar foto: Ritmo toda la noche">
+                        <img src="IMAGES/noche-escenario.webp" alt="Público bailando bajo luces verdes y rosas del escenario" width="1400" height="934" loading="lazy" decoding="async">
+                    </button>
+                    <figcaption>Ritmo toda la noche</figcaption>
+                </figure>
+                <figure class="gallery-item is-tall">
+                    <button type="button" class="gallery-open" data-index="6" aria-label="Ampliar foto: Faroles rojos">
+                        <img src="IMAGES/noche-faroles.webp" alt="Faroles chinos rojos encendidos en una calle de noche" width="933" height="1400" loading="lazy" decoding="async">
+                    </button>
+                    <figcaption>Faroles rojos</figcaption>
+                </figure>
+                <figure class="gallery-item is-tall">
+                    <button type="button" class="gallery-open" data-index="7" aria-label="Ampliar foto: Mezclas hasta tarde">
+                        <img src="IMAGES/noche-dj-mezcla.webp" alt="DJ mezclando en tornamesas entre luces y humo" width="788" height="1400" loading="lazy" decoding="async">
+                    </button>
+                    <figcaption>Mezclas hasta tarde</figcaption>
+                </figure>
+            </div>
+            <p class="gallery-note">Imágenes ilustrativas de ambiente nocturno.</p>
+        </div>
+        <dialog class="lightbox" id="galleryLightbox" aria-label="Foto ampliada">
+            <figure class="lightbox-figure">
+                <img class="lightbox-img" src="IMAGES/noche-laser.webp" alt="" width="1400" height="787" loading="lazy" decoding="async">
+                <figcaption class="lightbox-caption"><span class="lightbox-text"></span> <span class="lightbox-count"></span></figcaption>
+            </figure>
+            <button type="button" class="lightbox-btn lightbox-close" aria-label="Cerrar foto"><span aria-hidden="true">&times;</span></button>
+            <button type="button" class="lightbox-btn lightbox-prev" aria-label="Foto anterior"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button type="button" class="lightbox-btn lightbox-next" aria-label="Foto siguiente"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </dialog>
     </section>
 
     <!-- Reviews: real reviews from the Google Maps place (place_id ChIJP4G9EQB714ARYeGJXlf0QI0), static HTML, text copied as written.
