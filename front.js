@@ -15,8 +15,19 @@
         window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
     }
 
+    // layout position (ignores the scroll-reveal slide-in transforms, so the
+    // target is right even before its section has appeared)
+    function pageTop(el) {
+        var y = 0;
+        while (el) {
+            y += el.offsetTop;
+            el = el.offsetParent;
+        }
+        return y;
+    }
+
     function scrollToElement(el) {
-        scrollToY(el.getBoundingClientRect().top + window.pageYOffset - navOffset());
+        scrollToY(pageTop(el) - navOffset());
     }
 
     // "Tables" links: scroll to the seating chart (href="/" without JavaScript)
