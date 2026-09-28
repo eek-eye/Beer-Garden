@@ -106,6 +106,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
+    <script src="vendor/qrcode.js"></script>
+    <script src="checkin.js"></script>
     <script>
         // Profile page: show reservations and logout ONLY when the user is logged in
         document.addEventListener('DOMContentLoaded', function() {
@@ -174,17 +176,46 @@
                         `Mesa ${reservation.table}`;
                     const nameDisplay = reservation.name || (currentUser.firstName && currentUser.lastName ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.email) || '—';
                     
+                    const upcoming = !!(window.barCheckin && reservation.date && reservation.date >= window.barCheckin.serviceDate());
+                    const dateEs = window.barCheckin ? window.barCheckin.formatDateEs(reservation.date) : '';
+                    const whenDisplay = dateEs ? dateEs.charAt(0).toUpperCase() + dateEs.slice(1) + (reservation.time ? ' · ' + reservation.time : '') : '';
                     html += `
                         <div class="reservation-card profile-card-simple">
                             <div class="profile-card-order">${esc(reservation.orderNumber)}</div>
                             <div class="profile-card-table">${esc(tableDisplay)}</div>
                             <div class="profile-card-name">${esc(nameDisplay)}</div>
                             <div class="profile-card-guests">${esc(reservation.guests)} ${reservation.guests === '1' ? 'persona' : 'personas'}</div>
+                            ${whenDisplay ? `<div class="profile-card-when">${esc(whenDisplay)}</div>` : ''}
+                            ${upcoming ? `<div class="profile-card-checkin" data-order="${esc(reservation.orderNumber)}">
+                                <p class="profile-card-checkin-title">Código de entrada</p>
+                                <div class="checkin-qr"><p class="checkin-qr-loading">Generando código QR…</p></div>
+                                <p class="checkin-code"></p>
+                                <p class="profile-card-checkin-hint">Muéstralo en la puerta.</p>
+                            </div>` : ''}
                         </div>
                     `;
                 });
                 html += '</div>';
                 reservationsList.innerHTML = html;
+                // QR check-in codes (attached the first time if the reservation has none yet)
+                userReservations.forEach(function(reservation) {
+                    const box = reservationsList.querySelector('.profile-card-checkin[data-order="' + String(reservation.orderNumber).replace(/\D/g, '') + '"]');
+                    if (!box || !window.barCheckin) return;
+                    window.barCheckin.ensureCode(reservation).then(function(code) {
+                        const qr = box.querySelector('.checkin-qr');
+                        if (code) {
+                            window.barCheckin.renderQr(qr, code);
+                            box.querySelector('.checkin-code').textContent = window.barCheckin.shortCode(code);
+                            if (reservation.checkedIn) {
+                                box.classList.add('is-checked-in');
+                                box.querySelector('.profile-card-checkin-hint').textContent = '✓ Ya registrada en la entrada';
+                            }
+                        } else {
+                            box.classList.add('is-noqr');
+                            qr.innerHTML = '<p class="checkin-noqr"><strong>Sin QR por ahora.</strong> En la entrada da tu número de orden: <strong>' + esc(reservation.orderNumber) + '</strong>.</p>';
+                        }
+                    });
+                });
             }
             if (typeof whenAuthReady === 'function' && typeof getMyReservations === 'function') {
                 whenAuthReady().then(function(user) {

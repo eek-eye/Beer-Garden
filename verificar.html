@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){var c=location.pathname.replace(/\.html$/,'');if(location.href!==location.origin+c){history.replaceState(null,'',c);}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar reservación - Bar Chinesca Mxli</title>
+    <meta name="description" content="Verificación de códigos QR de reservaciones (solo personal de Bar Chinesca Mxli).">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="/favicon.ico" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="32x32" href="/IMAGES/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/IMAGES/icon-192.png">
+    <link rel="apple-touch-icon" href="/IMAGES/apple-touch-icon.png">
+    <!-- Cookie consent: the decorative Google Fonts load only after "Aceptar" -->
+    <script src="cookie-consent.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <a href="/" style="text-decoration: none; color: inherit;">
+                    <h1>🍺 Bar Chinesca Mxli</h1>
+                </a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" data-section="reservations">Reservaciones</a></li>
+                <li class="nav-tab-location"><a href="https://www.google.com/maps/search/?api=1&amp;query=Bar+Chinesca%2C+C.+Ju%C3%A1rez+22%2C+Primera%2C+21100+Mexicali%2C+B.C.&amp;query_place_id=ChIJP4G9EQB714ARYeGJXlf0QI0" target="_blank" rel="noopener noreferrer" title="Google Maps (se abre en una pestaña nueva)">Ubicación</a></li>
+                <li class="nav-tab-social">
+                    <a href="/" class="nav-social-toggle" role="button" aria-expanded="false" aria-controls="navSocialFlyout">Redes</a>
+                    <div class="nav-social-flyout" id="navSocialFlyout" hidden>
+                        <a href="https://www.facebook.com/p/BAR-chinesca-61565011852767/" target="_blank" rel="noopener noreferrer" aria-label="Facebook (se abre en una pestaña nueva)"><span class="nav-social-icon"><svg viewBox="2 3 20 20" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 22v-8.2h2.8l.4-3.2h-3.2V8.6c0-.9.3-1.6 1.6-1.6h1.7V4.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.3H7.3v3.2h2.8V22z"/></svg></span>Facebook</a>
+                        <a href="https://www.instagram.com/barchinesca.nightclub.mxl/" target="_blank" rel="noopener noreferrer" aria-label="Instagram (se abre en una pestaña nueva)"><span class="nav-social-icon"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17.4" cy="6.6" r="1.4" fill="currentColor"/></svg></span>Instagram</a>
+                        <a href="https://www.tiktok.com/@barchinesca" target="_blank" rel="noopener noreferrer" aria-label="TikTok, @barchinesca (se abre en una pestaña nueva)"><span class="nav-social-icon"><svg viewBox="-2.5 -2.5 29 29" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></span>TikTok</a>
+                    </div>
+                </li>
+                <li class="nav-tab-gallery"><a href="/galeria">Galería</a></li>
+                <li id="navLoginItem"><a href="/login">Iniciar sesión</a></li>
+            </ul>
+            <div class="nav-right">
+                <button type="button" class="btn btn-secondary nav-signout js-signout-btn" id="navSignOutBtn" title="Cerrar sesión">Salir</button>
+                <a href="/profile" class="profile-icon" title="Mi perfil" aria-label="Mi perfil">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </a>
+                <div class="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Staff check-in (Spanish only, noindex): scan the guest's QR, or type the code / order number -->
+    <section id="verificar" class="privacy-section verify-section">
+        <div class="container">
+            <h2>Verificar reservación</h2>
+
+            <div id="vfLoading" class="verify-panel"><p>Cargando…</p></div>
+
+            <div id="vfSignedOut" class="verify-panel" hidden>
+                <p>Esta página es solo para el personal del bar. Inicia sesión con tu cuenta autorizada.</p>
+                <p><a href="/login" class="btn btn-primary" id="vfLoginLink">Iniciar sesión</a></p>
+            </div>
+
+            <div id="vfDenied" class="verify-panel" hidden>
+                <p><strong>Acceso solo para personal autorizado.</strong></p>
+                <p>Tu cuenta (<span id="vfDeniedEmail"></span>) no tiene permiso para verificar reservaciones.</p>
+            </div>
+
+            <div id="vfApp" hidden>
+                <p class="verify-staff">Personal: <span id="vfStaffEmail"></span> · Noche del <span id="vfServiceDate"></span></p>
+                <div class="verify-camera">
+                    <video id="vfVideo" playsinline muted hidden></video>
+                    <p id="vfCameraMsg" class="verify-camera-msg" hidden></p>
+                    <button type="button" class="btn btn-primary verify-camera-btn" id="vfCameraBtn">📷 Escanear con la cámara</button>
+                </div>
+                <form id="vfForm" class="verify-form" autocomplete="off">
+                    <label for="vfInput">Código QR, código corto (BC-XXXXX) o número de orden</label>
+                    <div class="verify-form-row">
+                        <input type="text" id="vfInput" name="code" inputmode="text" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="Escanea o escribe el código" enterkeyhint="go">
+                        <button type="submit" class="btn btn-primary">Verificar</button>
+                    </div>
+                    <p class="verify-form-hint">Un lector USB escribe el código y oprime Enter: se verifica solo.</p>
+                </form>
+                <p id="vfBusy" class="verify-busy" hidden>Verificando…</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Result: big green VÁLIDA / red NO VÁLIDA screen (the address never changes) -->
+    <div id="vfResult" class="verify-result" hidden role="alertdialog" aria-modal="true" aria-labelledby="vfResultTitle" aria-describedby="vfResultReason vfResultNote">
+        <div class="verify-result-inner">
+            <p class="verify-result-icon" aria-hidden="true"></p>
+            <h2 id="vfResultTitle" class="verify-result-title"></h2>
+            <p id="vfResultReason" class="verify-result-reason"></p>
+            <p id="vfResultNote" class="verify-result-note"></p>
+            <dl class="verify-result-details" id="vfResultDetails"></dl>
+            <button type="button" class="btn verify-result-next" id="vfNext">Escanear otra</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Bar Chinesca Mxli. Todos los derechos reservados.</p>
+            <p>Reservaciones al <a href="tel:+526863642083">+52 686 364 2083</a></p>
+            <p class="cash-notice cash-notice-footer"><span class="cash-notice-icon" aria-hidden="true">💵</span> <span class="cash-notice-text">¡Te ahorras del <strong class="cash-notice-pct">10% al 15%</strong> en tu compra al pagar en efectivo!</span></p>
+            <p><a href="https://www.google.com/maps/search/?api=1&amp;query=Bar+Chinesca%2C+C.+Ju%C3%A1rez+22%2C+Primera%2C+21100+Mexicali%2C+B.C.&amp;query_place_id=ChIJP4G9EQB714ARYeGJXlf0QI0" target="_blank" rel="noopener noreferrer">C. Juárez 22, Primera, 21100 Mexicali, B.C.</a></p>
+            <div class="social-links footer-social">
+                <a href="https://www.facebook.com/p/BAR-chinesca-61565011852767/" class="social-link social-facebook" target="_blank" rel="noopener noreferrer" aria-label="Bar Chinesca en Facebook (se abre en una pestaña nueva)" title="Facebook"><svg viewBox="2 3 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 22v-8.2h2.8l.4-3.2h-3.2V8.6c0-.9.3-1.6 1.6-1.6h1.7V4.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.3H7.3v3.2h2.8V22z"/></svg></a>
+                <a href="https://www.instagram.com/barchinesca.nightclub.mxl/" class="social-link social-instagram" target="_blank" rel="noopener noreferrer" aria-label="Bar Chinesca en Instagram (se abre en una pestaña nueva)" title="Instagram"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.3" fill="currentColor"/></svg></a>
+                <a href="https://www.tiktok.com/@barchinesca" class="social-link social-tiktok" target="_blank" rel="noopener noreferrer" aria-label="Bar Chinesca en TikTok, @barchinesca (se abre en una pestaña nueva)" title="TikTok @barchinesca"><svg viewBox="-2.5 -2.5 29 29" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></a>
+            </div>
+            <p class="footer-gallery"><a href="/galeria" class="footer-gallery-link"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M9 4 7.2 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.2L15 4zm3 4.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg><span>Galería · La Noche en Chinesca</span></a></p>
+            <p class="footer-legal"><a href="/privacy">Aviso de privacidad</a> <span aria-hidden="true">·</span> <button type="button" class="footer-cookie-link" data-cookie-settings>Cookies</button> <span aria-hidden="true">·</span> <a href="/cancel" class="footer-cancel-link">Cancelar reservación</a></p>
+        </div>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+    <script src="checkin.js"></script>
+    <script src="vendor/qr-scanner.umd.min.js"></script>
+    <script src="verificar.js"></script>
+</body>
+</html>

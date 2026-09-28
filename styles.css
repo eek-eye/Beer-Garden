@@ -6650,3 +6650,336 @@ html.lightbox-open {
         padding-top: calc(var(--bm-h) * 0.1);
     }
 }
+
+/* ==========================================================================
+   QR check-in: code on the profile cards, booking confirmation dialog, /verificar
+   (QR always dark on white with a quiet zone so any phone camera reads it)
+   ========================================================================== */
+.checkin-qr {
+    width: 168px;
+    max-width: 100%;
+    margin: 0.4rem auto 0.2rem;
+    padding: 6px;
+    background: #ffffff;
+    border: 2px solid var(--cn-gold, #d4a017);
+    border-radius: 8px;
+    box-shadow: 0 0 14px rgba(242, 193, 78, 0.35);
+    line-height: 0;
+}
+
+.checkin-qr svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.checkin-qr-large {
+    width: 236px;
+}
+
+.checkin-qr-loading,
+.checkin-noqr {
+    margin: 0;
+    padding: 14px 6px;
+    line-height: 1.4;
+    font-size: 0.9rem;
+    color: #3a2a10;
+    text-align: center;
+}
+
+.checkin-qr-none {
+    width: auto;
+    max-width: 300px;
+    border-style: dashed;
+    box-shadow: none;
+}
+
+.checkin-code {
+    margin: 0.25rem 0 0;
+    font-family: 'Courier New', monospace;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--cn-gold-light, #f2c14e);
+}
+
+.profile-card-when {
+    font-size: 0.95rem;
+    color: var(--cn-gold-light, #f2c14e);
+}
+
+.profile-card-checkin {
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px dashed rgba(242, 193, 78, 0.45);
+}
+
+.profile-card-checkin-title {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cn-gold-light, #f2c14e);
+}
+
+.profile-card-checkin-hint {
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
+    opacity: 0.85;
+}
+
+.profile-card-checkin.is-checked-in .checkin-qr {
+    opacity: 0.35;
+}
+
+.profile-card-checkin.is-checked-in .profile-card-checkin-hint {
+    color: #2fd07a;
+    font-weight: 700;
+    opacity: 1;
+}
+
+/* booking confirmation dialog */
+.checkin-dialog {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    height: fit-content;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    width: min(92vw, 380px);
+    padding: 1.6rem 1.4rem 1.4rem;
+    text-align: center;
+    color: #fbeccb;
+    background: linear-gradient(180deg, #2a1414 0%, #0d0a0a 100%);
+    border: 2px solid var(--cn-gold, #d4a017);
+    border-radius: 12px;
+    box-shadow: 0 0 0 4px rgba(176, 18, 27, 0.6), 0 0 32px rgba(255, 45, 149, 0.4);
+}
+
+.checkin-dialog::backdrop {
+    background: rgba(5, 3, 6, 0.78);
+}
+
+.checkin-dialog-title {
+    margin: 0 0 0.3rem;
+    font-family: var(--cn-font-display);
+    font-size: 1.5rem;
+    color: #fff4fa;
+    text-shadow: 0 0 10px rgba(255, 45, 149, 0.7);
+}
+
+.checkin-dialog-sub,
+.checkin-dialog-details,
+.checkin-dialog-hint {
+    margin: 0.3rem 0;
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.checkin-dialog-details {
+    color: var(--cn-gold-light, #f2c14e);
+}
+
+.checkin-dialog-hint a {
+    color: var(--cn-gold-light, #f2c14e);
+}
+
+.checkin-dialog-close {
+    margin-top: 0.8rem;
+    min-width: 140px;
+}
+
+/* /verificar (staff) */
+.verify-section .container {
+    max-width: 640px;
+}
+
+.verify-panel {
+    padding: 1.2rem 1.4rem;
+    text-align: center;
+    background: rgba(13, 10, 10, 0.8);
+    border: 1px solid rgba(242, 193, 78, 0.45);
+    border-radius: 10px;
+}
+
+.verify-staff {
+    margin: 0 0 1rem;
+    text-align: center;
+    font-size: 0.95rem;
+    color: #cbb9a8;
+}
+
+.verify-camera {
+    position: relative;
+    margin-bottom: 1.2rem;
+    text-align: center;
+}
+
+.verify-camera video {
+    display: block;
+    width: 100%;
+    max-height: 60vh;
+    margin: 0 auto 0.8rem;
+    object-fit: cover;
+    background: #000;
+    border: 2px solid var(--cn-gold, #d4a017);
+    border-radius: 10px;
+}
+
+.verify-camera video[hidden] {
+    display: none;
+}
+
+.verify-camera-btn {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.15rem;
+}
+
+.verify-camera-msg {
+    margin: 0 0 0.8rem;
+    color: #ffb3b3;
+}
+
+.verify-form label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 700;
+    color: #fbeccb;
+}
+
+.verify-form-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.verify-form-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.85rem 0.9rem;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #111;
+    background: #fffdf5;
+    border: 2px solid var(--cn-gold, #d4a017);
+    border-radius: 8px;
+}
+
+.verify-form-hint,
+.verify-busy {
+    margin: 0.5rem 0 0;
+    font-size: 0.88rem;
+    color: #cbb9a8;
+}
+
+.verify-result {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 18px;
+    overflow-y: auto;
+    color: #ffffff;
+    text-align: center;
+}
+
+.verify-result[hidden] {
+    display: none;
+}
+
+.verify-result.is-valid {
+    background: radial-gradient(ellipse at 50% 30%, #1fbf5f 0%, #0d7a36 70%, #075224 100%);
+}
+
+.verify-result.is-invalid {
+    background: radial-gradient(ellipse at 50% 30%, #e0303a 0%, #a50e17 70%, #6d060c 100%);
+}
+
+.verify-result-inner {
+    width: 100%;
+    max-width: 520px;
+}
+
+.verify-result-icon {
+    margin: 0;
+    font-size: clamp(5rem, 26vw, 9rem);
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.verify-result-title {
+    margin: 0.2rem 0 0.4rem;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(2.6rem, 13vw, 4.6rem);
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    line-height: 1.05;
+    text-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+}
+
+.verify-result-reason {
+    margin: 0 0 1.1rem;
+    font-size: clamp(1.2rem, 5.4vw, 1.6rem);
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.verify-result-note {
+    margin: -0.6rem 0 1.1rem;
+    font-size: clamp(1rem, 4.4vw, 1.2rem);
+    line-height: 1.4;
+    opacity: 0.95;
+}
+
+.verify-result-note:empty {
+    display: none;
+}
+
+.verify-result-details {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.35rem 1rem;
+    margin: 0 auto 1.4rem;
+    padding: 1rem 1.2rem;
+    text-align: left;
+    font-size: 1.15rem;
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: 12px;
+}
+
+.verify-result-details:empty {
+    display: none;
+}
+
+.verify-result-details dt {
+    font-weight: 400;
+    opacity: 0.85;
+}
+
+.verify-result-details dd {
+    margin: 0;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.verify-result-next {
+    min-width: 220px;
+    padding: 1rem 1.6rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #111;
+    background: #ffffff;
+    border: 0;
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+body.verify-result-open {
+    overflow: hidden;
+}

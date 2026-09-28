@@ -234,8 +234,10 @@ function getBarReservation(orderNumber) {
 }
 window.getBarReservation = getBarReservation;
 
-// Cancel = delete the reservation + its table lock and decrement the user's counter, all at once
-function cancelBarReservation(orderNumber) {
+// Cancel = delete the reservation + its table lock and decrement the user's counter, all at once.
+// Its QR check-in code (if any) is closed in the same transaction: "cancelled", or "expired" for the
+// past-date cleanup. A code that was already checked in stays "used" (checkedIn) either way.
+function cancelBarReservation(orderNumber, closeAs) {
     return whenAuthReady().then(function(user) {
         if (!user || !firestoreDb) throw barError('bar/signed-out');
         var resRef = firestoreDb.collection('barReservations').doc(String(orderNumber));
@@ -246,6 +248,12 @@ function cancelBarReservation(orderNumber) {
                 var res = snaps[0].data();
                 if (res.uid !== user.uid) throw barError('bar/not-found');
                 var count = snaps[1].exists ? (snaps[1].data().count || 0) : 0;
+                if (res.checkinCode) {
+                    t.update(firestoreDb.collection('barCheckins').doc(res.checkinCode), {
+                        status: closeAs === 'expired' ? 'expired' : 'cancelled',
+                        closedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
                 t.delete(resRef);
                 t.delete(firestoreDb.collection('barTableLocks').doc(barLockId(res.date, res.table)));
                 t.set(countRef, {
@@ -270,7 +278,7 @@ function cancelPastReservations(uid) {
         var past = list.filter(function(r) { return r.date && r.date < today; });
         return past.reduce(function(p, r) {
             return p.then(function() {
-                return cancelBarReservation(r.orderNumber).catch(function(err) {
+                return cancelBarReservation(r.orderNumber, 'expired').catch(function(err) {
                     console.warn('Could not clear past reservation', r.orderNumber, err && err.code);
                 });
             });
@@ -502,8 +510,17 @@ Te contactaremos en ${formData.email} para confirmar tu reservación.
 También puedes reservar directamente al +52 686 364 2083.
     `.trim();
 
-    // Confirmation email (the script reads the details from the database; does nothing if emails are off)
-    sendReservationEmail('confirm', orderNumber);
+    // QR check-in code: attached right away (owner + upcoming reservation); the confirmation email is
+    // sent once that is done so it can include the code (the script reads everything from the database)
+    var fbUserNow = firebaseAuth && firebaseAuth.currentUser;
+    var bookedRes = {
+        orderNumber: String(orderNumber), uid: fbUserNow ? fbUserNow.uid : '', date: formData.date,
+        time: formData.time, guests: formData.guests, table: parseInt(formData.table, 10)
+    };
+    var codePromise = (window.barCheckin && fbUserNow) ? window.barCheckin.ensureCode(bookedRes) : Promise.resolve(null);
+    codePromise.catch(function() { return null; }).then(function() {
+        sendReservationEmail('confirm', orderNumber);
+    });
 
     // Show confirmation (in a real app, this would send to a server)
     alert(confirmationMessage);
@@ -554,6 +571,9 @@ También puedes reservar directamente al +52 686 364 2083.
     setTimeout(() => {
         successDiv.remove();
     }, 5000);
+
+    // Entry QR code for the door (or the "sin QR" note with the order number)
+    if (window.barCheckin && fbUserNow) window.barCheckin.showBookingQr(bookedRes, codePromise);
 }
 
 // Initialize seat elements with data attributes for table numbers
@@ -981,6 +1001,17 @@ var firebaseApp = null;
 var firebaseAuth = null;
 var accountSetupInProgress = false;
 
+// Where to go after signing in: the profile, or back to /verificar when staff came from there
+// (the flag is set by the /verificar login button and only lives while the login page is open)
+function afterLoginUrl() {
+    var next = null;
+    try { next = sessionStorage.getItem('barAfterLogin'); } catch (e) {}
+    return next === '/verificar' ? '/verificar' : '/profile';
+}
+if (!/(^|\/)login(\.html)?$/.test(window.location.pathname || '')) {
+    try { sessionStorage.removeItem('barAfterLogin'); } catch (e) {}
+}
+
 function isLoginPage() {
     return /(^|\/)login(\.html)?$/.test(window.location.pathname || '');
 }
@@ -1015,7 +1046,7 @@ function onSocialSignedIn(user, providerName) {
     var u = saveFirebaseUser(user);
     if (!u) return;
     if (isLoginPage()) {
-        window.location.href = '/profile';
+        window.location.href = afterLoginUrl();
         return;
     }
     if (typeof closeAuthModal === 'function') closeAuthModal();
@@ -1053,6 +1084,11 @@ function initFirebaseAuth() {
     if (firebase.firestore) {
         try { firestoreDb = firebase.firestore(); } catch (e) { firestoreDb = null; }
     }
+    // Local testing only: localhost + localStorage.barUseEmulator = '1' talks to the Firebase emulators
+    if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && localStorage.getItem('barUseEmulator') === '1') {
+        try { firebaseAuth.useEmulator('http://127.0.0.1:9099'); } catch (e) {}
+        try { if (firestoreDb) firestoreDb.useEmulator('127.0.0.1', 8080); } catch (e) {}
+    }
 
     // Finish a redirect sign-in (only used when the popup was blocked)
     firebaseAuth.getRedirectResult().then(function(result) {
@@ -1071,7 +1107,7 @@ function initFirebaseAuth() {
             checkLoginStatus();
             // (sign-up / account migration redirect themselves once the name is saved)
             if (isLoginPage() && !accountSetupInProgress) {
-                window.location.href = '/profile';
+                window.location.href = afterLoginUrl();
             }
         } else {
             // Not signed in to Firebase: drop any stored session, including old browser-only
@@ -1367,7 +1403,7 @@ function handleLogin(email, password) {
             .then(function() {
                 if (!document.getElementById('authModal')) {
                     showLoginPageMessage('Sesión iniciada. Redirigiendo…');
-                    window.location.href = '/profile';
+                    window.location.href = afterLoginUrl();
                     return;
                 }
                 closeAuthModal();
@@ -1404,7 +1440,7 @@ function handleLogin(email, password) {
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             if (!document.getElementById('authModal')) {
                 showLoginPageMessage('Sesión iniciada. Redirigiendo…');
-                window.location.href = '/profile';
+                window.location.href = afterLoginUrl();
                 return;
             }
             closeAuthModal();
@@ -1433,7 +1469,7 @@ function migrateLegacyAccount(legacy, email, password) {
             localStorage.setItem('userAccounts', JSON.stringify(accounts));
             if (!document.getElementById('authModal')) {
                 showLoginPageMessage('Sesión iniciada. Redirigiendo…');
-                window.location.href = '/profile';
+                window.location.href = afterLoginUrl();
                 return;
             }
             closeAuthModal();
@@ -1481,7 +1517,7 @@ function createAccountAndLogIn(firstName, lastName, email, password) {
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
     if (!document.getElementById('authModal')) {
         showLoginPageMessage('Cuenta creada. Redirigiendo…');
-        window.location.href = '/profile';
+        window.location.href = afterLoginUrl();
         return true;
     }
     closeAuthModal();
@@ -1507,7 +1543,7 @@ function handleSignup(firstName, lastName, email, password) {
                 accountSetupInProgress = false;
                 if (!document.getElementById('authModal')) {
                     showLoginPageMessage('Cuenta creada. Redirigiendo…');
-                    window.location.href = '/profile';
+                    window.location.href = afterLoginUrl();
                     return;
                 }
                 closeAuthModal();

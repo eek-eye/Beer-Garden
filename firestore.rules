@@ -9,6 +9,9 @@ service cloud.firestore {
     //   barReservations/{orderNumber}  one reserved table; private to its owner
     //   barTableLocks/{date_table}     "table T is taken on date D"; public, no personal data
     //   barUserCounts/{uid}            number of reservations the user currently holds (max 2)
+    //   barCheckins/{code}             QR check-in code of one reservation (random, unguessable);
+    //                                  owner + admins can read it, only admins can check it in
+    //   barAdmins/{uid}                staff allowlist (written only from the Firebase console)
     //
     // Booking = one transaction/batch that creates the reservation + its lock and
     // increments the counter. Cancelling = one batch that deletes the reservation +
@@ -29,6 +32,30 @@ service cloud.firestore {
 
     function barCountPath(uid) {
       return /databases/$(database)/documents/barUserCounts/$(uid);
+    }
+
+    function barCheckinPath(code) {
+      return /databases/$(database)/documents/barCheckins/$(code);
+    }
+
+    // Staff who may verify QR codes at the door: fuchendeonze@gmail.com (verified Google email)
+    // plus anyone with a barAdmins/{uid} document (added by hand in the Firebase console)
+    function isAdmin() {
+      return signedIn() && (
+        (request.auth.token.email == 'fuchendeonze@gmail.com' && request.auth.token.email_verified == true)
+        || exists(/databases/$(database)/documents/barAdmins/$(request.auth.uid))
+      );
+    }
+
+    // The reservation day is over (UTC midnight after the date = 5 PM Mexicali that day or later)
+    function barDatePast(date) {
+      return timestamp.date(int(date[0:4]), int(date[5:7]), int(date[8:10]))
+             + duration.value(1, 'd') < request.time;
+    }
+
+    // BC-XXXXX-YYYYYYYYYYYYYYYY: 5-character short code + 16 random characters (no 0/O/1/I/L)
+    function barValidCode(code) {
+      return code.matches('^BC-[2-9A-HJKMNP-Z]{5}-[2-9A-HJKMNP-Z]{16}$');
     }
 
     function barLockId(date, table) {
@@ -68,8 +95,9 @@ service cloud.firestore {
     }
 
     match /barReservations/{orderNumber} {
-      // Owner only. A missing doc may be probed so a fresh order number can be picked.
-      allow get: if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
+      // Owner only (and staff, to show the guest's name at check-in).
+      // A missing doc may be probed so a fresh order number can be picked.
+      allow get: if signedIn() && (resource == null || resource.data.uid == request.auth.uid || isAdmin());
       // Queries must be limited to the user's own reservations (where uid == auth.uid)
       allow list: if signedIn() && resource.data.uid == request.auth.uid;
 
@@ -91,7 +119,88 @@ service cloud.firestore {
         && getAfter(barCountPath(request.auth.uid)).data.count == barCountBefore(request.auth.uid) - 1
         && getAfter(barCountPath(request.auth.uid)).data.lastOrder == orderNumber;
 
-      allow update: if false;
+      allow update: if signedIn() && (
+        // (1) owner attaches a QR check-in code once, together with creating barCheckins/{code}
+        (
+          resource.data.uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkinCode'])
+          && !('checkinCode' in resource.data)
+          && request.resource.data.checkinCode is string
+          && barValidCode(request.resource.data.checkinCode)
+          && !exists(barCheckinPath(request.resource.data.checkinCode))
+          && existsAfter(barCheckinPath(request.resource.data.checkinCode))
+          && getAfter(barCheckinPath(request.resource.data.checkinCode)).data.orderNumber == orderNumber
+        ) ||
+        // (2) staff check the guest in at the door: once only
+        (
+          isAdmin()
+          && resource.data.status == 'active'
+          && resource.data.get('checkedIn', false) == false
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedIn', 'checkedInAt', 'checkedInBy'])
+          && request.resource.data.checkedIn == true
+          && request.resource.data.checkedInAt == request.time
+          && request.resource.data.checkedInBy == request.auth.uid
+        )
+      );
+    }
+
+    match /barCheckins/{code} {
+      // The reservation's owner (profile QR) and staff; nobody else can read a code
+      allow get: if signedIn() && (isAdmin() || (resource != null && resource.data.uid == request.auth.uid));
+      // Staff can look a code up by its short part (BC-XXXXX typed at the door)
+      allow list: if isAdmin();
+
+      // Owner creates the code for one of their own upcoming reservations (same batch sets checkinCode)
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['code', 'short', 'orderNumber', 'uid', 'date', 'time', 'guests', 'table', 'status', 'checkedIn', 'createdAt'])
+        && request.resource.data.keys().hasAll(['code', 'short', 'orderNumber', 'uid', 'date', 'time', 'guests', 'table', 'status', 'checkedIn', 'createdAt'])
+        && barValidCode(code)
+        && request.resource.data.code == code
+        && request.resource.data.short == code[3:8]
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'active'
+        && request.resource.data.checkedIn == false
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.orderNumber is string
+        && exists(barResPath(request.resource.data.orderNumber))
+        && get(barResPath(request.resource.data.orderNumber)).data.uid == request.auth.uid
+        && !('checkinCode' in get(barResPath(request.resource.data.orderNumber)).data)
+        && get(barResPath(request.resource.data.orderNumber)).data.date == request.resource.data.date
+        && get(barResPath(request.resource.data.orderNumber)).data.time == request.resource.data.time
+        && get(barResPath(request.resource.data.orderNumber)).data.guests == request.resource.data.guests
+        && get(barResPath(request.resource.data.orderNumber)).data.table == request.resource.data.table
+        && getAfter(barResPath(request.resource.data.orderNumber)).data.checkinCode == code;
+
+      allow update: if signedIn() && (
+        // staff check-in: one time only, active codes only
+        (
+          isAdmin()
+          && resource.data.status == 'active'
+          && resource.data.checkedIn == false
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedIn', 'checkedInAt', 'checkedInBy'])
+          && request.resource.data.checkedIn == true
+          && request.resource.data.checkedInAt == request.time
+          && request.resource.data.checkedInBy == request.auth.uid
+        ) ||
+        // owner closes the code in the same batch that deletes the reservation (cancel / past-date cleanup)
+        (
+          resource.data.uid == request.auth.uid
+          && resource.data.status == 'active'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'closedAt'])
+          && request.resource.data.closedAt == request.time
+          && !existsAfter(barResPath(resource.data.orderNumber))
+          && (request.resource.data.status == 'cancelled'
+              || (request.resource.data.status == 'expired' && barDatePast(resource.data.date)))
+        )
+      );
+
+      allow delete: if false;
+    }
+
+    match /barAdmins/{uid} {
+      // each user can check whether they are staff; the list is edited only in the Firebase console
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, write: if false;
     }
 
     match /barTableLocks/{lockId} {
