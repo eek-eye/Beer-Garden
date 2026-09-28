@@ -15,6 +15,10 @@ service cloud.firestore {
     //                                  kept for the shared staff login until the owner turns it off)
     //   barStaffEmails/{email}         staff allowlist by Google email (lower-cased), edited only by the owner
     //                                  in the staff app's "Personal" panel
+    //   barStaffNames/{nameKey}        names allowed on the shared password login ("Nombre y apellido"),
+    //                                  key = lower-case, no accents, single spaces; edited only by the owner
+    //   barStaffSessions/{uid}         shared-login sessions: one entry per device with the authorized name
+    //                                  typed there; the scanner works for barAdmins accounts only with one
     //
     // Booking = one transaction/batch that creates the reservation + its lock and
     // increments the counter. Cancelling = one batch that deletes the reservation +
@@ -63,14 +67,47 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/barStaffEmails/$(request.auth.token.email.lower()));
     }
 
+    function barNamePath(nameKey) {
+      return /databases/$(database)/documents/barStaffNames/$(nameKey);
+    }
+
+    function barSessionPath(uid) {
+      return /databases/$(database)/documents/barStaffSessions/$(uid);
+    }
+
+    function barIsSharedAccount() {
+      return exists(/databases/$(database)/documents/barAdmins/$(request.auth.uid));
+    }
+
+    // Shared password login (barAdmins/{uid}, e.g. security21): only after someone typed an authorized name
+    // on a device (session with at least one device, last name entered less than 16 hours ago)
+    function barSharedStaff() {
+      return barIsSharedAccount()
+        && exists(barSessionPath(request.auth.uid))
+        && get(barSessionPath(request.auth.uid)).data.devices.size() > 0
+        && get(barSessionPath(request.auth.uid)).data.lastLoginAt + duration.value(16, 'h') > request.time;
+    }
+
     // Staff who may verify QR codes at the door: the owner, anyone the owner added in "Personal"
-    // (Google sign-in), plus the old barAdmins/{uid} accounts (added by hand in the Firebase console)
+    // (Google sign-in), plus the shared barAdmins/{uid} login once an authorized name was entered
     function isAdmin() {
       return signedIn() && (
         barOwner()
-        || exists(/databases/$(database)/documents/barAdmins/$(request.auth.uid))
         || barGoogleStaff()
+        || barSharedStaff()
       );
+    }
+
+    // Who checked the guest in (barCheckins only). Owner / Google staff: optional display name.
+    // Shared login: the device's session entry, whose name must still be on the list, less than 16 hours old.
+    function barCheckinWhoOk(d) {
+      return (barOwner() || barGoogleStaff())
+        ? (!('checkedInDevice' in d) && (!('checkedInName' in d) || (d.checkedInName is string && d.checkedInName.size() <= 100)))
+        : ('checkedInDevice' in d && d.checkedInDevice is string
+           && d.checkedInDevice in get(barSessionPath(request.auth.uid)).data.devices
+           && d.checkedInName == get(barSessionPath(request.auth.uid)).data.devices[d.checkedInDevice].name
+           && get(barSessionPath(request.auth.uid)).data.devices[d.checkedInDevice].at + duration.value(16, 'h') > request.time
+           && exists(barNamePath(get(barSessionPath(request.auth.uid)).data.devices[d.checkedInDevice].nameKey)));
     }
 
     // BC-XXXXX-YYYYYYYYYYYYYYYY: 5-character short code + 16 random characters (no 0/O/1/I/L)
@@ -250,7 +287,8 @@ service cloud.firestore {
           && resource.data.status == 'active'
           && resource.data.checkedIn == false
           && barInServiceNight(resource.data)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedIn', 'checkedInAt', 'checkedInBy'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedIn', 'checkedInAt', 'checkedInBy', 'checkedInName', 'checkedInDevice'])
+          && barCheckinWhoOk(request.resource.data)
           && request.resource.data.checkedIn == true
           && request.resource.data.checkedInAt == request.time
           && request.resource.data.checkedInBy == request.auth.uid
@@ -268,6 +306,82 @@ service cloud.firestore {
       );
 
       allow delete: if false;
+    }
+
+    match /barStaffNames/{nameKey} {
+      // The owner sees the whole list; the shared login may look up one exact name (the name prompt)
+      allow get: if barOwner() || (signedIn() && barIsSharedAccount());
+      allow list: if barOwner();
+
+      allow create: if barOwner()
+        && request.resource.data.keys().hasOnly(['key', 'name', 'addedAt', 'addedBy'])
+        && request.resource.data.keys().hasAll(['key', 'name', 'addedAt', 'addedBy'])
+        && nameKey.size() <= 80
+        && nameKey.matches("^[a-z0-9]([a-z0-9 .'-]*[a-z0-9.])?$")
+        && !nameKey.matches('.*  .*')
+        && request.resource.data.key == nameKey
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
+        && request.resource.data.addedAt == request.time
+        && request.resource.data.addedBy == request.auth.token.email;
+
+      allow delete: if barOwner();
+      allow update: if false;
+    }
+
+    // Shared login session doc: devices = { deviceId: { nameKey, name, at } }. A device adds its own entry
+    // (authorized name, canonical spelling from barStaffNames) or removes it (Salir). Signing in may also
+    // reset the map to just this device (clears devices that never signed out).
+    function barSessionShapeOk(uid) {
+      return request.resource.data.keys().hasOnly(['uid', 'devices', 'lastDevice', 'lastLoginAt'])
+        && request.resource.data.keys().hasAll(['uid', 'devices', 'lastDevice', 'lastLoginAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.devices is map
+        && request.resource.data.devices.size() <= 50
+        && request.resource.data.lastDevice is string
+        && request.resource.data.lastDevice.matches('^[A-Za-z0-9]{16,40}$')
+        && request.resource.data.lastLoginAt is timestamp;
+    }
+
+    function barSessionSignInOk() {
+      let e = request.resource.data.devices[request.resource.data.lastDevice];
+      return e is map
+        && e.keys().hasOnly(['nameKey', 'name', 'at'])
+        && e.keys().hasAll(['nameKey', 'name', 'at'])
+        && e.nameKey is string && e.nameKey.size() <= 80
+        && exists(barNamePath(e.nameKey))
+        && e.name == get(barNamePath(e.nameKey)).data.name
+        && e.at == request.time
+        && request.resource.data.lastLoginAt == request.time;
+    }
+
+    match /barStaffSessions/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || barOwner());
+
+      allow create: if signedIn() && request.auth.uid == uid && barIsSharedAccount()
+        && barSessionShapeOk(uid)
+        && request.resource.data.devices.keys().hasOnly([request.resource.data.lastDevice])
+        && barSessionSignInOk();
+
+      allow update: if signedIn() && request.auth.uid == uid && barIsSharedAccount()
+        && barSessionShapeOk(uid)
+        && (
+          // sign in on this device: add / replace its entry (or reset the map to just this device)
+          (
+            request.resource.data.lastDevice in request.resource.data.devices
+            && barSessionSignInOk()
+            && (request.resource.data.devices.diff(resource.data.devices).affectedKeys().hasOnly([request.resource.data.lastDevice])
+                || request.resource.data.devices.keys().hasOnly([request.resource.data.lastDevice]))
+          ) ||
+          // Salir on this device: remove only its entry
+          (
+            !(request.resource.data.lastDevice in request.resource.data.devices)
+            && request.resource.data.devices.diff(resource.data.devices).affectedKeys().hasOnly([request.resource.data.lastDevice])
+            && request.resource.data.lastLoginAt == resource.data.lastLoginAt
+          )
+        );
+
+      allow delete: if barOwner();
     }
 
     match /barAdmins/{uid} {
