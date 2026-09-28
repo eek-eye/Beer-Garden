@@ -6914,3 +6914,447 @@ html.lightbox-open {
         animation: none;
     }
 }
+
+
+/* ==========================================================================
+   Puerta de La Chinesca: design based on the Chinatown gate in Mexicali
+   (glazed-tile roof, red lacquer pillars, gold plaque «唐人街 CHINESCA»,
+   gold lattice doors with the round medallion, vertical couplets).
+   Everything is CSS + inline SVG (generated artwork, no extra requests);
+   all ornaments are aria-hidden.
+   ========================================================================== */
+:root {
+    --gate-medallion: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-100 -100 200 200'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff1b8'/%3E%3Cstop offset='.35' stop-color='%23f2c14e'/%3E%3Cstop offset='.65' stop-color='%23c8921c'/%3E%3Cstop offset='1' stop-color='%23fbe08a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='none' stroke='url(%23g)' stroke-linecap='square'%3E%3Ccircle r='95' stroke-width='4'/%3E%3Ccircle r='87' stroke-width='1.6'/%3E%3Ccircle r='72' stroke-width='3'/%3E%3Ccircle r='62' stroke-width='1.4'/%3E%3Ccircle r='34' stroke-width='3'/%3E%3Ccircle r='22' stroke-width='1.6'/%3E%3Cpath d='M72 0L87 0M66.5 27.6L80.4 33.3M50.9 50.9L61.5 61.5M27.6 66.5L33.3 80.4M0 72L0 87M-27.6 66.5L-33.3 80.4M-50.9 50.9L-61.5 61.5M-66.5 27.6L-80.4 33.3M-72 0L-87 0M-66.5 -27.6L-80.4 -33.3M-50.9 -50.9L-61.5 -61.5M-27.6 -66.5L-33.3 -80.4M-0 -72L-0 -87M27.6 -66.5L33.3 -80.4M50.9 -50.9L61.5 -61.5M66.5 -27.6L80.4 -33.3M31.4 13L57.3 23.7M13 31.4L23.7 57.3M-13 31.4L-23.7 57.3M-31.4 13L-57.3 23.7M-31.4 -13L-57.3 -23.7M-13 -31.4L-23.7 -57.3M13 -31.4L23.7 -57.3M31.4 -13L57.3 -23.7' stroke-width='2.2'/%3E%3Ccircle r='48' stroke-width='1.4'/%3E%3Cpath d='M40 0L56 0M28.3 28.3L39.6 39.6M0 40L0 56M-28.3 28.3L-39.6 39.6M-40 0L-56 0M-28.3 -28.3L-39.6 -39.6M-0 -40L-0 -56M28.3 -28.3L39.6 -39.6' stroke-width='1.4'/%3E%3Cpath d='M-22 0H22M0-22V22M-10-10H10V10H-10Z' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E");
+    --gate-lattice: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff1b8'/%3E%3Cstop offset='.35' stop-color='%23f2c14e'/%3E%3Cstop offset='.65' stop-color='%23c8921c'/%3E%3Cstop offset='1' stop-color='%23fbe08a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='none' stroke='url(%23g)' stroke-width='2'%3E%3Cpath d='M2 2H30V30H10V10H22V22H16' transform='rotate(0 32 32)'/%3E%3Cpath d='M2 2H30V30H10V10H22V22H16' transform='rotate(90 32 32)'/%3E%3Cpath d='M2 2H30V30H10V10H22V22H16' transform='rotate(180 32 32)'/%3E%3Cpath d='M2 2H30V30H10V10H22V22H16' transform='rotate(270 32 32)'/%3E%3Cpath d='M0 0H64M0 0V64' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E");
+    --gate-band: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='18' viewBox='0 0 40 18'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff1b8'/%3E%3Cstop offset='.35' stop-color='%23f2c14e'/%3E%3Cstop offset='.65' stop-color='%23c8921c'/%3E%3Cstop offset='1' stop-color='%23fbe08a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='none' stroke='url(%23g)' stroke-width='1.6'%3E%3Cpath d='M0 1h40M0 17h40' stroke-width='1.2'/%3E%3Cpath d='M0 13h8V5h16v8h-8V9'/%3E%3Cpath d='M20 13h8V5h12'/%3E%3C/g%3E%3C/svg%3E");
+    --gate-roof: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 120' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cpattern id='t' width='16' height='16' patternUnits='userSpaceOnUse'%3E%3Crect width='16' height='16' fill='%230c1411'/%3E%3Crect x='1.5' width='11' height='16' fill='%231d2d26'/%3E%3Crect x='4' width='2.5' height='16' fill='%2356776a' opacity='.8'/%3E%3Crect y='14.5' width='16' height='1.5' fill='%23050907' opacity='.7'/%3E%3C/pattern%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.28'/%3E%3Cstop offset='.4' stop-color='%23fff' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='.45'/%3E%3C/linearGradient%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff1b8'/%3E%3Cstop offset='.5' stop-color='%23e2b33c'/%3E%3Cstop offset='1' stop-color='%239a6b12'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M40 30Q20 26 3 2L20 0Q50 15 96 15H904Q950 15 980 0L997 2Q980 26 960 30Z' fill='%230b120f'/%3E%3Cpath d='M40 30Q20 26 3 2L20 0Q50 15 96 15H904Q950 15 980 0L997 2Q980 26 960 30Z' fill='url(%23s)'/%3E%3Cpath d='M70 28H930Q962 70 1000 80Q984 104 940 108H60Q16 104 0 80Q38 70 70 28Z' fill='url(%23t)'/%3E%3Cpath d='M70 28H930Q962 70 1000 80Q984 104 940 108H60Q16 104 0 80Q38 70 70 28Z' fill='url(%23s)'/%3E%3Cpath d='M0 80Q16 104 60 108H940Q984 104 1000 80' fill='none' stroke='url(%23g)' stroke-width='4' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M70 28H930' stroke='url(%23g)' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+    --gate-eave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='28' viewBox='0 0 40 28'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff1b8'/%3E%3Cstop offset='.5' stop-color='%23e2b33c'/%3E%3Cstop offset='1' stop-color='%239a6b12'/%3E%3C/linearGradient%3E%3ClinearGradient id='t' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23344a40'/%3E%3Cstop offset='1' stop-color='%230c1411'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='40' height='12' fill='url(%23t)'/%3E%3Cpath d='M10 0v12M30 0v12' stroke='%235d8173' stroke-width='3' opacity='.7'/%3E%3Cpath d='M21 11.5H39L30 25Z' fill='%2316221d' stroke='url(%23g)' stroke-width='1.2' stroke-linejoin='round'/%3E%3Ccircle cx='10' cy='16' r='7.5' fill='%2316221d' stroke='url(%23g)' stroke-width='1.6'/%3E%3Ccircle cx='10' cy='16' r='3.6' fill='none' stroke='url(%23g)' stroke-width='1'/%3E%3Ccircle cx='10' cy='16' r='1.2' fill='%23f2c14e'/%3E%3Cpath d='M0 .8H40' stroke='url(%23g)' stroke-width='1.6'/%3E%3C/svg%3E");
+}
+
+:root {
+    --gate-gold-text: linear-gradient(180deg, #fff4c4 0%, #f2c14e 42%, #b8860b 68%, #ffe08a 100%);
+    --gate-gold-metal: linear-gradient(90deg, #6d4a0c 0%, #c8921c 22%, #fff1b8 48%, #e2b33c 62%, #7a5410 100%);
+    --gate-lacquer: linear-gradient(90deg, #4e0409 0%, #9c0f18 22%, #d42a33 42%, #e8474e 50%, #b3141d 64%, #6a060c 100%);
+}
+
+/* ---------- The gate frame (reservations heading, gallery title) ---------- */
+.gate {
+    position: relative;
+    display: grid;
+    grid-template-columns: 48px 24px minmax(0, 1fr) 24px 48px;
+    grid-template-areas:
+        "roof roof   roof   roof   roof"
+        ".    lintel lintel lintel ."
+        "cl   pl     open   pr     cr"
+        ".    base   base   base   .";
+    max-width: min(920px, calc(100vw - 120px));
+    margin: 0 auto 2.75rem;
+}
+
+.gate-roof {
+    grid-area: roof;
+    position: relative;
+    z-index: 2;
+    height: 68px;
+    margin: 0 -14px -6px;
+    background: var(--gate-roof) center / 100% 100% no-repeat;
+}
+
+.gate-lintel {
+    grid-area: lintel;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 13px 16px;
+    background:
+        var(--gate-band) 0 4px / 30px 13.5px repeat-x,
+        var(--gate-band) 0 calc(100% - 4px) / 30px 13.5px repeat-x,
+        linear-gradient(180deg, #d0232b 0%, #a50f18 48%, #6d070d 100%);
+    border-top: 2px solid #e2b33c;
+    border-bottom: 2px solid #b8860b;
+    box-shadow: inset 0 1px 0 rgba(255, 241, 184, 0.45), 0 6px 14px rgba(0, 0, 0, 0.5);
+}
+
+.gate-plaque {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 28px 7px;
+    background: radial-gradient(ellipse at 50% 30%, #d8262f 0%, #9a0d16 70%, #6e070d 100%);
+    border: 2px solid #e2b33c;
+    box-shadow:
+        0 0 0 4px #7f0a11,
+        0 0 0 5px #e2b33c,
+        0 8px 18px rgba(0, 0, 0, 0.55),
+        inset 0 0 0 3px #7f0a11,
+        inset 0 0 0 4px rgba(242, 193, 78, 0.55);
+}
+
+.gate-plaque-zh,
+.gate-plaque-latin,
+.gate-couplet span {
+    background: var(--gate-gold-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+
+.gate-plaque-zh {
+    font-family: var(--cn-font-display);
+    font-weight: 900;
+    font-size: 1.55rem;
+    line-height: 1.1;
+    letter-spacing: 0.5em;
+    margin-right: -0.5em;
+}
+
+.gate-plaque-latin {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.1;
+    letter-spacing: 0.42em;
+    margin-right: -0.42em;
+}
+
+/* slow gold sheen across the plaque */
+.gate-plaque::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 245, 200, 0.38) 50%, transparent 65%);
+    transform: translateX(-120%);
+    animation: gate-sheen 7s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes gate-sheen {
+    0%, 72% { transform: translateX(-120%); }
+    100% { transform: translateX(120%); }
+}
+
+.gate-pillar {
+    position: relative;
+    background: var(--gate-lacquer);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.45);
+}
+
+.gate-pillar-left { grid-area: pl; }
+.gate-pillar-right { grid-area: pr; }
+
+.gate-pillar::before,
+.gate-pillar::after {
+    content: '';
+    position: absolute;
+    left: -3px;
+    right: -3px;
+    background: var(--gate-gold-metal);
+    border-radius: 2px;
+}
+
+.gate-pillar::before { top: 0; height: 9px; }
+.gate-pillar::after { bottom: 0; height: 14px; }
+
+.gate-couplet {
+    align-self: center;
+    display: flex;
+    justify-content: center;
+    padding: 12px 0;
+    background: linear-gradient(180deg, #b3141d 0%, #8a0b12 100%);
+    border: 1px solid #d4a017;
+    box-shadow: inset 0 0 0 3px #8a0b12, inset 0 0 0 4px rgba(242, 193, 78, 0.5), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.gate-couplet-left { grid-area: cl; margin-right: 8px; }
+.gate-couplet-right { grid-area: cr; margin-left: 8px; }
+
+.gate-couplet span {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    font-family: var(--cn-font-display);
+    font-weight: 700;
+    font-size: 0.92rem;
+    line-height: 1;
+    letter-spacing: 0.3em;
+    background-image: linear-gradient(90deg, #b8860b 0%, #fff1b8 45%, #f2c14e 60%, #b8860b 100%);
+}
+
+.gate-opening {
+    grid-area: open;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-width: 0;
+    padding: 2.4rem clamp(1rem, 4vw, 3rem) 1.9rem;
+    text-align: center;
+    background: radial-gradient(ellipse at 50% 40%, rgba(96, 8, 22, 0.55) 0%, rgba(10, 3, 6, 0.88) 72%);
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.7);
+}
+
+/* the double lattice doors: gold fretwork fading out behind the text, centre seam */
+.gate-doors {
+    position: absolute;
+    inset: 8px 8px 0;
+    z-index: -1;
+    border: 1px solid rgba(212, 160, 23, 0.5);
+    border-bottom: 0;
+    background:
+        linear-gradient(90deg, transparent calc(50% - 1px), rgba(242, 193, 78, 0.7) calc(50% - 1px), rgba(242, 193, 78, 0.7) calc(50% + 1px), transparent calc(50% + 1px)),
+        var(--gate-lattice) center top / 44px 44px;
+    opacity: 0.24;
+    -webkit-mask-image: radial-gradient(ellipse 58% 66% at 50% 55%, transparent 25%, #000 80%);
+    mask-image: radial-gradient(ellipse 58% 66% at 50% 55%, transparent 25%, #000 80%);
+}
+
+/* the big round medallion of the doors, very faint behind the heading */
+.gate-opening::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: 50%;
+    top: 50%;
+    width: min(290px, 78%);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    background: var(--gate-medallion) center / contain no-repeat;
+    opacity: 0.17;
+    pointer-events: none;
+}
+
+.gate-opening h2 {
+    margin-top: 0;
+}
+
+.gate-opening .section-subtitle,
+.gate-opening .gallery-sub {
+    margin-bottom: 0;
+}
+
+/* stone step with a gold edge */
+.gate::after {
+    content: '';
+    grid-area: base;
+    height: 12px;
+    margin: 0 -10px;
+    background: linear-gradient(180deg, #e2b33c 0, #e2b33c 2px, #3b2c22 2px, #1c140f 100%);
+    border-radius: 0 0 3px 3px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.gate-gallery {
+    position: relative;
+    z-index: 1;
+}
+
+/* ---------- Section headings: round gold medallion around the 福 ---------- */
+.reservations h2::before,
+.contact h2::before,
+.reviews h2::before,
+.gallery h2::before,
+.cancellation h2::before,
+.login-page-title::before,
+.profile-section h2::before {
+    width: 32px;
+    height: 32px;
+    margin-left: -16px;
+    bottom: -1px;
+    border: 0;
+    border-radius: 50%;
+    transform: none;
+    background:
+        radial-gradient(circle closest-side, #b0121b 0, #b0121b 62%, #f2c14e 62%, #f2c14e 69%, transparent 69%),
+        radial-gradient(circle closest-side, transparent 0, transparent 81%, #d4a017 81%, #fff1b8 90%, #b8860b 98%, transparent 98%),
+        repeating-conic-gradient(rgba(242, 193, 78, 0.95) 0deg 4deg, transparent 4deg 22.5deg),
+        #4a070c;
+    box-shadow: 0 0 12px rgba(242, 193, 78, 0.35);
+}
+
+/* ---------- Dividers between sections: fret band + medallion ---------- */
+.gate-divider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60px;
+    overflow: hidden;
+    background: #050306;
+    border-top: 1px solid rgba(212, 160, 23, 0.35);
+    border-bottom: 1px solid rgba(212, 160, 23, 0.35);
+}
+
+.gate-divider::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 18px;
+    margin-top: -9px;
+    background: var(--gate-band) center / 40px 18px repeat-x;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 20%, #000 80%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 20%, #000 80%, transparent 100%);
+    opacity: 0.85;
+}
+
+.gate-divider span {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--gate-medallion) center / 100% 100% no-repeat, radial-gradient(circle, #7a0a10 0%, #3a0508 100%);
+    box-shadow: 0 0 0 5px #050306, 0 0 18px rgba(242, 193, 78, 0.45);
+}
+
+.gate-divider + .reviews,
+.gate-divider + .contact {
+    border-top: 0;
+    border-image: none;
+}
+
+/* ---------- Contact: framed photo of the real gate ---------- */
+.contact-gate {
+    position: relative;
+    width: min(270px, 100%);
+    margin: 3.25rem auto 0;
+    padding-top: 22px;
+    text-align: center;
+}
+
+.contact-gate::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -16px;
+    right: -16px;
+    height: 30px;
+    background: var(--gate-roof) center / 100% 100% no-repeat;
+    z-index: 1;
+}
+
+.contact-gate img {
+    display: block;
+    width: 100%;
+    height: auto;
+    padding: 6px;
+    background: linear-gradient(135deg, #fff1b8 0%, #d4a017 30%, #8a5d0e 55%, #f2c14e 80%, #b8860b 100%);
+    box-shadow: 0 0 0 1px #3a0508, 0 14px 30px rgba(0, 0, 0, 0.6), 0 0 24px rgba(212, 160, 23, 0.18);
+}
+
+.contact-gate figcaption {
+    margin-top: 0.9rem;
+    font-family: var(--cn-font-display);
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    color: var(--cn-gold-light);
+}
+
+/* ---------- Footer: tiled eave with gold end caps ---------- */
+.footer {
+    position: relative;
+    padding-top: calc(2rem + 24px);
+    border-top: 1px solid rgba(212, 160, 23, 0.4);
+    border-image: none;
+}
+
+.footer::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 28px;
+    background: var(--gate-eave) 0 0 / 40px 28px repeat-x;
+    pointer-events: none;
+}
+
+/* ---------- Phones: no couplets, slimmer pillars and roof ---------- */
+@media (max-width: 768px) {
+    .gate {
+        max-width: none;
+        grid-template-columns: 12px minmax(0, 1fr) 12px;
+        grid-template-areas:
+            "roof   roof   roof"
+            "lintel lintel lintel"
+            "pl     open   pr"
+            "base   base   base";
+        margin-bottom: 2.25rem;
+    }
+
+    .gate-couplet {
+        display: none;
+    }
+
+    .gate-roof {
+        height: 44px;
+        margin: 0 -6px -4px;
+    }
+
+    .gate-lintel {
+        margin: 0 4px;
+        padding: 10px 8px;
+        background-size: 24px 11px, 24px 11px, 100% 100%;
+    }
+
+    .gate-plaque {
+        padding: 6px 18px 5px;
+    }
+
+    .gate-plaque-zh {
+        font-size: 1.2rem;
+    }
+
+    .gate-plaque-latin {
+        font-size: 0.78rem;
+        letter-spacing: 0.34em;
+        margin-right: -0.34em;
+    }
+
+    .gate-pillar::before,
+    .gate-pillar::after {
+        left: -2px;
+        right: -2px;
+    }
+
+    .gate-opening {
+        padding: 1.9rem 0.8rem 1.5rem;
+    }
+
+    .gate-doors {
+        background-size: auto, 36px 36px;
+    }
+
+    .gate::after {
+        margin: 0 -4px;
+    }
+
+    .gate-divider {
+        height: 52px;
+    }
+
+    .gate-divider span {
+        width: 38px;
+        height: 38px;
+    }
+
+    .contact-gate {
+        width: min(240px, 100%);
+    }
+
+    .contact-gate::before {
+        left: -10px;
+        right: -10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gate-plaque::after {
+        animation: none;
+        display: none;
+    }
+}

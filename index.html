@@ -161,8 +161,20 @@
     <!-- Reservations Section -->
     <section id="reservations" class="reservations">
         <div class="container">
-            <h2>Haz tu reservación</h2>
-            <p class="section-subtitle">Reserva al <a href="tel:+526863642083" class="inline-contact-link">+52 686 364 2083</a> o llena el formulario de abajo</p>
+            <!-- Puerta de La Chinesca (inspired by the Chinatown gate in Mexicali): roof, plaque, pillars, couplets and lattice doors are CSS/SVG decoration -->
+            <div class="gate">
+                <div class="gate-roof" aria-hidden="true"></div>
+                <div class="gate-lintel" aria-hidden="true"><span class="gate-plaque"><span class="gate-plaque-zh">唐人街</span><span class="gate-plaque-latin">CHINESCA</span></span></div>
+                <span class="gate-couplet gate-couplet-left" aria-hidden="true"><span>重温百年辉煌历史今胜昔</span></span>
+                <span class="gate-pillar gate-pillar-left" aria-hidden="true"></span>
+                <div class="gate-opening">
+                    <span class="gate-doors" aria-hidden="true"></span>
+                    <h2>Haz tu reservación</h2>
+                    <p class="section-subtitle">Reserva al <a href="tel:+526863642083" class="inline-contact-link">+52 686 364 2083</a> o llena el formulario de abajo</p>
+                </div>
+                <span class="gate-pillar gate-pillar-right" aria-hidden="true"></span>
+                <span class="gate-couplet gate-couplet-right" aria-hidden="true"><span>喜看中墨友谊圣火代代传</span></span>
+            </div>
             
             <div class="reservation-content">
                 <div class="reservation-info">
@@ -362,6 +374,8 @@
         </div>
     </section>
 
+    <div class="gate-divider" aria-hidden="true"><span></span></div>
+
     <!-- Reviews: real reviews from the Google Maps place (place_id ChIJP4G9EQB714ARYeGJXlf0QI0), static HTML, text copied as written.
          Rating and count as shown on Google Maps on Sep 27 2026. front.js: arrow buttons; swipe = native scroll-snap. -->
     <section id="reviews" class="reviews" aria-labelledby="reviewsTitle">
@@ -457,6 +471,8 @@
         </div>
     </section>
 
+    <div class="gate-divider" aria-hidden="true"><span></span></div>
+
     <!-- Contact Section -->
     <section id="contact" class="contact">
         <div class="container">
@@ -492,6 +508,10 @@
                     </div>
                 </div>
             </div>
+            <figure class="contact-gate">
+                <img src="IMAGES/puerta-chinesca.webp" alt="Puerta roja de La Chinesca con techo de tejas, letrero dorado «唐人街 CHINESCA» y reja dorada con celosía china" width="408" height="465" loading="lazy" decoding="async">
+                <figcaption>La puerta de La Chinesca, Mexicali</figcaption>
+            </figure>
         </div>
     </section>
 
