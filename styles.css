@@ -8222,3 +8222,56 @@ body {
         row-gap: 1rem;
     }
 }
+
+/* ==========================================================================
+   Per-account table limits (script.js applyReservationLimit): when the account
+   can't book the selected date, the send button turns grey and disabled and the
+   table signs in the chart switch off (dim, no glow, can't be picked).
+   ========================================================================== */
+#reservationForm button[type="submit"].is-limit-blocked,
+#reservationForm button[type="submit"].is-limit-blocked:hover,
+#reservationForm button[type="submit"].is-limit-blocked:focus-visible {
+    background: #4a4646;
+    color: #bdb6b6;
+    border-color: #676161;
+    text-shadow: none;
+    box-shadow: none;
+    transform: none;
+    filter: none;
+    animation: none;
+    cursor: not-allowed;
+}
+
+#reservationForm button[type="submit"].is-limit-blocked::before,
+#reservationForm button[type="submit"].is-limit-blocked::after {
+    display: none;
+}
+
+#reservationForm select:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.seating-chart-container.tables-off .vip-seat,
+.seating-chart-container.tables-off .seat-circle,
+.seating-chart-container.tables-off .seat-square,
+.seating-chart-container.tables-off .vip-container .vip-seat {
+    background: #1c1919;
+    color: #6f6767;
+    border: 1.5px solid #3b3434;
+    text-shadow: none;
+    filter: grayscale(1);
+    opacity: 0.55;
+    outline: none;
+    transform: none;
+    animation: none;
+    box-shadow: inset 0 0 0 2px #1c1919, inset 0 0 0 3px rgba(255, 255, 255, 0.08);
+    cursor: not-allowed;
+    pointer-events: none;
+    transition: opacity 0.3s, filter 0.3s, background 0.3s;
+}
+
+.seating-chart-container.tables-off .vip-label {
+    color: #7d7470;
+    text-shadow: none;
+}

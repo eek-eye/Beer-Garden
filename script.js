@@ -179,11 +179,21 @@ tabBtns.forEach(btn => {
 // RESERVATIONS (shared Firebase Firestore database)
 //   barReservations/{orderNumber}  the user's reservation (private to its owner)
 //   barTableLocks/{date_table}     "table taken on date" (public, no personal data)
-//   barUserCounts/{uid}            how many tables the user holds (max 2, enforced by the security rules)
+//   barUserActive/{uid}            the user's tables that still count: res = {orderNumber: date}
+//                                  (the security rules check the limits below on it)
+// Limits per account (Mexicali dates, same "night" as the check-in codes: 00:00 until 6:00 AM next day):
+//   - today: up to 2 tables; any future date: 1 table (a 2nd slot opens when that date arrives)
+//   - at most 3 upcoming tables (today + future); past nights and cancelled tables don't count
 // ============================================
-var MAX_TABLES_PER_ACCOUNT = 2;
-var TABLE_LIMIT_MESSAGE = 'Solo puedes reservar 2 mesas por cuenta. Cancela una de tus reservaciones para apartar otra.';
-var SIGN_IN_TO_RESERVE_MESSAGE = '<a href="/login">Inicia sesión</a> para reservar una mesa. Cada cuenta puede reservar hasta 2 mesas.';
+var MAX_TABLES_TODAY = 2;
+var MAX_TABLES_PER_FUTURE_DAY = 1;
+var MAX_ACTIVE_TABLES = 3;
+var LIMIT_MESSAGES = {
+    today: 'Ya tienes 2 mesas para hoy. Es el máximo por noche.',
+    future: 'Solo puedes reservar 1 mesa por día con anticipación. El mismo día de tu reservación se abre un segundo lugar.',
+    total: 'Límite de 3 mesas activas. Cancela una o espera a que pase su fecha para reservar otra.'
+};
+var SIGN_IN_TO_RESERVE_MESSAGE = '<a href="/login">Inicia sesión</a> para reservar una mesa. Cada cuenta puede reservar hasta 2 mesas para hoy y 1 por día con anticipación (máximo 3 activas).';
 var firestoreDb = null;
 
 function localDateString(d) {
@@ -233,6 +243,24 @@ function barIsPastNight(r, now) {
     var end = barNightEndMs(r && r.date);
     return isFinite(end) && (now || Date.now()) > end;
 }
+// The date's night has started (00:00 Mexicali): it counts as "today" (2 tables) until 6:00 AM next morning
+function barNightStarted(date, now) {
+    var start = barDayStartMs(date);
+    return isFinite(start) && (now || Date.now()) >= start;
+}
+// Which limit stops a new table for `date` (null = allowed). active = the user's reservations whose
+// night isn't over. Same rules as firestore.rules (the database refuses anything beyond them).
+function barLimitFor(active, date, now) {
+    var list = (active || []).filter(function(r) { return !barIsPastNight(r, now); });
+    if (date) {
+        var today = barNightStarted(date, now);
+        var sameDay = list.filter(function(r) { return r.date === date; }).length;
+        if (sameDay >= (today ? MAX_TABLES_TODAY : MAX_TABLES_PER_FUTURE_DAY)) return today ? 'today' : 'future';
+    }
+    if (list.length >= MAX_ACTIVE_TABLES) return 'total';
+    return null;
+}
+window.barLimits = { limitFor: barLimitFor, nightStarted: barNightStarted, messages: LIMIT_MESSAGES };
 window.barArrival = {
     offsetHours: barMxOffsetHours,
     dayStartMs: barDayStartMs,
@@ -275,26 +303,26 @@ function getBarReservation(orderNumber) {
 }
 window.getBarReservation = getBarReservation;
 
-// Cancel = delete the reservation + its table lock and decrement the user's counter, all at once.
+// Cancel = delete the reservation + its table lock and take it out of the user's active index, all at once.
 // Its QR check-in code (if any) is closed in the same transaction: "cancelled", or "expired" for the
 // past-night cleanup. A code that was already checked in stays "used" (checkedIn) either way.
 function cancelBarReservation(orderNumber, closeAs) {
     return whenAuthReady().then(function(user) {
         if (!user || !firestoreDb) throw barError('bar/signed-out');
         var resRef = firestoreDb.collection('barReservations').doc(String(orderNumber));
-        var countRef = firestoreDb.collection('barUserCounts').doc(user.uid);
+        var activeRef = firestoreDb.collection('barUserActive').doc(user.uid);
         return firestoreDb.runTransaction(function(t) {
             return t.get(resRef).then(function(resSnap) {
                 if (!resSnap.exists) throw barError('bar/not-found');
                 var res = resSnap.data();
                 if (res.uid !== user.uid) throw barError('bar/not-found');
                 var lockRef = firestoreDb.collection('barTableLocks').doc(barLockId(res.date, res.table));
-                return Promise.all([t.get(countRef), t.get(lockRef)]).then(function(snaps) {
-                    return { res: res, countSnap: snaps[0], lockSnap: snaps[1], lockRef: lockRef };
+                return Promise.all([t.get(activeRef), t.get(lockRef)]).then(function(snaps) {
+                    return { res: res, activeSnap: snaps[0], lockSnap: snaps[1], lockRef: lockRef };
                 });
             }).then(function(x) {
                 var res = x.res;
-                var count = x.countSnap.exists ? (x.countSnap.data().count || 0) : 0;
+                var active = x.activeSnap.exists ? Object.assign({}, x.activeSnap.data().res || {}) : null;
                 if (res.checkinCode) {
                     t.update(firestoreDb.collection('barCheckins').doc(res.checkinCode), {
                         status: closeAs === 'expired' ? 'expired' : 'cancelled',
@@ -304,11 +332,15 @@ function cancelBarReservation(orderNumber, closeAs) {
                 t.delete(resRef);
                 // only remove the lock if it is this reservation's own
                 if (x.lockSnap.exists && String(x.lockSnap.data().orderNumber) === String(orderNumber)) t.delete(x.lockRef);
-                t.set(countRef, {
-                    count: Math.max(0, count - 1),
-                    lastOrder: String(orderNumber),
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                // reservations made before the index existed aren't in it: nothing to remove then
+                if (active && Object.prototype.hasOwnProperty.call(active, String(orderNumber))) {
+                    delete active[String(orderNumber)];
+                    t.set(activeRef, {
+                        res: active,
+                        lastOrder: String(orderNumber),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
                 return res;
             });
         }).then(function(res) {
@@ -320,8 +352,8 @@ function cancelBarReservation(orderNumber, closeAs) {
 window.cancelBarReservation = cancelBarReservation;
 
 // Reservations whose night is over (after 6:00 AM Mexicali the next morning) no longer hold a table
-// and don't count against the 2-table limit. Cancel the user's own ones (frees their counter; the code
-// is closed as "expired" so it stays in the profile's Registros: verified or "No verificada").
+// and don't count against the limits. Cancel the user's own ones (frees their slot in the active index;
+// the code is closed as "expired" so it stays in the profile's Registros: verified or "No verificada").
 function barHoldsNoTable(r) {
     return barIsPastNight(r);
 }
@@ -335,16 +367,41 @@ function cancelPastReservations(uid) {
                 });
             });
         }, Promise.resolve()).then(function() {
-            return list.filter(function(r) { return !barHoldsNoTable(r); });
+            var active = list.filter(function(r) { return !barHoldsNoTable(r); });
+            return pruneActiveIndex(uid, active).then(function() { return active; });
         });
     });
 }
 
-// Book one table: reservation + table lock + counter in one transaction (the rules re-check all of it)
+// Index entries that no longer match a table (past night, or reservation gone) are removed one by one
+// (the rules allow that alone), so they never block a new booking
+function pruneActiveIndex(uid, active) {
+    var activeRef = firestoreDb.collection('barUserActive').doc(uid);
+    var keep = {};
+    active.forEach(function(r) { keep[String(r.orderNumber)] = true; });
+    return activeRef.get().then(function(snap) {
+        if (!snap.exists) return;
+        var stale = Object.keys(snap.data().res || {}).filter(function(o) { return !keep[o]; });
+        return stale.reduce(function(p, o) {
+            return p.then(function() {
+                return firestoreDb.runTransaction(function(t) {
+                    return t.get(activeRef).then(function(s) {
+                        var m = Object.assign({}, (s.exists && s.data().res) || {});
+                        if (!Object.prototype.hasOwnProperty.call(m, o)) return;
+                        delete m[o];
+                        t.set(activeRef, { res: m, lastOrder: o, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    });
+                }).catch(function(err) { console.warn('Could not clear old index entry', o, err && err.code); });
+            });
+        }, Promise.resolve());
+    }).catch(function(err) { console.warn('Could not read your active tables:', err && err.code); });
+}
+
+// Book one table: reservation + table lock + active-index entry in one transaction (the rules re-check all of it)
 function bookTableInFirestore(user, formData) {
     var table = parseInt(formData.table, 10);
     var lockRef = firestoreDb.collection('barTableLocks').doc(barLockId(formData.date, table));
-    var countRef = firestoreDb.collection('barUserCounts').doc(user.uid);
+    var activeRef = firestoreDb.collection('barUserActive').doc(user.uid);
     var attempts = 0;
     var validUntil = firebase.firestore.Timestamp.fromMillis(barNightEndMs(formData.date));
     function attempt() {
@@ -352,13 +409,16 @@ function bookTableInFirestore(user, formData) {
         var orderNumber = String(Math.floor(100000 + Math.random() * 900000));
         var resRef = firestoreDb.collection('barReservations').doc(orderNumber);
         return firestoreDb.runTransaction(function(t) {
-            return Promise.all([t.get(lockRef), t.get(countRef), t.get(resRef)]).then(function(snaps) {
+            return Promise.all([t.get(lockRef), t.get(activeRef), t.get(resRef)]).then(function(snaps) {
                 if (snaps[0].exists) {
                     throw barError('bar/table-taken', { orderNumber: snaps[0].data().orderNumber });
                 }
-                var count = snaps[1].exists ? (snaps[1].data().count || 0) : 0;
-                if (count >= MAX_TABLES_PER_ACCOUNT) throw barError('bar/limit');
+                var active = Object.assign({}, (snaps[1].exists && snaps[1].data().res) || {});
+                var entries = Object.keys(active).map(function(o) { return { orderNumber: o, date: active[o] }; });
+                var limit = barLimitFor(entries, formData.date);
+                if (limit) throw barError('bar/limit', { limit: limit });
                 if (snaps[2].exists) throw barError('bar/order-number-taken');
+                active[orderNumber] = formData.date;
                 var ts = firebase.firestore.FieldValue.serverTimestamp();
                 t.set(resRef, {
                     orderNumber: orderNumber,
@@ -374,7 +434,7 @@ function bookTableInFirestore(user, formData) {
                     validUntil: validUntil
                 });
                 t.set(lockRef, { date: formData.date, table: table, time: formData.time, orderNumber: orderNumber, createdAt: ts, validUntil: validUntil });
-                t.set(countRef, { count: count + 1, lastOrder: orderNumber, updatedAt: ts });
+                t.set(activeRef, { res: active, lastOrder: orderNumber, updatedAt: ts });
                 return orderNumber;
             });
         }).catch(function(err) {
@@ -408,31 +468,64 @@ function hideReservationMessage(kind) {
     el.setAttribute('data-kind', '');
 }
 
-// Show the limit message as soon as a signed-in user already holds 2 tables (nights not over yet)
+// The signed-in user's reservations whose night isn't over (null = unknown / signed out)
+var myActiveReservations = null;
+
+// Limit reached for the selected date (or 3 active tables): grey, disabled send button, table signs
+// switched off (dropdown disabled) and a short message. Re-evaluated on every date change and each minute
+// (so a future date's 2nd slot opens by itself when that date arrives).
+function applyReservationLimit() {
+    var form = document.getElementById('reservationForm');
+    if (!form) return;
+    var dateEl = document.getElementById('date');
+    var kind = myActiveReservations ? barLimitFor(myActiveReservations, dateEl ? dateEl.value : '') : null;
+    var btn = form.querySelector('button[type="submit"]');
+    var select = document.getElementById('table');
+    var chart = document.querySelector('.seating-chart-container');
+    form.classList.toggle('is-limit-reached', !!kind);
+    form.setAttribute('data-limit', kind || '');
+    if (btn) {
+        btn.classList.toggle('is-limit-blocked', !!kind);
+        btn.disabled = !!kind || reservationSubmitting;
+        if (kind) btn.setAttribute('aria-disabled', 'true'); else btn.removeAttribute('aria-disabled');
+    }
+    if (select) {
+        select.disabled = !!kind;
+        if (kind) select.value = '';
+    }
+    if (chart) chart.classList.toggle('tables-off', !!kind);
+    if (kind) {
+        document.querySelectorAll('.vip-seat.is-selected, .seat-circle.is-selected, .seat-square.is-selected').forEach(function(seat) { seat.classList.remove('is-selected'); });
+        showReservationMessage(LIMIT_MESSAGES[kind], 'limit');
+    } else {
+        hideReservationMessage('limit');
+    }
+}
+
+// Load the signed-in user's active tables, then apply the limits for the selected date
 function updateReservationLimitNotice() {
     if (!document.getElementById('reservationForm')) return;
     var user = JSON.parse(localStorage.getItem('currentUser')) || null;
     var fbUser = firebaseAuth && firebaseAuth.currentUser;
     if (!user) {
-        hideReservationMessage('limit');
+        myActiveReservations = null;
+        applyReservationLimit();
         return;
     }
     hideReservationMessage('signin');
     if (!fbUser || !firestoreDb) {
-        hideReservationMessage('limit');
+        myActiveReservations = null;
+        applyReservationLimit();
         return;
     }
     getMyReservations(fbUser.uid).then(function(list) {
-        var active = list.filter(function(r) { return !barHoldsNoTable(r); });
-        if (active.length >= MAX_TABLES_PER_ACCOUNT) {
-            showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
-        } else {
-            hideReservationMessage('limit');
-        }
+        myActiveReservations = list.filter(function(r) { return !barHoldsNoTable(r); });
+        applyReservationLimit();
     }).catch(function(err) {
         console.warn('Could not check your reservations:', err && err.code);
     });
 }
+setInterval(function() { if (myActiveReservations) applyReservationLimit(); }, 60000);
 
 window.addEventListener('pageshow', function(e) { if (e.persisted) updateReservationLimitNotice(); });
 
@@ -445,7 +538,7 @@ if (reservationForm) {
         e.preventDefault();
         if (reservationSubmitting) return;
 
-        // Reservations need a real (Firebase) account so the 2-tables-per-account limit can be enforced
+        // Reservations need a real (Firebase) account so the per-account limits can be enforced
         currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
         var fbUser = firebaseAuth && firebaseAuth.currentUser;
         if (!currentUser || !fbUser) {
@@ -463,6 +556,12 @@ if (reservationForm) {
             table: document.getElementById('table').value
         };
         
+        // Limit already reached for this date (the button is disabled then; this also covers Enter / scripts)
+        if (myActiveReservations && barLimitFor(myActiveReservations, formData.date)) {
+            applyReservationLimit();
+            return;
+        }
+
         // Check if the selected date is locked
         if (isDateLocked(formData.date)) {
             alert('Esta fecha ya no está disponible para reservar. Las reservaciones se cierran a las 7:00 p. m. de ese día.');
@@ -505,25 +604,29 @@ if (reservationForm) {
     if (submitBtn) submitBtn.disabled = true;
 
     // 1) past-dated reservations of this user are cancelled first (they no longer hold a table)
-    // 2) at most 2 tables per account, 3) book table + lock + counter in one transaction
+    // 2) limits (2 today, 1 per future date, 3 active), 3) book table + lock + index entry in one transaction
     cancelPastReservations(fbUser.uid).then(function(active) {
-        if (active.length >= MAX_TABLES_PER_ACCOUNT) throw barError('bar/limit');
+        myActiveReservations = active;
+        var limit = barLimitFor(active, formData.date);
+        if (limit) throw barError('bar/limit', { limit: limit });
         return bookTableInFirestore(fbUser, formData);
     }).then(function(orderNumber) {
         onReservationBooked(formData, orderNumber, formattedDate);
     }).catch(function(err) {
         var code = err && err.code;
         if (code === 'bar/limit') {
-            showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
+            updateReservationLimitNotice();
+            showReservationMessage(LIMIT_MESSAGES[err.limit] || LIMIT_MESSAGES.total, 'limit');
         } else if (code === 'bar/table-taken') {
             alert('Esta mesa ya está reservada para esa fecha (mesa ' + formData.table + ', orden ' + err.orderNumber + '). Elige otra mesa.');
             updateSeatingChartForDate(formData.date, true);
             updateTableDropdownForDate(formData.date);
         } else if (code === 'permission-denied') {
-            // The database refused the booking: most likely the per-account limit
+            // The database refused the booking: most likely one of the per-account limits
             getMyReservations(fbUser.uid).then(function(list) {
-                if (list.filter(function(r) { return !barHoldsNoTable(r); }).length >= MAX_TABLES_PER_ACCOUNT) {
-                    showReservationMessage(TABLE_LIMIT_MESSAGE, 'limit');
+                myActiveReservations = list.filter(function(r) { return !barHoldsNoTable(r); });
+                if (barLimitFor(myActiveReservations, formData.date)) {
+                    applyReservationLimit();
                 } else {
                     alert('Lo sentimos, no pudimos guardar tu reservación. Recarga la página y vuelve a intentarlo.');
                 }
@@ -537,6 +640,7 @@ if (reservationForm) {
     }).then(function() {
         reservationSubmitting = false;
         if (submitBtn) submitBtn.disabled = false;
+        applyReservationLimit();
     });
 });
 }
@@ -583,7 +687,7 @@ También puedes reservar directamente al +52 686 364 2083.
     // Reset form
     reservationForm.reset();
     hideReservationMessage();
-    checkLoginStatus(); // refill name/email and show the limit message if this was their 2nd table
+    checkLoginStatus(); // refill name/email and re-check the limits with the new table
     
     // Update seating chart and dropdown for the current date (if date input still has a value)
     const dateInput = document.getElementById('date');
@@ -726,6 +830,7 @@ if (dateInput) dateInput.addEventListener('change', function() {
         }
         updateSeatingChartForDate(selectedDate);
         updateTableDropdownForDate(selectedDate);
+        applyReservationLimit();
     } else {
         // Clear all X marks if no date selected
         const allSeats = document.querySelectorAll('.vip-seat, .seat-circle, .seat-square');
@@ -750,6 +855,13 @@ if (dateInput) dateInput.addEventListener('change', function() {
         }
     }
 });
+
+// Per-account limits depend on the date: re-check on every change (also when the date is cleared)
+if (dateInput) {
+    dateInput.addEventListener('change', applyReservationLimit);
+    dateInput.addEventListener('input', applyReservationLimit);
+}
+if (reservationFormEl) reservationFormEl.addEventListener('reset', () => setTimeout(applyReservationLimit, 0));
 
 // Set reasonable time limits (7 PM to 3 AM as default hours)
 const timeInput = document.getElementById('time');

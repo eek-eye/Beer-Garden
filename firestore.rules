@@ -8,7 +8,9 @@ service cloud.firestore {
     //
     //   barReservations/{orderNumber}  one reserved table; private to its owner
     //   barTableLocks/{date_table}     "table T is taken on date D"; public, no personal data
-    //   barUserCounts/{uid}            number of reservations the user currently holds (max 2)
+    //   barUserActive/{uid}            the user's reservations that still hold a table: res = {orderNumber: date};
+    //                                  the per-account limits are checked on this index (see "Per-account limits")
+    //   barUserCounts/{uid}            legacy counter (old 2-per-account limit); no longer written by the site
     //   barCheckins/{code}             QR check-in code of one reservation (random, unguessable);
     //                                  owner + admins can read it, only admins can check it in
     //   barAdmins/{uid}                old staff allowlist by account (written only from the Firebase console;
@@ -23,9 +25,9 @@ service cloud.firestore {
     //                                  shared login, g_{uid}_{device} for Google staff; read only by the owner
     //
     // Booking = one transaction/batch that creates the reservation + its lock and
-    // increments the counter. Cancelling = one batch that deletes the reservation +
-    // its lock and decrements the counter. Each write checks the others with
-    // getAfter()/existsAfter(), so none of the three can be written on its own.
+    // adds the order to barUserActive/{uid}. Cancelling = one batch that deletes the
+    // reservation + its lock and removes the order from barUserActive. Each write checks
+    // the others with getAfter()/existsAfter(), so none of the three can be written on its own.
     // ------------------------------------------------------------------
     function signedIn() {
       return request.auth != null;
@@ -41,6 +43,10 @@ service cloud.firestore {
 
     function barCountPath(uid) {
       return /databases/$(database)/documents/barUserCounts/$(uid);
+    }
+
+    function barActivePath(uid) {
+      return /databases/$(database)/documents/barUserActive/$(uid);
     }
 
     function barCheckinPath(code) {
@@ -174,6 +180,32 @@ service cloud.firestore {
       return exists(barCountPath(uid)) ? get(barCountPath(uid)).data.count : 0;
     }
 
+    // ---- Per-account limits (Mexicali service nights) ----
+    // A reservation date is "today" (its bar night) from 00:00 Mexicali until 6:00 AM the next morning,
+    // a future date before that and past after it. Per account: up to 2 tables for today, 1 per future
+    // date (the 2nd slot opens when the date arrives), at most 3 upcoming (today + future) in total.
+    // Past nights and cancelled tables don't count. Checked on barUserActive/{uid}.res {orderNumber: date}:
+    // at most 3 entries; a cancelled table leaves the index with its reservation, and a past night may
+    // always be removed (the site removes the user's past nights right before booking).
+    function barNightStarted(date) {
+      return request.time >= barDayStart(date);
+    }
+
+    function barDayCap(date) {
+      return barNightStarted(date) ? 2 : 1;
+    }
+
+    function barEntryOn(m, k, i, date) {
+      return (k.size() > i && m[k[i]] == date) ? 1 : 0;
+    }
+
+    // m after adding a table for `date`: max 3 entries, max 1 (future date) / 2 (today) on `date`
+    function barActiveOk(m, date) {
+      let k = m.keys();
+      return k.size() <= 3
+        && barEntryOn(m, k, 0, date) + barEntryOn(m, k, 1, date) + barEntryOn(m, k, 2, date) <= barDayCap(date);
+    }
+
     // The reservation date (YYYY-MM-DD) must not be in the past
     // (1 day of slack so Mexicali "today" is always accepted whatever the UTC time)
     function barDateNotPast(date) {
@@ -218,19 +250,21 @@ service cloud.firestore {
         && existsAfter(barLockPath(barLockId(request.resource.data.date, request.resource.data.table)))
         && !exists(barLockPath(barLockId(request.resource.data.date, request.resource.data.table)))
         && getAfter(barLockPath(barLockId(request.resource.data.date, request.resource.data.table))).data.orderNumber == orderNumber
-        // the user's counter goes up by exactly one for this order, and never above 2
-        && getAfter(barCountPath(request.auth.uid)).data.count == barCountBefore(request.auth.uid) + 1
-        && getAfter(barCountPath(request.auth.uid)).data.count <= 2
-        && getAfter(barCountPath(request.auth.uid)).data.lastOrder == orderNumber;
+        // the order is added to the user's active index in the same batch (that write checks the limits)
+        && (!exists(barActivePath(request.auth.uid))
+            || !(orderNumber in get(barActivePath(request.auth.uid)).data.res))
+        && getAfter(barActivePath(request.auth.uid)).data.res[orderNumber] == request.resource.data.date
+        && getAfter(barActivePath(request.auth.uid)).data.lastOrder == orderNumber;
 
-      // Cancel: owner deletes the reservation, its lock and decrements the counter together
-      // (tolerates a lock that is already gone or belongs to another order)
+      // Cancel: owner deletes the reservation, its lock and takes it out of the active index together
+      // (tolerates a lock that is already gone or belongs to another order, and a reservation made
+      // before the index existed)
       allow delete: if signedIn()
         && resource.data.uid == request.auth.uid
         && (!existsAfter(barLockPath(barLockId(resource.data.date, resource.data.table)))
             || getAfter(barLockPath(barLockId(resource.data.date, resource.data.table))).data.orderNumber != orderNumber)
-        && getAfter(barCountPath(request.auth.uid)).data.count == barCountBefore(request.auth.uid) - 1
-        && getAfter(barCountPath(request.auth.uid)).data.lastOrder == orderNumber;
+        && (!existsAfter(barActivePath(request.auth.uid))
+            || !(orderNumber in getAfter(barActivePath(request.auth.uid)).data.res));
 
       allow update: if signedIn() && (
         // (1) owner attaches a QR check-in code once, together with creating barCheckins/{code}
@@ -505,6 +539,53 @@ service cloud.firestore {
       allow update: if false; // a taken table can't be overwritten
     }
 
+    // Active index: res = {orderNumber: date} of the user's tables that still count. One entry is added
+    // per booking (with the new reservation, limits checked on the result) or removed per cancel (with
+    // the reservation deleted); a past night or an entry without a reservation may also be removed alone.
+    function barActiveAdd(uid, before) {
+      let after = request.resource.data.res;
+      let o = request.resource.data.lastOrder;
+      return after.diff(before).addedKeys().hasOnly([o])
+        && after.diff(before).addedKeys().size() == 1
+        && after.diff(before).changedKeys().size() == 0
+        && after.diff(before).removedKeys().size() == 0
+        && !exists(barResPath(o))
+        && existsAfter(barResPath(o))
+        && getAfter(barResPath(o)).data.uid == uid
+        && getAfter(barResPath(o)).data.date == after[o]
+        && barActiveOk(after, after[o]);
+    }
+
+    function barActiveRemove(uid, before) {
+      let after = request.resource.data.res;
+      let o = request.resource.data.lastOrder;
+      return after.diff(before).removedKeys().hasOnly([o])
+        && after.diff(before).removedKeys().size() == 1
+        && after.diff(before).addedKeys().size() == 0
+        && after.diff(before).changedKeys().size() == 0
+        && (!exists(barResPath(o))
+            || (get(barResPath(o)).data.uid == uid && !existsAfter(barResPath(o)))
+            || barNightOver(before[o]));
+    }
+
+    match /barUserActive/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['res', 'lastOrder', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['res', 'lastOrder', 'updatedAt'])
+        && request.resource.data.res is map
+        && request.resource.data.lastOrder is string
+        && request.resource.data.updatedAt == request.time
+        && (barActiveAdd(uid, resource == null ? {} : resource.data.res)
+            || barActiveRemove(uid, resource == null ? {} : resource.data.res));
+
+      allow delete: if false;
+    }
+
+    // Legacy counter of the old 2-per-account limit (the site no longer writes it; kept so pages cached
+    // before the change fail cleanly instead of leaving half-written bookings)
     match /barUserCounts/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
 
