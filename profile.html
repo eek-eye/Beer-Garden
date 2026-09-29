@@ -64,7 +64,7 @@
                 <p>No has iniciado sesión. <a href="/">Ve a la página de inicio</a> para iniciar sesión o crear una cuenta.</p>
             </div>
             
-            <!-- Shown only when logged in - name (username = first + last), then reservations and logout -->
+            <!-- Shown only when logged in - name (username = first + last), then tabs: Mis reservaciones | Registros. Sign out: tap your picture (avatar menu, script.js) or "Salir" in the header -->
             <div id="profileContent" style="display: none;">
                 <div class="profile-user">
                     <img id="profileUserPhoto" class="profile-user-photo" alt="" referrerpolicy="no-referrer" style="display: none;">
@@ -73,17 +73,23 @@
                         <p class="profile-user-email" id="profileUserEmail"></p>
                     </div>
                 </div>
-                <div class="reservations-list">
-                    <div id="reservationsList">
-                        <p>No tienes reservaciones.</p>
-                    </div>
+                <div class="profile-tabs" role="tablist" aria-label="Tus mesas">
+                    <button type="button" class="profile-tab is-active" role="tab" id="tabActive" aria-selected="true" aria-controls="panelActive">Mis reservaciones</button>
+                    <button type="button" class="profile-tab" role="tab" id="tabPast" aria-selected="false" aria-controls="pastTables" tabindex="-1">Registros <span class="profile-tab-count" id="pastCount" hidden></span></button>
                 </div>
-                <p class="profile-cancel-hint">¿Necesitas cancelar? <a href="/cancel" class="profile-cancel-link">Cancelar una reservación</a></p>
-                <section class="profile-past" id="pastTables" hidden>
+                <div class="profile-panel" id="panelActive" role="tabpanel" aria-labelledby="tabActive">
+                    <div class="reservations-list">
+                        <div id="reservationsList">
+                            <p>No tienes reservaciones.</p>
+                        </div>
+                    </div>
+                    <p class="profile-cancel-hint">¿Necesitas cancelar? <a href="/cancel" class="profile-cancel-link">Cancelar una reservación</a></p>
+                </div>
+                <section class="profile-panel profile-past" id="pastTables" role="tabpanel" aria-labelledby="tabPast" hidden>
                     <h3 class="profile-past-title">Registros</h3>
+                    <p class="profile-past-empty" id="pastEmpty">Aún no tienes registros. Aquí verás tus mesas verificadas en la puerta y las noches pasadas.</p>
                     <div id="pastTablesList"></div>
                 </section>
-                <p class="profile-logout-wrap"><button class="btn btn-secondary" id="logoutBtn">Cerrar sesión</button></p>
             </div>
         </div>
     </section>
@@ -269,35 +275,82 @@
                 });
             }
 
-            // ---- "Registros": verified tables, or past nights without check-in; no QR, no cancel button ----
+            // ---- tabs: "Mis reservaciones" | "Registros" (the chosen tab is remembered for this visit) ----
+            const tabActive = document.getElementById('tabActive');
+            const tabPast = document.getElementById('tabPast');
+            const panelActive = document.getElementById('panelActive');
+            const pastCount = document.getElementById('pastCount');
+            const pastEmpty = document.getElementById('pastEmpty');
+            function showTab(which, focus) {
+                const past = which === 'past';
+                tabActive.classList.toggle('is-active', !past);
+                tabPast.classList.toggle('is-active', past);
+                tabActive.setAttribute('aria-selected', String(!past));
+                tabPast.setAttribute('aria-selected', String(past));
+                tabActive.tabIndex = past ? -1 : 0;
+                tabPast.tabIndex = past ? 0 : -1;
+                panelActive.hidden = past;
+                pastSection.hidden = !past;
+                try { sessionStorage.setItem('barProfileTab', which); } catch (e) {}
+                if (focus) (past ? tabPast : tabActive).focus();
+            }
+            tabActive.addEventListener('click', function() { showTab('active'); });
+            tabPast.addEventListener('click', function() { showTab('past'); });
+            [tabActive, tabPast].forEach(function(t) {
+                t.addEventListener('keydown', function(e) {
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'Home' || e.key === 'End') {
+                        e.preventDefault();
+                        const toPast = e.key === 'End' || ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && t === tabActive);
+                        showTab(toPast ? 'past' : 'active', true);
+                    }
+                });
+            });
+            try { if (sessionStorage.getItem('barProfileTab') === 'past') showTab('past'); } catch (e) {}
+
+            // ---- "Registros": verified tables, or past nights without check-in; no QR, no cancel button.
+            //      Grouped under date headings ("Sábado 26 de septiembre de 2026"), newest first ----
+            function dateHeading(date) {
+                return typeof barDateLong === 'function' ? barDateLong(date) : (date || '');
+            }
+            let pastSig = null;
             function renderPast(items) {
                 if (!pastSection || !pastList) return;
+                const sig = items.map(function(r) { return [r.orderNumber, r.date, r.time, r.table, r.guests, r.checkedIn ? 1 : 0, toMillis(r.checkedInAt)].join('|'); }).sort().join(';');
+                if (sig === pastSig) return;
+                pastSig = sig;
+                pastCount.hidden = items.length === 0;
+                pastCount.textContent = items.length ? String(items.length) : '';
+                tabPast.setAttribute('aria-label', items.length ? 'Registros, ' + items.length : 'Registros');
+                pastEmpty.hidden = items.length > 0;
                 if (items.length === 0) {
-                    pastSection.hidden = true;
                     pastList.innerHTML = '';
                     return;
                 }
                 items.sort((a, b) => String(b.date + ' ' + b.time).localeCompare(String(a.date + ' ' + a.time)));
-                let html = '<div class="reservations-grid profile-cards">';
+                let html = '';
+                let currentDate = null;
                 items.forEach(function(r) {
-                    const when = whenDisplay(r);
+                    if (r.date !== currentDate) {
+                        if (currentDate !== null) html += '</div></div>';
+                        currentDate = r.date;
+                        html += `<div class="profile-past-day" data-date="${esc(r.date)}"><h4 class="profile-past-date">${esc(dateHeading(r.date))}</h4><div class="profile-past-cards">`;
+                    }
                     const at = formatTime(toMillis(r.checkedInAt));
                     const badge = r.checkedIn
                         ? `<div class="profile-card-badge is-verified">✓ ${at ? 'Verificada a las ' + esc(at) : 'Verificada'}</div>`
                         : '<div class="profile-card-badge is-unverified">No verificada</div>';
                     html += `
                         <div class="reservation-card profile-card-simple profile-card-past${r.checkedIn ? ' is-verified' : ' is-unverified'}" data-order="${esc(r.orderNumber)}">
-                            <div class="profile-card-order">${esc(r.orderNumber)}</div>
-                            <div class="profile-card-table">${esc(tableDisplay(r.table))}</div>
-                            <div class="profile-card-guests">${esc(guestsDisplay(r.guests))}</div>
-                            ${when ? `<div class="profile-card-when">${esc(when)}</div>` : ''}
+                            <div class="profile-past-main">
+                                <span class="profile-past-line"><span class="profile-card-table">${esc(tableDisplay(r.table))}</span>${r.time ? ' <span class="profile-past-time">· ' + esc(r.time) + '</span>' : ''}</span>
+                                <span class="profile-past-meta">${esc(guestsDisplay(r.guests))} · <span class="profile-card-order">Orden ${esc(r.orderNumber)}</span></span>
+                            </div>
                             ${badge}
                         </div>
                     `;
                 });
-                html += '</div>';
+                html += '</div></div>';
                 pastList.innerHTML = html;
-                pastSection.hidden = false;
             }
 
             // ---- confetti once per reservation (remembered on this device) ----
@@ -385,19 +438,6 @@
                 });
             }
             
-            // Logout button (sign out from Firebase if used)
-            var logoutBtn = document.getElementById('logoutBtn');
-            if (!logoutBtn) return;
-            logoutBtn.addEventListener('click', function() {
-                logoutBtn.disabled = true;
-                // Wait for Firebase to finish signing out, otherwise the session comes back on the next page
-                if (typeof signOutUser === 'function') {
-                    signOutUser(function() { window.location.href = '/'; });
-                } else {
-                    localStorage.removeItem('currentUser');
-                    window.location.href = '/';
-                }
-            });
         });
     </script>
     <!-- Dragón volador (decorativo): CSS/SVG en styles.css, no recibe clics, se oculta con movimiento reducido -->

@@ -5,7 +5,7 @@
     <script>(function(){var c=location.pathname.replace(/\.html$/,'');if(location.href!==location.origin+c){history.replaceState(null,'',c);}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cancelar reservación - Bar Chinesca Mxli</title>
-    <meta name="description" content="Cancela tu reservación en Bar Chinesca Mxli con tu número de orden.">
+    <meta name="description" content="Cancela tu reservación en Bar Chinesca Mxli: inicia sesión y elige la mesa que quieres cancelar.">
     <link rel="icon" href="/favicon.ico" sizes="48x48">
     <link rel="icon" type="image/png" sizes="32x32" href="/IMAGES/favicon-32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/IMAGES/icon-192.png">
@@ -37,8 +37,14 @@
                 <li class="nav-tab-gallery"><a href="/galeria">Galería</a></li>
                 <li id="navLoginItem"><a href="/login">Iniciar sesión</a></li>
             </ul>
-            <div class="nav-right nav-right-auth">
+            <div class="nav-right">
                 <button type="button" class="btn btn-secondary nav-signout js-signout-btn" id="navSignOutBtn" title="Cerrar sesión">Salir</button>
+                <a href="/profile" class="profile-icon" title="Mi perfil" aria-label="Mi perfil">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </a>
                 <div class="hamburger">
                     <span></span>
                     <span></span>
@@ -48,36 +54,43 @@
         </div>
     </nav>
 
-    <!-- Cancellation Section -->
+    <!-- Cancellation Section: finds the signed-in guest's active reservations by itself (no order number to type) -->
     <section id="cancellation" class="cancellation">
         <div class="container">
             <h2>Cancelar reservación</h2>
-            <p class="section-subtitle">Escribe tu número de orden para cancelar tu reservación</p>
-            
-            <div class="cancellation-form" id="cancellationForm">
-                <!-- Step 1: Order Number -->
-                <div class="cancellation-step" id="step1">
-                    <div class="form-group">
-                        <label for="orderNumber">Número de orden *</label>
-                        <input type="text" id="orderNumber" name="orderNumber" placeholder="Tu número de orden de 6 dígitos" maxlength="6">
-                    </div>
-                    <button type="button" class="btn btn-primary" id="continueBtn">Continuar</button>
+            <p class="section-subtitle" id="cancelSubtitle">Buscamos tus reservaciones activas por ti.</p>
+
+            <div class="cancellation-form cancel-auto" id="cancelPanel" aria-live="polite">
+                <div class="cancel-state" id="cancelLoading">
+                    <span class="cancel-spinner" aria-hidden="true"></span>
+                    <p class="cancel-state-text">Buscando tus reservaciones…</p>
                 </div>
-                
-                <!-- Step 2: Select Table -->
-                <div class="cancellation-step" id="step2">
-                    <div class="form-group">
-                        <label for="tableSelect">Selecciona tu mesa *</label>
-                        <select id="tableSelect" name="tableSelect">
-                            <option value="">Selecciona tu mesa...</option>
-                        </select>
-                    </div>
-                    <button type="button" class="btn btn-primary" id="submitCancellationBtn">Cancelar reservación</button>
+
+                <div class="cancel-state" id="cancelSignedOut" hidden>
+                    <span class="cancel-state-icon" aria-hidden="true">🔒</span>
+                    <h3>Inicia sesión para cancelar</h3>
+                    <p class="cancel-state-text">Entra con la cuenta con la que reservaste y te mostraremos tus reservaciones activas.</p>
+                    <a href="/login" class="btn btn-primary cancel-login-btn" id="cancelLoginBtn">Iniciar sesión</a>
                 </div>
-                
-                <!-- Thank You Message -->
-                <div class="thank-you-message" id="thankYouMessage" style="display: none;">
-                    <h2>Gracias por visitar Bar Chinesca</h2>
+
+                <div class="cancel-state" id="cancelNone" hidden>
+                    <span class="cancel-state-icon" aria-hidden="true">🏮</span>
+                    <h3 id="cancelNoneTitle">No tienes reservaciones activas</h3>
+                    <p class="cancel-state-text" id="cancelNoneText">Cuando reserves una mesa, aquí podrás cancelarla con un toque.</p>
+                    <a href="/" class="btn btn-primary" data-section="reservations">Reservar una mesa</a>
+                </div>
+
+                <div class="cancel-state" id="cancelList" hidden>
+                    <p class="cancel-done-note" id="cancelDoneNote" hidden></p>
+                    <h3 id="cancelListTitle">Tus reservaciones activas</h3>
+                    <ul class="cancel-items" id="cancelItems"></ul>
+                </div>
+
+                <div class="cancel-state" id="cancelError" hidden>
+                    <span class="cancel-state-icon" aria-hidden="true">⚠️</span>
+                    <h3>No pudimos cargar tus reservaciones</h3>
+                    <p class="cancel-state-text">Revisa tu conexión y vuelve a intentarlo.</p>
+                    <button type="button" class="btn btn-primary" id="cancelRetryBtn">Reintentar</button>
                 </div>
             </div>
         </div>
@@ -112,148 +125,162 @@
         </div>
     </footer>
 
-    <script>
-        // Cancellation page JavaScript - runs immediately since script is at end of body
-        let currentOrderNumber = null;
-
-        // Reservations live in the shared database; only the account that booked can cancel
-        function cancelNeedsLogin() {
-            alert('Inicia sesión (Iniciar sesión, arriba en la página) con la cuenta con la que reservaste y vuelve a intentarlo.');
-        }
-
-        // Step 1: Check order number and populate table dropdown
-        document.getElementById('continueBtn').addEventListener('click', function() {
-            const orderNumberInput = document.getElementById('orderNumber');
-            if (!orderNumberInput) {
-                alert('No se encontró el campo del número de orden.');
-                return;
-            }
-            
-            let orderNumber = orderNumberInput.value.trim().replace(/\D/g, '');
-            
-            if (!orderNumber || orderNumber.length !== 6) {
-                alert('Escribe un número de orden válido de 6 dígitos.');
-                return;
-            }
-            
-            if (typeof getBarReservation !== 'function') {
-                alert('Las cancelaciones no están disponibles en este momento. Recarga la página y vuelve a intentarlo.');
-                return;
-            }
-            
-            const continueBtn = this;
-            continueBtn.disabled = true;
-            getBarReservation(orderNumber).then(function(order) {
-                if (!order) {
-                    alert('Ese número de orden no existe.');
-                    return;
-                }
-                
-                currentOrderNumber = orderNumber;
-                
-                // Populate table dropdown with tables 1-50
-                const tableSelect = document.getElementById('tableSelect');
-                if (tableSelect) {
-                    tableSelect.innerHTML = '<option value="">Selecciona tu mesa...</option>';
-                    
-                    for (let i = 1; i <= 50; i++) {
-                        const option = document.createElement('option');
-                        option.value = i;
-                        if (i <= 4) {
-                            option.textContent = `Mesa VIP ${i}`;
-                        } else {
-                            option.textContent = `Mesa ${i}`;
-                        }
-                        tableSelect.appendChild(option);
-                    }
-                }
-            }).catch(function(err) {
-                if (err && err.code === 'bar/signed-out') {
-                    cancelNeedsLogin();
-                    return;
-                }
-                console.warn('Order lookup failed:', err);
-                alert('No pudimos buscar tu orden en este momento. Revisa tu conexión y vuelve a intentarlo.');
-            }).then(function() {
-                continueBtn.disabled = false;
-            });
-        });
-
-        // Submit cancellation
-        document.getElementById('submitCancellationBtn').addEventListener('click', function() {
-            if (!currentOrderNumber) {
-                alert('Primero escribe tu número de orden.');
-                return;
-            }
-            
-            const tableSelect = document.getElementById('tableSelect');
-            if (!tableSelect) {
-                alert('No se encontró la lista de mesas.');
-                return;
-            }
-            
-            const selectedTable = tableSelect.value;
-            
-            if (!selectedTable) {
-                alert('Selecciona tu mesa.');
-                return;
-            }
-            
-            const submitBtn = this;
-            submitBtn.disabled = true;
-            getBarReservation(currentOrderNumber).then(function(order) {
-                if (!order) {
-                    alert('No encontramos esa orden. Vuelve a intentarlo.');
-                    return false;
-                }
-                // Verify the order number matches the selected table
-                if (String(order.table) !== String(selectedTable)) {
-                    alert('Esta mesa no corresponde a tu número de orden. Selecciona la mesa correcta.');
-                    return false;
-                }
-                // Delete the reservation + table lock and free the slot (one transaction)
-                const cancelledOrder = currentOrderNumber;
-                return cancelBarReservation(cancelledOrder).then(function(res) {
-                    // Cancellation email (does nothing if emails are off; never blocks the cancel)
-                    if (typeof sendReservationEmail === 'function') sendReservationEmail('cancel', cancelledOrder, res);
-                    return true;
-                });
-            }).then(function(done) {
-                if (!done) return;
-                showCancelThankYou();
-            }).catch(function(err) {
-                if (err && err.code === 'bar/signed-out') {
-                    cancelNeedsLogin();
-                    return;
-                }
-                if (err && err.code === 'bar/not-found') {
-                    alert('No encontramos esa orden. Vuelve a intentarlo.');
-                    return;
-                }
-                console.warn('Cancellation failed:', err);
-                alert('No pudimos cancelar tu reservación en este momento. Vuelve a intentarlo.');
-            }).then(function() {
-                submitBtn.disabled = false;
-            });
-        });
-
-        function showCancelThankYou() {
-            // Hide form and show thank you
-            const step1 = document.getElementById('step1');
-            const step2 = document.getElementById('step2');
-            const thankYou = document.getElementById('thankYouMessage');
-            
-            if (step1) step1.style.display = 'none';
-            if (step2) step2.style.display = 'none';
-            if (thankYou) thankYou.style.display = 'block';
-        }
-    </script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="email-config.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Cancellation page: detects the signed-in guest's upcoming reservations (not cancelled, night not over,
+        // not verified at the door). 1 -> "¿Deseas cancelar tu reservación?", several -> pick one, then confirm,
+        // none -> "No tienes reservaciones activas", signed out -> "Inicia sesión para cancelar" card (no pop-up, so the
+        // header/footer stay usable). cancelBarReservation() removes the
+        // reservation, its table lock and its entry in barUserActive in one transaction (enforced by the rules).
+        (function() {
+            var states = ['cancelLoading', 'cancelSignedOut', 'cancelNone', 'cancelList', 'cancelError'];
+            var busy = false;
+            var lastCancelled = null;
+            function $(id) { return document.getElementById(id); }
+            function show(id) {
+                states.forEach(function(s) { $(s).hidden = s !== id; });
+            }
+            function when(r) {
+                return { table: barTableLabel(r.table), date: barDateLong(r.date), time: r.time || '' };
+            }
+            function details(r) {
+                var w = when(r);
+                return [w.table, w.date, w.time ? w.time + ' h' : '', { text: 'Orden ' + r.orderNumber + ' · ' + r.guests + (String(r.guests) === '1' ? ' persona' : ' personas'), small: true }]
+                    .filter(Boolean);
+            }
+            function renderList(list) {
+                var ul = $('cancelItems');
+                ul.innerHTML = '';
+                list.forEach(function(r) {
+                    var w = when(r);
+                    var li = document.createElement('li');
+                    li.className = 'cancel-item';
+                    li.setAttribute('data-order', r.orderNumber);
+                    var info = document.createElement('div');
+                    info.className = 'cancel-item-info';
+                    var t = document.createElement('span'); t.className = 'cancel-item-table'; t.textContent = w.table;
+                    var d = document.createElement('span'); d.className = 'cancel-item-date'; d.textContent = w.date;
+                    var h = document.createElement('span'); h.className = 'cancel-item-time'; h.textContent = w.time ? w.time + ' h' : '';
+                    info.appendChild(t); info.appendChild(d); info.appendChild(h);
+                    var b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'cancel-item-btn';
+                    b.textContent = 'Cancelar';
+                    b.setAttribute('aria-label', 'Cancelar ' + w.table + ', ' + w.date + ', ' + w.time);
+                    b.onclick = function() { confirmCancel(r); };
+                    li.appendChild(info); li.appendChild(b);
+                    ul.appendChild(li);
+                });
+                $('cancelListTitle').textContent = list.length === 1 ? 'Tu reservación activa' : 'Tus reservaciones activas';
+            }
+            function load(auto) {
+                show('cancelLoading');
+                return whenAuthReady().then(function(user) {
+                    if (!user) {
+                        show('cancelSignedOut');
+                        $('cancelSubtitle').textContent = 'Inicia sesión para ver tus reservaciones activas.';
+                        return;
+                    }
+                    try { sessionStorage.removeItem('barAfterLogin'); } catch (e) {}
+                    return getMyReservations(user.uid).then(function(all) {
+                        var list = barCancellable(all);
+                        $('cancelSubtitle').textContent = list.length ? 'Toca la reservación que quieres cancelar.' : 'Buscamos tus reservaciones activas por ti.';
+                        if (!list.length) {
+                            $('cancelNoneTitle').textContent = lastCancelled ? 'Reservación cancelada' : 'No tienes reservaciones activas';
+                            $('cancelNoneText').textContent = lastCancelled
+                                ? 'Cancelaste la ' + lastCancelled + '. Ya no tienes reservaciones activas. ¡Gracias por avisarnos!'
+                                : 'Cuando reserves una mesa, aquí podrás cancelarla con un toque.';
+                            show('cancelNone');
+                            return;
+                        }
+                        renderList(list);
+                        $('cancelDoneNote').hidden = !lastCancelled;
+                        $('cancelDoneNote').textContent = lastCancelled ? '✓ Cancelaste la ' + lastCancelled + '.' : '';
+                        show('cancelList');
+                        if (!auto) return;
+                        if (list.length === 1) return confirmCancel(list[0]);
+                        return pickOne(list);
+                    });
+                }).catch(function(err) {
+                    console.warn('Could not load your reservations:', err && err.code);
+                    show('cancelError');
+                });
+            }
+            function pickOne(list) {
+                return barAlert({
+                    id: 'cancelPickAlert',
+                    title: '¿Qué reservación deseas cancelar?',
+                    message: 'Tienes ' + list.length + ' reservaciones activas.',
+                    options: list.map(function(r) {
+                        var w = when(r);
+                        return { label: w.table, sub: w.date + ' · ' + w.time + ' h', value: r.orderNumber };
+                    }),
+                    buttons: [{ label: 'Cancelar', value: null, role: 'cancel' }]
+                }).then(function(order) {
+                    if (!order) return;
+                    var r = list.filter(function(x) { return String(x.orderNumber) === String(order); })[0];
+                    if (r) return confirmCancel(r);
+                });
+            }
+            function confirmCancel(r) {
+                if (busy) return;
+                return barAlert({
+                    id: 'cancelConfirmAlert',
+                    title: '¿Deseas cancelar tu reservación?',
+                    details: details(r),
+                    buttons: [{ label: 'Cancelar', value: false, role: 'cancel', id: 'cancelNoBtn' }, { label: 'Sí, cancelar', value: true, role: 'destructive', id: 'cancelYesBtn' }]
+                }).then(function(yes) {
+                    if (yes) return doCancel(r);
+                });
+            }
+            function doCancel(r) {
+                busy = true;
+                var li = document.querySelector('.cancel-item[data-order="' + String(r.orderNumber).replace(/\D/g, '') + '"]');
+                if (li) li.classList.add('is-busy');
+                var label = barTableLabel(r.table);
+                return cancelBarReservation(r.orderNumber).then(function(res) {
+                    // Cancellation email (does nothing if emails are off; never blocks the cancel)
+                    if (typeof sendReservationEmail === 'function') sendReservationEmail('cancel', r.orderNumber, res);
+                    lastCancelled = label;
+                    return barAlert({
+                        id: 'cancelDoneAlert',
+                        title: 'Reservación cancelada',
+                        details: [label, barDateLong(r.date), r.time ? r.time + ' h' : ''].filter(Boolean),
+                        message: 'Gracias por avisarnos. ¡Te esperamos pronto en Bar Chinesca!',
+                        buttons: [{ label: 'Aceptar', value: true }]
+                    });
+                }, function(err) {
+                    if (err && err.code === 'bar/not-found') {
+                        return barAlert({ title: 'Esa reservación ya no existe', message: 'Puede que ya se haya cancelado.', buttons: [{ label: 'Aceptar', value: true }] });
+                    }
+                    if (err && err.code === 'bar/signed-out') {
+                        return barAlert({ title: 'Inicia sesión', message: 'Tu sesión terminó. Entra de nuevo para cancelar.', buttons: [{ label: 'Iniciar sesión', value: true }] }).then(goLogin);
+                    }
+                    console.warn('Cancellation failed:', err);
+                    return barAlert({ title: 'No se pudo cancelar', message: 'Revisa tu conexión y vuelve a intentarlo.', buttons: [{ label: 'Aceptar', value: true }] });
+                }).then(function() {
+                    busy = false;
+                    return load(false);
+                });
+            }
+            function goLogin() {
+                try { sessionStorage.setItem('barAfterLogin', '/cancel'); } catch (e) {}
+                window.location.href = '/login';
+            }
+            $('cancelLoginBtn').addEventListener('click', function(e) { e.preventDefault(); goLogin(); });
+            $('cancelRetryBtn').addEventListener('click', function() { load(true); });
+            function start() {
+                if (typeof whenAuthReady !== 'function' || typeof barAlert !== 'function') { show('cancelError'); return; }
+                load(true);
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+        })();
+    </script>
     <!-- Dragón volador (decorativo): CSS/SVG en styles.css, no recibe clics, se oculta con movimiento reducido -->
     <div class="sky-dragon" aria-hidden="true"><div class="sky-dragon-flight"><div class="sky-dragon-bob"><div class="sky-dragon-body"><span class="sd-tail"></span><span class="sd-seg" style="--i:0;--s:0.6"></span><span class="sd-seg" style="--i:1;--s:0.68"></span><span class="sd-seg" style="--i:2;--s:0.76"></span><span class="sd-seg" style="--i:3;--s:0.84"></span><span class="sd-seg" style="--i:4;--s:0.92"><span class="sd-leg sd-leg-back sd-leg-far"></span></span><span class="sd-seg" style="--i:5"><span class="sd-leg sd-leg-back"></span></span><span class="sd-seg" style="--i:6"></span><span class="sd-seg" style="--i:7"></span><span class="sd-seg" style="--i:8"></span><span class="sd-seg" style="--i:9"></span><span class="sd-seg" style="--i:10"></span><span class="sd-seg" style="--i:11"></span><span class="sd-seg" style="--i:12"></span><span class="sd-seg" style="--i:13"><span class="sd-leg sd-leg-front sd-leg-far"></span></span><span class="sd-seg" style="--i:14"><span class="sd-leg sd-leg-front"></span></span><span class="sd-seg" style="--i:15"></span><span class="sd-seg" style="--i:16;--s:0.95"></span><span class="sd-seg" style="--i:17;--s:0.9"></span><span class="sd-head"></span><span class="sd-pearl"></span></div></div></div></div>
 </body>

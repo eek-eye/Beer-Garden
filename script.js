@@ -1202,7 +1202,7 @@ function onSocialSignedIn(user, providerName) {
     var u = saveFirebaseUser(user);
     if (!u) return;
     if (isLoginPage()) {
-        window.location.href = '/profile';
+        window.location.href = barPostLoginUrl();
         return;
     }
     if (typeof closeAuthModal === 'function') closeAuthModal();
@@ -1263,7 +1263,7 @@ function initFirebaseAuth() {
             checkLoginStatus();
             // (sign-up / account migration redirect themselves once the name is saved)
             if (isLoginPage() && !accountSetupInProgress) {
-                window.location.href = '/profile';
+                window.location.href = barPostLoginUrl();
             }
         } else {
             // Not signed in to Firebase: drop any stored session, including old browser-only
@@ -1513,6 +1513,7 @@ function checkLoginStatus() {
             if (svg) svg.style.display = '';
         }
     }
+    initAvatarMenus();
     
     if (currentUser) {
         // User is logged in - fill form with user info (but don't disable fields)
@@ -1559,7 +1560,7 @@ function handleLogin(email, password) {
             .then(function() {
                 if (!document.getElementById('authModal')) {
                     showLoginPageMessage('Sesión iniciada. Redirigiendo…');
-                    window.location.href = '/profile';
+                    window.location.href = barPostLoginUrl();
                     return;
                 }
                 closeAuthModal();
@@ -1596,7 +1597,7 @@ function handleLogin(email, password) {
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             if (!document.getElementById('authModal')) {
                 showLoginPageMessage('Sesión iniciada. Redirigiendo…');
-                window.location.href = '/profile';
+                window.location.href = barPostLoginUrl();
                 return;
             }
             closeAuthModal();
@@ -1625,7 +1626,7 @@ function migrateLegacyAccount(legacy, email, password) {
             localStorage.setItem('userAccounts', JSON.stringify(accounts));
             if (!document.getElementById('authModal')) {
                 showLoginPageMessage('Sesión iniciada. Redirigiendo…');
-                window.location.href = '/profile';
+                window.location.href = barPostLoginUrl();
                 return;
             }
             closeAuthModal();
@@ -1673,7 +1674,7 @@ function createAccountAndLogIn(firstName, lastName, email, password) {
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
     if (!document.getElementById('authModal')) {
         showLoginPageMessage('Cuenta creada. Redirigiendo…');
-        window.location.href = '/profile';
+        window.location.href = barPostLoginUrl();
         return true;
     }
     closeAuthModal();
@@ -1699,7 +1700,7 @@ function handleSignup(firstName, lastName, email, password) {
                 accountSetupInProgress = false;
                 if (!document.getElementById('authModal')) {
                     showLoginPageMessage('Cuenta creada. Redirigiendo…');
-                    window.location.href = '/profile';
+                    window.location.href = barPostLoginUrl();
                     return;
                 }
                 closeAuthModal();
@@ -1821,3 +1822,308 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ---------------------------------------------------------------------------------------------
+// Shared helpers for the guest pages: long Spanish dates, table labels, iOS-style alert,
+// the avatar menu (tap your picture -> "Mi perfil" / "Salir") and the reservations a guest can cancel.
+// ---------------------------------------------------------------------------------------------
+
+// "2026-09-26" -> "Sábado 26 de septiembre de 2026"
+function barDateLong(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return date || '';
+    var d = new Date(Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), 12));
+    var s;
+    try {
+        s = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    } catch (e) {
+        return date;
+    }
+    s = s.replace(',', '');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function barTableLabel(t) {
+    return Number(t) <= 4 ? 'Mesa VIP ' + t : 'Mesa ' + t;
+}
+window.barDateLong = barDateLong;
+window.barTableLabel = barTableLabel;
+
+// Upcoming reservations the signed-in guest can still cancel: night not over, not verified at the door,
+// not cancelled. Soonest first.
+function barCancellable(list) {
+    return (list || []).filter(function(r) {
+        return r && r.orderNumber && !barHoldsNoTable(r) && !r.checkedIn && r.status !== 'cancelled';
+    }).sort(function(a, b) {
+        return String(a.date + ' ' + a.time).localeCompare(String(b.date + ' ' + b.time));
+    });
+}
+window.barCancellable = barCancellable;
+
+// Where to go after signing in: back to /cancel when the guest came from there, otherwise the profile
+function barPostLoginUrl() {
+    try {
+        if (sessionStorage.getItem('barAfterLogin') === '/cancel') return '/cancel';
+    } catch (e) {}
+    return '/profile';
+}
+window.barPostLoginUrl = barPostLoginUrl;
+
+// iOS-style alert in the Chinesca colours. Resolves with the chosen button/option value.
+// opts: { title, message, details: [lines], options: [{label, sub, value}], buttons: [{label, value, role: 'cancel'|'destructive'|'default'}], id }
+function barAlert(opts) {
+    opts = opts || {};
+    return new Promise(function(resolve) {
+        var prevFocus = document.activeElement;
+        var old = document.querySelector('.bar-alert-backdrop');
+        if (old) old.remove();
+        var back = document.createElement('div');
+        back.className = 'bar-alert-backdrop';
+        var box = document.createElement('div');
+        box.className = 'bar-alert';
+        if (opts.id) box.id = opts.id;
+        box.setAttribute('role', 'alertdialog');
+        box.setAttribute('aria-modal', 'true');
+        var body = document.createElement('div');
+        body.className = 'bar-alert-body';
+        var title = document.createElement('h2');
+        title.className = 'bar-alert-title';
+        title.id = 'barAlertTitle';
+        title.textContent = opts.title || '';
+        box.setAttribute('aria-labelledby', 'barAlertTitle');
+        body.appendChild(title);
+        if (opts.message) {
+            var msg = document.createElement('p');
+            msg.className = 'bar-alert-message';
+            msg.id = 'barAlertMessage';
+            msg.textContent = opts.message;
+            box.setAttribute('aria-describedby', 'barAlertMessage');
+            body.appendChild(msg);
+        }
+        if (opts.details && opts.details.length) {
+            var dl = document.createElement('div');
+            dl.className = 'bar-alert-details';
+            opts.details.forEach(function(line, i) {
+                var p = document.createElement('p');
+                p.className = 'bar-alert-detail' + (i === 0 ? ' is-main' : '') + (line && line.small ? ' is-small' : '');
+                p.textContent = (line && line.text) || line;
+                dl.appendChild(p);
+            });
+            body.appendChild(dl);
+        }
+        box.appendChild(body);
+        var finished = false;
+        function close(value) {
+            if (finished) return;
+            finished = true;
+            document.removeEventListener('keydown', onKey, true);
+            back.classList.add('is-closing');
+            document.documentElement.classList.remove('bar-alert-open');
+            setTimeout(function() { back.remove(); }, 160);
+            if (prevFocus && typeof prevFocus.focus === 'function' && document.contains(prevFocus)) {
+                try { prevFocus.focus({ preventScroll: true }); } catch (e) {}
+            }
+            resolve(value);
+        }
+        if (opts.options && opts.options.length) {
+            var list = document.createElement('div');
+            list.className = 'bar-alert-options';
+            list.setAttribute('role', 'group');
+            opts.options.forEach(function(o) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'bar-alert-option';
+                if (o.value != null) b.setAttribute('data-value', o.value);
+                var main = document.createElement('span');
+                main.className = 'bar-alert-option-main';
+                main.textContent = o.label;
+                b.appendChild(main);
+                if (o.sub) {
+                    var sub = document.createElement('span');
+                    sub.className = 'bar-alert-option-sub';
+                    sub.textContent = o.sub;
+                    b.appendChild(sub);
+                }
+                b.onclick = function() { close(o.value); };
+                list.appendChild(b);
+            });
+            box.appendChild(list);
+        }
+        var buttons = opts.buttons && opts.buttons.length ? opts.buttons : [{ label: 'Aceptar', value: true }];
+        var row = document.createElement('div');
+        row.className = 'bar-alert-buttons' + (buttons.length === 2 ? ' is-row' : '');
+        var cancelValue = null;
+        buttons.forEach(function(bt) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'bar-alert-btn' + (bt.role === 'cancel' ? ' is-cancel' : '') + (bt.role === 'destructive' ? ' is-destructive' : '');
+            b.textContent = bt.label;
+            if (bt.id) b.id = bt.id;
+            if (bt.role === 'cancel') cancelValue = bt.value;
+            b.onclick = function() { close(bt.value); };
+            row.appendChild(b);
+        });
+        if (buttons.length === 1) cancelValue = buttons[0].value;
+        box.appendChild(row);
+        back.appendChild(box);
+        function onKey(e) {
+            if (e.key === 'Escape') { e.preventDefault(); close(cancelValue); }
+            if (e.key === 'Tab') { // keep focus inside the alert
+                var f = box.querySelectorAll('button');
+                if (!f.length) return;
+                var first = f[0], last = f[f.length - 1];
+                if (document.activeElement === box) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+                else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        }
+        document.addEventListener('keydown', onKey, true);
+        document.documentElement.classList.add('bar-alert-open');
+        document.body.appendChild(back);
+        // focus the alert itself (no ring on a button, like iOS); Tab moves into the buttons
+        box.tabIndex = -1;
+        try { box.focus({ preventScroll: true }); } catch (e) {}
+    });
+}
+window.barAlert = barAlert;
+
+// ---- Avatar menu: tapping your picture opens a small menu with "Mi perfil" and "Salir" ----
+function closeAvatarMenu() {
+    var menu = document.getElementById('avatarMenu');
+    if (!menu || menu.hidden) return;
+    menu.hidden = true;
+    var anchors = document.querySelectorAll('[data-avatar-anchor][aria-expanded="true"]');
+    for (var i = 0; i < anchors.length; i++) anchors[i].setAttribute('aria-expanded', 'false');
+}
+function positionAvatarMenu(menu, anchor) {
+    var r = anchor.getBoundingClientRect();
+    var vw = document.documentElement.clientWidth || window.innerWidth;
+    var w = Math.min(232, vw - 16);
+    menu.style.width = w + 'px';
+    var left = Math.round(r.right - w);
+    if (r.left + r.width / 2 < vw / 2) left = Math.round(r.left); // anchor on the left half: open to the right
+    left = Math.max(8, Math.min(left, vw - w - 8));
+    menu.style.left = left + 'px';
+    menu.style.top = Math.round(r.bottom + 8) + 'px';
+    var tipX = Math.max(14, Math.min(w - 14, Math.round(r.left + r.width / 2 - left)));
+    menu.style.setProperty('--tip-x', tipX + 'px');
+}
+function openAvatarMenu(anchor) {
+    var menu = document.getElementById('avatarMenu');
+    if (!menu) return;
+    if (!menu.hidden && menu._anchor === anchor) { closeAvatarMenu(); return; }
+    closeAvatarMenu();
+    menu._anchor = anchor;
+    menu.hidden = false;
+    positionAvatarMenu(menu, anchor);
+    anchor.setAttribute('aria-expanded', 'true');
+    var first = menu.querySelector('.avatar-menu-item');
+    if (first) {
+        try { first.focus({ preventScroll: true }); } catch (e) {}
+    }
+}
+function buildAvatarMenu() {
+    var menu = document.getElementById('avatarMenu');
+    if (!currentUser) {
+        if (menu) menu.remove();
+        return null;
+    }
+    if (!menu) {
+        menu = document.createElement('div');
+        menu.id = 'avatarMenu';
+        menu.className = 'avatar-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', 'Tu cuenta');
+        menu.hidden = true;
+        // on the profile page the "Salir" item keeps the old logout button id
+        var logoutId = document.getElementById('profileContent') ? 'logoutBtn' : 'avatarLogoutBtn';
+        menu.innerHTML =
+            '<div class="avatar-menu-head"><span class="avatar-menu-name"></span><span class="avatar-menu-email"></span></div>' +
+            '<a href="/profile" class="avatar-menu-item" role="menuitem" id="avatarProfileLink">Mi perfil</a>' +
+            '<button type="button" class="avatar-menu-item is-danger" role="menuitem" id="' + logoutId + '">Salir</button>';
+        document.body.appendChild(menu);
+        var out = menu.querySelector('.avatar-menu-item.is-danger');
+        out.addEventListener('click', function(e) {
+            e.preventDefault();
+            out.disabled = true;
+            out.textContent = 'Saliendo…';
+            signOutUser(function() { window.location.href = '/'; });
+        });
+        menu.addEventListener('keydown', function(e) {
+            var items = [].slice.call(menu.querySelectorAll('.avatar-menu-item'));
+            var i = items.indexOf(document.activeElement);
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                var a = menu._anchor;
+                closeAvatarMenu();
+                if (a) a.focus();
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                var n = e.key === 'ArrowDown' ? i + 1 : i - 1;
+                items[(n + items.length) % items.length].focus();
+            }
+        });
+    }
+    var name = [currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ').trim();
+    menu.querySelector('.avatar-menu-name').textContent = name || 'Tu cuenta';
+    menu.querySelector('.avatar-menu-email').textContent = currentUser.email || '';
+    return menu;
+}
+function wireAvatarAnchor(el) {
+    if (el.getAttribute('data-avatar-anchor')) return;
+    el.setAttribute('data-avatar-anchor', '1');
+    el.addEventListener('click', function(e) {
+        if (!currentUser || !document.getElementById('avatarMenu')) return; // signed out: the icon is a normal link
+        e.preventDefault();
+        e.stopPropagation();
+        openAvatarMenu(el);
+    });
+    el.addEventListener('keydown', function(e) {
+        if (el.tagName !== 'A' && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            el.click();
+        }
+    });
+}
+function initAvatarMenus() {
+    var menu = buildAvatarMenu();
+    var anchors = document.querySelectorAll('.profile-icon, .profile-user-photo');
+    for (var i = 0; i < anchors.length; i++) {
+        var el = anchors[i];
+        wireAvatarAnchor(el);
+        if (menu) {
+            el.setAttribute('aria-haspopup', 'menu');
+            el.setAttribute('aria-controls', 'avatarMenu');
+            el.setAttribute('aria-expanded', 'false');
+            if (el.classList.contains('profile-icon')) {
+                el.setAttribute('title', 'Tu cuenta');
+                el.setAttribute('aria-label', 'Tu cuenta: Mi perfil o Salir');
+            } else {
+                el.setAttribute('role', 'button');
+                el.setAttribute('tabindex', '0');
+                el.setAttribute('aria-label', 'Tu cuenta: Mi perfil o Salir');
+            }
+        } else {
+            el.removeAttribute('aria-haspopup');
+            el.removeAttribute('aria-controls');
+            el.removeAttribute('aria-expanded');
+            if (el.classList.contains('profile-icon')) {
+                el.setAttribute('title', 'Mi perfil');
+                el.setAttribute('aria-label', 'Mi perfil');
+            }
+        }
+    }
+}
+window.initAvatarMenus = initAvatarMenus;
+document.addEventListener('click', function(e) {
+    var menu = document.getElementById('avatarMenu');
+    if (!menu || menu.hidden) return;
+    if (menu.contains(e.target)) return;
+    closeAvatarMenu();
+});
+window.addEventListener('resize', function() {
+    var menu = document.getElementById('avatarMenu');
+    if (menu && !menu.hidden && menu._anchor) positionAvatarMenu(menu, menu._anchor);
+});
+window.addEventListener('scroll', function() {
+    var menu = document.getElementById('avatarMenu');
+    if (menu && !menu.hidden && menu._anchor) positionAvatarMenu(menu, menu._anchor);
+}, { passive: true });

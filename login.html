@@ -171,7 +171,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (localStorage.getItem('currentUser')) {
-                window.location.href = '/profile';
+                window.location.href = barPostLoginUrl();
                 return;
             }
             var loginForm = document.getElementById('loginForm');
