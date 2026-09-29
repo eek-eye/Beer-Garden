@@ -22,7 +22,10 @@ service cloud.firestore {
     //   barStaffSessions/{uid}         shared-login sessions: one entry per device with the authorized name
     //                                  typed there; the scanner works for barAdmins accounts only with one
     //   barStaffPresence/{id}          who has the scanner open (heartbeat), one doc per phone: s_{device} for the
-    //                                  shared login, g_{uid}_{device} for Google staff; read only by the owner
+    //                                  shared login, g_{uid}_{device} for Google staff; read by the owners (and
+    //                                  shared-login names with the «Ver quién está en línea» privilege)
+    //   barTableSeated/{date_table}    staff app «Mesas»: table T of night D already checked in (written only in the
+    //                                  check-in transaction); no personal data, read only by staff
     //
     // Booking = one transaction/batch that creates the reservation + its lock and
     // adds the order to barUserActive/{uid}. Cancelling = one batch that deletes the
@@ -101,6 +104,34 @@ service cloud.firestore {
         && exists(barSessionPath(request.auth.uid))
         && get(barSessionPath(request.auth.uid)).data.devices.size() > 0
         && get(barSessionPath(request.auth.uid)).data.lastLoginAt + duration.value(16, 'h') > request.time;
+    }
+
+    // ---- Privileges of the shared-login names (owners set them in «Personal») ----
+    // barStaffNames/{key}.perms ⊆ ['presence', 'add', 'remove'] («Ver quién está en línea», «Agregar personal»,
+    // «Quitar personal»); a missing field = no privileges. The shared login uses them only through the phone that
+    // is acting: session.actor = its device id, still signed in (entry < 16 h) with a name that is still listed.
+    function barPermsOk(p) {
+      return p is list && p.size() <= 3 && p.hasOnly(['presence', 'add', 'remove']);
+    }
+
+    function barActorOk(s) {
+      return ('actor' in s) && s.actor is string && s.actor in s.devices
+        && s.devices[s.actor].at + duration.value(16, 'h') > request.time
+        && exists(barNamePath(s.devices[s.actor].nameKey));
+    }
+
+    function barActorPerms(s) {
+      return barActorOk(s) ? get(barNamePath(s.devices[s.actor].nameKey)).data.get('perms', []) : [];
+    }
+
+    function barSharedCan(p) {
+      return signedIn() && barIsSharedAccount()
+        && exists(barSessionPath(request.auth.uid))
+        && p in barActorPerms(get(barSessionPath(request.auth.uid)).data);
+    }
+
+    function barSharedCanAny() {
+      return barSharedCan('presence') || barSharedCan('add') || barSharedCan('remove');
     }
 
     // Staff who may verify QR codes at the door: the owner, anyone the owner added in "Personal"
@@ -351,32 +382,58 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /barStaffNames/{nameKey} {
-      // The owner sees the whole list; the shared login may look up one exact name (the name prompt)
-      allow get: if barOwner() || (signedIn() && barIsSharedAccount());
-      allow list: if barOwner();
-
-      allow create: if barOwner()
-        && request.resource.data.keys().hasOnly(['key', 'name', 'addedAt', 'addedBy'])
-        && request.resource.data.keys().hasAll(['key', 'name', 'addedAt', 'addedBy'])
+    // {key, name, first?, last?, role?, perms?, addedAt, addedBy, addedByName?, updatedAt?, updatedBy?}
+    function barNameShapeOk(nameKey) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['key', 'name', 'first', 'last', 'role', 'perms', 'addedAt', 'addedBy', 'addedByName'])
+        && d.keys().hasAll(['key', 'name', 'addedAt', 'addedBy'])
         && nameKey.size() <= 80
         && nameKey.matches("^[a-z0-9]([a-z0-9 .'-]*[a-z0-9.])?$")
         && !nameKey.matches('.*  .*')
-        && request.resource.data.key == nameKey
-        && request.resource.data.name is string
-        && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
-        && request.resource.data.addedAt == request.time
-        && request.resource.data.addedBy == request.auth.token.email;
+        && d.key == nameKey
+        && d.name is string && d.name.size() >= 2 && d.name.size() <= 80
+        && (!('first' in d) || (d.first is string && d.first.size() <= 40))
+        && (!('last' in d) || (d.last is string && d.last.size() <= 40))
+        && (!('role' in d) || (d.role is string && d.role.size() <= 40))
+        && (!('perms' in d) || barPermsOk(d.perms))
+        && d.addedAt == request.time
+        && d.addedBy == request.auth.token.email;
+    }
 
-      allow delete: if barOwner();
-      allow update: if false;
+    match /barStaffNames/{nameKey} {
+      // The owners see the whole list; the shared login may look up one exact name (the name prompt) and,
+      // while a privileged name is acting, see the list («Personal» limited to its privileges)
+      allow get: if barOwner() || (signedIn() && barIsSharedAccount());
+      allow list: if barOwner() || barSharedCanAny();
+
+      // Owners add anyone with any role / privileges. A name with «Agregar personal» adds people without
+      // privileges only (granting privileges is for the owners), signed with its own name.
+      allow create: if barNameShapeOk(nameKey) && (
+        (barOwner() && !('addedByName' in request.resource.data))
+        || (barSharedCan('add')
+            && request.resource.data.get('perms', []).size() == 0
+            && request.resource.data.addedByName
+               == get(barSessionPath(request.auth.uid)).data.devices[get(barSessionPath(request.auth.uid)).data.actor].name)
+      );
+
+      // Only the owners edit a person's role and privileges (the name itself never changes)
+      allow update: if barOwner()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'perms', 'updatedAt', 'updatedBy'])
+        && request.resource.data.get('role', '') is string && request.resource.data.get('role', '').size() <= 40
+        && barPermsOk(request.resource.data.get('perms', []))
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.token.email;
+
+      // Owners remove anyone; a name with «Quitar personal» removes only people without privileges
+      allow delete: if barOwner()
+        || (barSharedCan('remove') && resource.data.get('perms', []).size() == 0);
     }
 
     // Shared login session doc: devices = { deviceId: { nameKey, name, at } }. A device adds its own entry
     // (authorized name, canonical spelling from barStaffNames) or removes it (Salir). Signing in may also
     // reset the map to just this device (clears devices that never signed out).
     function barSessionShapeOk(uid) {
-      return request.resource.data.keys().hasOnly(['uid', 'devices', 'lastDevice', 'lastLoginAt'])
+      return request.resource.data.keys().hasOnly(['uid', 'devices', 'lastDevice', 'lastLoginAt', 'actor', 'kicked'])
         && request.resource.data.keys().hasAll(['uid', 'devices', 'lastDevice', 'lastLoginAt'])
         && request.resource.data.uid == uid
         && request.resource.data.devices is map
@@ -398,17 +455,27 @@ service cloud.firestore {
         && request.resource.data.lastLoginAt == request.time;
     }
 
+    // Signing in / Salir never sets who is acting or who was removed (those have their own updates below);
+    // they may only keep them or drop them
+    function barSessionKeepsExtras() {
+      let d = request.resource.data;
+      return (!('actor' in d) || (resource != null && d.actor == resource.data.get('actor', null)))
+        && (!('kicked' in d) || (resource != null && d.kicked == resource.data.get('kicked', null)));
+    }
+
     match /barStaffSessions/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || barOwner());
       allow list: if barOwner();
 
       allow create: if signedIn() && request.auth.uid == uid && barIsSharedAccount()
         && barSessionShapeOk(uid)
+        && !('actor' in request.resource.data) && !('kicked' in request.resource.data)
         && request.resource.data.devices.keys().hasOnly([request.resource.data.lastDevice])
         && barSessionSignInOk();
 
       allow update: if signedIn() && request.auth.uid == uid && barIsSharedAccount()
         && barSessionShapeOk(uid)
+        && barSessionKeepsExtras()
         && (
           // sign in on this device: add / replace its entry (or reset the map to just this device)
           (
@@ -424,6 +491,24 @@ service cloud.firestore {
             && request.resource.data.lastLoginAt == resource.data.lastLoginAt
           )
         );
+
+      // a phone whose name has privileges becomes the one acting for the shared login (nothing else changes)
+      allow update: if signedIn() && request.auth.uid == uid && barIsSharedAccount()
+        && barSessionShapeOk(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actor'])
+        && barActorPerms(request.resource.data).size() > 0;
+
+      // a name with «Quitar personal» removed someone: take that person's phone out of the session, one per update
+      // (kicked = its device id; its name must be gone already)
+      allow update: if signedIn() && request.auth.uid == uid && barIsSharedAccount()
+        && barSessionShapeOk(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['devices', 'kicked'])
+        && request.resource.data.kicked is string
+        && request.resource.data.kicked in resource.data.devices
+        && request.resource.data.devices.diff(resource.data.devices).affectedKeys().hasOnly([request.resource.data.kicked])
+        && !(request.resource.data.kicked in request.resource.data.devices)
+        && !exists(barNamePath(resource.data.devices[request.resource.data.kicked].nameKey))
+        && 'remove' in barActorPerms(resource.data);
 
       // the owner removed a name in «Personal»: he may take entries out of the map (nothing else changes)
       allow update: if barOwner()
@@ -474,10 +559,39 @@ service cloud.firestore {
     }
 
     match /barStaffPresence/{pid} {
-      allow get, list: if barOwner();
+      allow get, list: if barOwner() || barSharedCan('presence');
       allow create, update: if signedIn() && barPresenceShapeOk()
         && (barPresenceSharedOk(pid) || barPresenceGoogleOk(pid));
-      allow delete: if barOwner();
+      // owners; a name with «Quitar personal» only for a name it already removed
+      allow delete: if barOwner()
+        || (barSharedCan('remove') && resource.data.kind == 'shared' && !exists(barNamePath(resource.data.ref)));
+    }
+
+    // «Mesas» (staff app): tables already checked in tonight. Written only inside the staff check-in transaction
+    // (the reservation goes from not checked in to checked in in the same request, same date / table / time);
+    // a table re-booked after a cancellation may be overwritten by the new check-in. No names or emails.
+    function barSeatedOk(sid) {
+      let d = request.resource.data;
+      return isAdmin()
+        && d.keys().hasOnly(['date', 'table', 'time', 'orderNumber', 'at'])
+        && d.keys().hasAll(['date', 'table', 'time', 'orderNumber', 'at'])
+        && d.orderNumber is string && d.orderNumber.matches('^[0-9]{6}$')
+        && d.date is string && d.table is int && d.time is string
+        && sid == barLockId(d.date, d.table)
+        && d.at == request.time
+        && exists(barResPath(d.orderNumber))
+        && get(barResPath(d.orderNumber)).data.get('checkedIn', false) == false
+        && getAfter(barResPath(d.orderNumber)).data.checkedIn == true
+        && getAfter(barResPath(d.orderNumber)).data.date == d.date
+        && getAfter(barResPath(d.orderNumber)).data.table == d.table
+        && getAfter(barResPath(d.orderNumber)).data.time == d.time;
+    }
+
+    match /barTableSeated/{sid} {
+      allow get, list: if isAdmin();
+      allow create: if barSeatedOk(sid);
+      allow update: if barSeatedOk(sid) && resource.data.orderNumber != request.resource.data.orderNumber;
+      allow delete: if false;
     }
 
     match /barAdmins/{uid} {
