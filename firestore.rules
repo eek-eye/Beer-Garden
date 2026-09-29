@@ -47,11 +47,18 @@ service cloud.firestore {
       return /databases/$(database)/documents/barCheckins/$(code);
     }
 
-    // The bar's owner: fuchendeonze@gmail.com with a verified email
+    // The bar's owners (same powers): fuchendeonze@gmail.com with a verified email, and
+    // nunezmarbyte@gmail.com signed in with Google with a verified email
     function barOwner() {
       return signedIn()
-        && request.auth.token.email == 'fuchendeonze@gmail.com'
-        && request.auth.token.email_verified == true;
+        && request.auth.token.email_verified == true
+        && (request.auth.token.email == 'fuchendeonze@gmail.com'
+            || (request.auth.token.email == 'nunezmarbyte@gmail.com'
+                && request.auth.token.firebase.sign_in_provider == 'google.com'));
+    }
+
+    function barOwnerEmail(email) {
+      return email in ['fuchendeonze@gmail.com', 'nunezmarbyte@gmail.com'];
     }
 
     // Signed in with Google (not email/password) and Google vouches for the email
@@ -359,6 +366,7 @@ service cloud.firestore {
 
     match /barStaffSessions/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || barOwner());
+      allow list: if barOwner();
 
       allow create: if signedIn() && request.auth.uid == uid && barIsSharedAccount()
         && barSessionShapeOk(uid)
@@ -382,6 +390,12 @@ service cloud.firestore {
             && request.resource.data.lastLoginAt == resource.data.lastLoginAt
           )
         );
+
+      // the owner removed a name in «Personal»: he may take entries out of the map (nothing else changes)
+      allow update: if barOwner()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['devices'])
+        && request.resource.data.devices.diff(resource.data.devices).addedKeys().size() == 0
+        && request.resource.data.devices.diff(resource.data.devices).changedKeys().size() == 0;
 
       allow delete: if barOwner();
     }
@@ -450,6 +464,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(['email', 'name', 'addedAt', 'addedBy'])
         && email.size() <= 254
         && email.matches('^[a-z0-9._%+-]+@[a-z0-9-]+([.][a-z0-9-]+)*[.][a-z]{2,}$')
+        && !barOwnerEmail(email)
         && request.resource.data.email == email
         && request.resource.data.name is string && request.resource.data.name.size() <= 60
         && request.resource.data.addedAt == request.time
