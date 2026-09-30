@@ -161,12 +161,11 @@ service cloud.firestore {
       return code.matches('^BC-[2-9A-HJKMNP-Z]{5}-[2-9A-HJKMNP-Z]{16}$');
     }
 
-    // ---- Service night (Mexicali, America/Tijuana) ----
-    // A code works from 00:00 of the reservation date (arriving early is fine) until 6:00 AM the
-    // next morning (booked for 10 PM, arriving at 1 AM is fine). Mexicali follows US daylight
-    // time: UTC-7 from the 2nd Sunday of March until the 1st Sunday of November, UTC-8
-    // otherwise; the switch happens at 2 AM, so midnight uses the previous day's offset and
-    // 6 AM the new day's. Same calculation as script.js and the staff app.
+    // ---- Reservation window (Mexicali, America/Tijuana) ----
+    // A code works from 7:00 PM until 11:00 PM on the reservation date. At 11:00 PM an
+    // unclaimed table becomes walk-in availability. Mexicali follows US daylight time:
+    // UTC-7 from the 2nd Sunday of March until the 1st Sunday of November, UTC-8 otherwise.
+    // Same calculation as script.js and the staff app.
     function barMxOffsetMinYMD(y, m, d) {
       let secondSundayMarch = 8 + (7 - timestamp.date(y, 3, 1).dayOfWeek()) % 7;
       let firstSundayNovember = 1 + (7 - timestamp.date(y, 11, 1).dayOfWeek()) % 7;
@@ -177,21 +176,23 @@ service cloud.firestore {
       return timestamp.date(int(date[0:4]), int(date[5:7]), int(date[8:10]));
     }
 
-    // 00:00 Mexicali on the reservation date
+    // 7:00 PM Mexicali on the reservation date
     function barDayStart(date) {
-      let prev = barUtcDate(date) - duration.value(1, 'd');
-      return barUtcDate(date) + duration.value(barMxOffsetMinYMD(prev.year(), prev.month(), prev.day()), 'm');
+      let day = barUtcDate(date);
+      return day + duration.value(barMxOffsetMinYMD(day.year(), day.month(), day.day()), 'm')
+             + duration.value(19, 'h');
     }
 
-    // 6:00 AM Mexicali the morning after the reservation date (end of the service night)
+    // 11:00 PM Mexicali on the reservation date (walk-in cutoff)
     function barNightEnd(date) {
-      let next = barUtcDate(date) + duration.value(1, 'd');
-      return next + duration.value(barMxOffsetMinYMD(next.year(), next.month(), next.day()) + 360, 'm');
+      let day = barUtcDate(date);
+      return day + duration.value(barMxOffsetMinYMD(day.year(), day.month(), day.day()), 'm')
+             + duration.value(23, 'h');
     }
 
-    // The service night is over (after 6:00 AM Mexicali the next morning)
+    // The reservation window is over at 11:00 PM Mexicali.
     function barNightOver(date) {
-      return request.time > barNightEnd(date);
+      return request.time >= barNightEnd(date);
     }
 
     function barInServiceNight(data) {
@@ -199,7 +200,7 @@ service cloud.firestore {
     }
 
     function barValidTime(time) {
-      return time is string && time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+      return time is string && time.matches('^((19|20|21|22):[0-5][0-9]|23:00)$');
     }
 
     function barLockId(date, table) {
@@ -216,8 +217,8 @@ service cloud.firestore {
       return exists(barCountPath(uid)) ? get(barCountPath(uid)).data.count : 0;
     }
 
-    // ---- Per-account limits (Mexicali service nights) ----
-    // A reservation date is "today" (its bar night) from 00:00 Mexicali until 6:00 AM the next morning,
+    // ---- Per-account limits (Mexicali reservation windows) ----
+    // A reservation date is "today" from 7:00 PM until the 11:00 PM cutoff,
     // a future date before that and past after it. Per account: up to 2 tables for today, 1 per future
     // date (the 2nd slot opens when the date arrives), at most 3 upcoming (today + future) in total.
     // Past nights and cancelled tables don't count. Checked on barUserActive/{uid}.res {orderNumber: date}:
@@ -315,8 +316,7 @@ service cloud.firestore {
           && existsAfter(barCheckinPath(request.resource.data.checkinCode))
           && getAfter(barCheckinPath(request.resource.data.checkinCode)).data.orderNumber == orderNumber
         ) ||
-        // (2) staff check the guest in at the door: once only, from 00:00 of the reservation
-        //     date until 6:00 AM the next morning
+        // (2) staff check the guest in at the door: once only, from 7:00 PM until 11:00 PM
         (
           isAdmin()
           && resource.data.status == 'active'

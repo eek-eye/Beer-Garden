@@ -181,7 +181,7 @@ tabBtns.forEach(btn => {
 //   barTableLocks/{date_table}     "table taken on date" (public, no personal data)
 //   barUserActive/{uid}            the user's tables that still count: res = {orderNumber: date}
 //                                  (the security rules check the limits below on it)
-// Limits per account (Mexicali dates, same "night" as the check-in codes: 00:00 until 6:00 AM next day):
+// Limits per account (Mexicali dates, same window as the check-in codes: 7:00 PM until 11:00 PM):
 //   - today: up to 2 tables; any future date: 1 table (a 2nd slot opens when that date arrives)
 //   - at most 3 upcoming tables (today + future); past nights and cancelled tables don't count
 // ============================================
@@ -230,11 +230,10 @@ function barLockId(date, table) {
 }
 
 // ---- Service night (Mexicali, America/Tijuana) ----
-// A reservation's code works from 00:00 of its date (arriving early is fine) until 6:00 AM the next
-// morning (booked for 10 PM, arriving at 1 AM is fine). After that the night is over: the reservation
-// no longer holds a table and goes to the profile's Registros. Same calculation as the Firestore rules:
-// Mexicali uses UTC-7 from the 2nd Sunday of March to the 1st Sunday of November, UTC-8 otherwise;
-// the switch is at 2 AM, so midnight uses the previous day's offset and 6 AM the next day's.
+// A reservation's code works from 7:00 PM until 11:00 PM Mexicali time on its date. At 11:00 PM
+// unclaimed reservations stop holding a table and become walk-in availability. Same calculation as
+// the Firestore rules. Mexicali uses UTC-7 from the 2nd Sunday of March to the 1st Sunday of November,
+// UTC-8 otherwise.
 function barMxOffsetHours(date) {
     var y = +date.slice(0, 4), m = +date.slice(5, 7), d = +date.slice(8, 10);
     function isoDow(mm, dd) { var w = new Date(Date.UTC(y, mm - 1, dd)).getUTCDay(); return w === 0 ? 7 : w; }
@@ -242,26 +241,22 @@ function barMxOffsetHours(date) {
     var firstSundayNovember = 1 + (7 - isoDow(11, 1)) % 7;
     return ((m > 3 && m < 11) || (m === 3 && d >= secondSundayMarch) || (m === 11 && d < firstSundayNovember)) ? 7 : 8;
 }
-function barAddDays(date, n) {
-    return new Date(Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10) + n)).toISOString().slice(0, 10);
-}
-// 00:00 Mexicali on the reservation date
+// 7:00 PM Mexicali on the reservation date
 function barDayStartMs(date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return NaN;
-    return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(barAddDays(date, -1)), 0);
+    return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(date) + 19, 0);
 }
-// 6:00 AM Mexicali the morning after the reservation date
+// 11:00 PM Mexicali on the reservation date
 function barNightEndMs(date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return NaN;
-    var next = barAddDays(date, 1);
-    return Date.UTC(+next.slice(0, 4), +next.slice(5, 7) - 1, +next.slice(8, 10), barMxOffsetHours(next) + 6, 0);
+    return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(date) + 23, 0);
 }
-// The reservation's night is over (after 6:00 AM Mexicali the next morning)
+// The reservation window is over (at 11:00 PM Mexicali)
 function barIsPastNight(r, now) {
     var end = barNightEndMs(r && r.date);
-    return isFinite(end) && (now || Date.now()) > end;
+    return isFinite(end) && (now || Date.now()) >= end;
 }
-// The date's night has started (00:00 Mexicali): it counts as "today" (2 tables) until 6:00 AM next morning
+// The reservation window has started (7:00 PM Mexicali): it counts as "today" until 11:00 PM.
 function barNightStarted(date, now) {
     var start = barDayStartMs(date);
     return isFinite(start) && (now || Date.now()) >= start;
@@ -369,7 +364,7 @@ function cancelBarReservation(orderNumber, closeAs) {
 }
 window.cancelBarReservation = cancelBarReservation;
 
-// Reservations whose night is over (after 6:00 AM Mexicali the next morning) no longer hold a table
+// Reservations whose window is over (at 11:00 PM Mexicali) no longer hold a table
 // and don't count against the limits. Cancel the user's own ones (frees their slot in the active index;
 // the code is closed as "expired" so it stays in the profile's Registros: verified or "No verificada").
 function barHoldsNoTable(r) {
@@ -587,15 +582,20 @@ if (reservationForm) {
             return;
         }
         
-        // Check if time is before 7 PM (business hours start at 7 PM)
+        // Online reservation arrival times are 7:00 PM through 11:00 PM.
         const selectedTime = formData.time;
         if (selectedTime) {
             const [hours, minutes] = selectedTime.split(':').map(Number);
             const timeInMinutes = hours * 60 + minutes;
             const businessStartTime = 19 * 60; // 7 PM = 19:00 = 1140 minutes
+            const reservationEndTime = 23 * 60; // 11 PM = walk-ins
             
             if (timeInMinutes < businessStartTime) {
                 alert('Abrimos a las 7:00 p. m. Elige una hora a partir de las 7:00 p. m.');
+                return;
+            }
+            if (timeInMinutes > reservationEndTime) {
+                alert('Las reservaciones terminan a las 11:00 p. m. Después de esa hora atendemos sin reservación.');
                 return;
             }
         }
@@ -890,12 +890,12 @@ if (dateInput) {
 }
 if (reservationFormEl) reservationFormEl.addEventListener('reset', () => setTimeout(applyReservationLimit, 0));
 
-// Set reasonable time limits (7 PM to 3 AM as default hours)
+// Online reservation times: 7 PM through 11 PM. After 11 PM service is walk-in.
 const timeInput = document.getElementById('time');
 if (timeInput) {
     timeInput.setAttribute('min', '19:00');
-    timeInput.setAttribute('max', '23:59'); // Note: Hours extend until 3 AM (next day)
-    timeInput.setAttribute('title', 'Horario: 7:00 p. m. - 3:00 a. m.');
+    timeInput.setAttribute('max', '23:00');
+    timeInput.setAttribute('title', 'Reservaciones: 7:00 p. m. - 11:00 p. m.');
 }
 
 // Navbar background on scroll
