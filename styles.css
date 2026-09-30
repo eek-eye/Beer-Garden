@@ -2386,7 +2386,8 @@ textarea {
 }
 
 /* VIP: gold sign, red characters, double frame and a stronger glow */
-.vip-container .vip-seat {
+.vip-container .vip-seat,
+.vip-table-seat {
     --neon: var(--neon-yellow);
     --neon-ink: #9b0000;
     background: linear-gradient(180deg, #fff27a 0%, var(--neon-yellow) 55%, #ffb000 100%);
@@ -2398,6 +2399,32 @@ textarea {
         0 0 6px var(--neon-yellow),
         0 0 16px #ff9f0a,
         0 0 26px rgba(255, 159, 10, 0.55);
+}
+
+.vip-table-seat {
+    position: relative;
+    overflow: visible;
+}
+
+.vip-table-seat::before {
+    content: "VIP";
+    position: absolute;
+    bottom: calc(100% + 3px);
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fff6b0;
+    font-family: var(--cn-font-display);
+    font-size: 0.54rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 4px #ffd60a, 0 0 8px #ff9f0a;
+    pointer-events: none;
+}
+
+.vip-table-seat.reserved::before {
+    color: #8a8080;
+    text-shadow: none;
 }
 
 .vip-label {

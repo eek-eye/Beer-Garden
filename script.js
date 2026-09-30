@@ -760,6 +760,7 @@ function initializeSeatDataAttributes() {
         const seatNumber = parseInt(text);
         if (!isNaN(seatNumber)) {
             seat.dataset.tableNumber = seatNumber.toString();
+            seat.classList.toggle('vip-table-seat', seatNumber >= 5 && seatNumber <= 11);
             seat.setAttribute('role', 'button');
             seat.setAttribute('tabindex', '0');
             seat.setAttribute('aria-label', `${seatNumber <= 11 ? 'Mesa VIP' : 'Mesa'} ${seatNumber}`);
