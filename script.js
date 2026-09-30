@@ -743,6 +743,10 @@ function initializeSeatDataAttributes() {
         const seatNumber = parseInt(text);
         if (!isNaN(seatNumber)) {
             seat.dataset.tableNumber = seatNumber.toString();
+            seat.setAttribute('role', 'button');
+            seat.setAttribute('tabindex', '0');
+            seat.setAttribute('aria-label', `${seatNumber <= 4 ? 'Mesa VIP' : 'Mesa'} ${seatNumber}`);
+            seat.setAttribute('aria-pressed', 'false');
         }
     });
 }
@@ -811,10 +815,31 @@ function highlightSelectedTable() {
     const select = document.getElementById('table');
     const value = select ? select.value : '';
     document.querySelectorAll('.vip-seat, .seat-circle, .seat-square').forEach(seat => {
-        seat.classList.toggle('is-selected', !!value && seat.dataset.tableNumber === value && !seat.classList.contains('reserved'));
+        const selected = !!value && seat.dataset.tableNumber === value && !seat.classList.contains('reserved');
+        seat.classList.toggle('is-selected', selected);
+        seat.setAttribute('aria-pressed', selected ? 'true' : 'false');
     });
 }
 if (tableSelect) tableSelect.addEventListener('change', highlightSelectedTable);
+
+// Pick an available table directly from the seating chart.
+function selectTableFromChart(seat) {
+    if (!tableSelect || tableSelect.disabled || seat.classList.contains('reserved')) return;
+    const tableNumber = seat.dataset.tableNumber;
+    if (!tableNumber || !tableSelect.querySelector(`option[value="${tableNumber}"]`)) return;
+    tableSelect.value = tableNumber;
+    tableSelect.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+document.querySelectorAll('.vip-seat, .seat-circle, .seat-square').forEach(seat => {
+    seat.addEventListener('click', () => selectTableFromChart(seat));
+    seat.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        selectTableFromChart(seat);
+    });
+});
+
 const reservationFormEl = document.getElementById('reservationForm');
 if (reservationFormEl) reservationFormEl.addEventListener('reset', () => setTimeout(highlightSelectedTable, 0));
 
