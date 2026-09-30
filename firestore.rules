@@ -196,7 +196,14 @@ service cloud.firestore {
     }
 
     function barInServiceNight(data) {
-      return request.time >= barDayStart(data.date) && request.time < barNightEnd(data.date);
+      return (request.time >= barDayStart(data.date) && request.time < barNightEnd(data.date))
+        // Short-lived records created directly by an administrator for scanner testing.
+        // Public reservation/check-in creates reject these fields through their hasOnly() schemas.
+        || (data.get('testMode', false) == true
+            && data.testValidUntil is timestamp
+            && data.createdAt is timestamp
+            && data.testValidUntil <= data.createdAt + duration.value(4, 'h')
+            && request.time < data.testValidUntil);
     }
 
     function barValidTime(time) {

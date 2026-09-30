@@ -263,8 +263,15 @@ function barNightEndMs(date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return NaN;
     return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(date) + 23, 5);
 }
-// The reservation window is over (at 11:05 PM Mexicali)
+// The reservation window is over (at 11:05 PM Mexicali). Privileged test records may carry a
+// short testValidUntil override; normal website bookings cannot create that field.
 function barIsPastNight(r, now) {
+    if (r && r.testMode === true && r.testValidUntil) {
+        var testEnd = typeof r.testValidUntil.toMillis === 'function'
+            ? r.testValidUntil.toMillis()
+            : new Date(r.testValidUntil).getTime();
+        if (isFinite(testEnd) && (now || Date.now()) < testEnd) return false;
+    }
     var end = barNightEndMs(r && r.date);
     return isFinite(end) && (now || Date.now()) >= end;
 }
