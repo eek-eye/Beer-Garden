@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <script>(function(){var h=location.hash;if(h.length>1){try{window.__barLandSection=decodeURIComponent(h.slice(1));}catch(e){}}if(location.href!==location.origin+'/'){history.replaceState(null,'','/');}})();</script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta id="siteViewport" name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Phones use the compact desktop composition shown in the approved reference.
+        // Desktop and tablet layouts keep their normal responsive viewport.
+        (function () {
+            var phone = /Android|iPhone|iPod|IEMobile|Mobile/i.test(navigator.userAgent);
+            var shortSide = Math.min(screen.width || 9999, screen.height || 9999);
+            if (phone && shortSide <= 600) {
+                document.getElementById('siteViewport').setAttribute('content', 'width=1180');
+            }
+        })();
+    </script>
     <title>Bar Chinesca Mxli - Bar y centro nocturno en La Chinesca, Mexicali</title>
     <meta name="description" content="Reserva tu mesa en Bar Chinesca Mxli, bar y centro nocturno en La Chinesca, Mexicali. Elige tu mesa en el mapa y reserva en línea.">
     <link rel="icon" href="/favicon.ico" sizes="48x48">
