@@ -4268,6 +4268,14 @@ body {
     display: list-item;
 }
 
+/* On wide screens the header already has a login link; hide the duplicate left bookmark.
+   Keep it in the compact navigation where the header links are hidden. */
+@media (min-width: 1180px) {
+    #navLoginItem {
+        display: none;
+    }
+}
+
 /* small round social icons above the right-hand links */
 .badge-social {
     position: absolute;
