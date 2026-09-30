@@ -250,6 +250,9 @@ function barMxOffsetHours(date) {
     var firstSundayNovember = 1 + (7 - isoDow(11, 1)) % 7;
     return ((m > 3 && m < 11) || (m === 3 && d >= secondSundayMarch) || (m === 11 && d < firstSundayNovember)) ? 7 : 8;
 }
+function barAddDays(date, n) {
+    return new Date(Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10) + n)).toISOString().slice(0, 10);
+}
 // 7:00 PM Mexicali on the reservation date
 function barDayStartMs(date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return NaN;
@@ -265,9 +268,15 @@ function barIsPastNight(r, now) {
     var end = barNightEndMs(r && r.date);
     return isFinite(end) && (now || Date.now()) >= end;
 }
-// The reservation window has started (7:00 PM Mexicali): it counts as "today" until 11:05 PM.
+// Midnight Mexicali on the reservation date. Account limits use the calendar day so the second
+// same-day table opens at midnight; QR-code validity still begins at 7:00 PM.
+function barLimitDayStartMs(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return NaN;
+    return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(barAddDays(date, -1)), 0);
+}
+// The reservation's calendar day has started: it receives the same-day limit of two tables.
 function barNightStarted(date, now) {
-    var start = barDayStartMs(date);
+    var start = barLimitDayStartMs(date);
     return isFinite(start) && (now || Date.now()) >= start;
 }
 // Which limit stops a new table for `date` (null = allowed). active = the user's reservations whose

@@ -217,15 +217,19 @@ service cloud.firestore {
       return exists(barCountPath(uid)) ? get(barCountPath(uid)).data.count : 0;
     }
 
-    // ---- Per-account limits (Mexicali reservation windows) ----
-    // A reservation date is "today" from 7:00 PM until the 11:05 PM cutoff,
-    // a future date before that and past after it. Per account: up to 2 tables for today, 1 per future
+    // ---- Per-account limits (Mexicali calendar days) ----
+    // A second table opens at midnight on the reservation date. Per account: up to 2 tables for today, 1 per future
     // date (the 2nd slot opens when the date arrives), at most 3 upcoming (today + future) in total.
     // Past nights and cancelled tables don't count. Checked on barUserActive/{uid}.res {orderNumber: date}:
     // at most 3 entries; a cancelled table leaves the index with its reservation, and a past night may
     // always be removed (the site removes the user's past nights right before booking).
+    function barLimitDayStart(date) {
+      let prev = barUtcDate(date) - duration.value(1, 'd');
+      return barUtcDate(date) + duration.value(barMxOffsetMinYMD(prev.year(), prev.month(), prev.day()), 'm');
+    }
+
     function barNightStarted(date) {
-      return request.time >= barDayStart(date);
+      return request.time >= barLimitDayStart(date);
     }
 
     function barDayCap(date) {
