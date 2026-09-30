@@ -219,7 +219,7 @@
             function todayMx() {
                 return window.barCheckin ? window.barCheckin.mexicaliDate() : new Date().toISOString().slice(0, 10);
             }
-            // Registros = verified at the door, or an unused reservation after the 11:00 PM cutoff
+            // Registros = verified at the door, or an unused reservation after the 11:05 PM cutoff
             function isPast(r) {
                 return !!r.checkedIn || !!(window.barCheckin && window.barCheckin.isPastNight(r));
             }
@@ -413,7 +413,7 @@
                 renderPast(past);
                 maybeCelebrate(reservations);
             }
-            // a page left open past 11:00 PM moves that night's reservation to "Registros"
+            // a page left open past 11:05 PM moves that night's reservation to "Registros"
             setInterval(refresh, 60000);
             if (typeof whenAuthReady === 'function' && typeof firestoreDb !== 'undefined') {
                 whenAuthReady().then(function(user) {

@@ -162,8 +162,8 @@ service cloud.firestore {
     }
 
     // ---- Reservation window (Mexicali, America/Tijuana) ----
-    // A code works from 7:00 PM until 11:00 PM on the reservation date. At 11:00 PM an
-    // unclaimed table becomes walk-in availability. Mexicali follows US daylight time:
+    // A code works from 7:00 PM until 11:05 PM on the reservation date. At 11:05 PM every
+    // unused code expires. Mexicali follows US daylight time:
     // UTC-7 from the 2nd Sunday of March until the 1st Sunday of November, UTC-8 otherwise.
     // Same calculation as script.js and the staff app.
     function barMxOffsetMinYMD(y, m, d) {
@@ -183,20 +183,20 @@ service cloud.firestore {
              + duration.value(19, 'h');
     }
 
-    // 11:00 PM Mexicali on the reservation date (walk-in cutoff)
+    // 11:05 PM Mexicali on the reservation date (code-expiration cutoff)
     function barNightEnd(date) {
       let day = barUtcDate(date);
       return day + duration.value(barMxOffsetMinYMD(day.year(), day.month(), day.day()), 'm')
-             + duration.value(23, 'h');
+             + duration.value(23, 'h') + duration.value(5, 'm');
     }
 
-    // The reservation window is over at 11:00 PM Mexicali.
+    // The reservation window is over at 11:05 PM Mexicali.
     function barNightOver(date) {
       return request.time >= barNightEnd(date);
     }
 
     function barInServiceNight(data) {
-      return request.time >= barDayStart(data.date) && request.time <= barNightEnd(data.date);
+      return request.time >= barDayStart(data.date) && request.time < barNightEnd(data.date);
     }
 
     function barValidTime(time) {
@@ -218,7 +218,7 @@ service cloud.firestore {
     }
 
     // ---- Per-account limits (Mexicali reservation windows) ----
-    // A reservation date is "today" from 7:00 PM until the 11:00 PM cutoff,
+    // A reservation date is "today" from 7:00 PM until the 11:05 PM cutoff,
     // a future date before that and past after it. Per account: up to 2 tables for today, 1 per future
     // date (the 2nd slot opens when the date arrives), at most 3 upcoming (today + future) in total.
     // Past nights and cancelled tables don't count. Checked on barUserActive/{uid}.res {orderNumber: date}:
@@ -316,7 +316,7 @@ service cloud.firestore {
           && existsAfter(barCheckinPath(request.resource.data.checkinCode))
           && getAfter(barCheckinPath(request.resource.data.checkinCode)).data.orderNumber == orderNumber
         ) ||
-        // (2) staff check the guest in at the door: once only, from 7:00 PM until 11:00 PM
+        // (2) staff check the guest in at the door: once only, from 7:00 PM until 11:05 PM
         (
           isAdmin()
           && resource.data.status == 'active'

@@ -181,7 +181,7 @@ tabBtns.forEach(btn => {
 //   barTableLocks/{date_table}     "table taken on date" (public, no personal data)
 //   barUserActive/{uid}            the user's tables that still count: res = {orderNumber: date}
 //                                  (the security rules check the limits below on it)
-// Limits per account (Mexicali dates, same window as the check-in codes: 7:00 PM until 11:00 PM):
+// Limits per account (Mexicali dates, same window as the check-in codes: 7:00 PM until 11:05 PM):
 //   - today: up to 2 tables; any future date: 1 table (a 2nd slot opens when that date arrives)
 //   - at most 3 upcoming tables (today + future); past nights and cancelled tables don't count
 // ============================================
@@ -230,8 +230,8 @@ function barLockId(date, table) {
 }
 
 // ---- Service night (Mexicali, America/Tijuana) ----
-// A reservation's code works from 7:00 PM until 11:00 PM Mexicali time on its date. At 11:00 PM
-// unclaimed reservations stop holding a table and become walk-in availability. Same calculation as
+// A reservation's code works from 7:00 PM until 11:05 PM Mexicali time on its date. At 11:05 PM
+// all unused codes expire and reservations stop holding a table. Same calculation as
 // the Firestore rules. Mexicali uses UTC-7 from the 2nd Sunday of March to the 1st Sunday of November,
 // UTC-8 otherwise.
 function barMxOffsetHours(date) {
@@ -246,17 +246,17 @@ function barDayStartMs(date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return NaN;
     return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(date) + 19, 0);
 }
-// 11:00 PM Mexicali on the reservation date
+// 11:05 PM Mexicali on the reservation date
 function barNightEndMs(date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return NaN;
-    return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(date) + 23, 0);
+    return Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), barMxOffsetHours(date) + 23, 5);
 }
-// The reservation window is over (at 11:00 PM Mexicali)
+// The reservation window is over (at 11:05 PM Mexicali)
 function barIsPastNight(r, now) {
     var end = barNightEndMs(r && r.date);
     return isFinite(end) && (now || Date.now()) >= end;
 }
-// The reservation window has started (7:00 PM Mexicali): it counts as "today" until 11:00 PM.
+// The reservation window has started (7:00 PM Mexicali): it counts as "today" until 11:05 PM.
 function barNightStarted(date, now) {
     var start = barDayStartMs(date);
     return isFinite(start) && (now || Date.now()) >= start;
@@ -364,7 +364,7 @@ function cancelBarReservation(orderNumber, closeAs) {
 }
 window.cancelBarReservation = cancelBarReservation;
 
-// Reservations whose window is over (at 11:00 PM Mexicali) no longer hold a table
+// Reservations whose window is over (at 11:05 PM Mexicali) no longer hold a table
 // and don't count against the limits. Cancel the user's own ones (frees their slot in the active index;
 // the code is closed as "expired" so it stays in the profile's Registros: verified or "No verificada").
 function barHoldsNoTable(r) {

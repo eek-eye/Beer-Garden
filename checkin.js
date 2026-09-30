@@ -5,9 +5,9 @@
  *   barCheckins/{code}  { code, short, orderNumber, uid, date, time, guests, table, validUntil,
  *                         status: active|cancelled|expired, checkedIn, checkedInAt, checkedInBy }
  *
- * Reservation window: a code works from 7:00 PM until 11:00 PM (Mexicali) on the reservation date
+ * Reservation window: a code works from 7:00 PM until 11:05 PM (Mexicali) on the reservation date
  * (window.barArrival in script.js, same calculation as the Firestore rules). validUntil stores the
- * 11:00 PM cutoff.
+ * 11:05 PM cutoff.
  *
  * The code is random (5 + 16 characters from a 31-letter alphabet, ~100 bits): it can't be
  * guessed from the order number. The owner attaches it right after booking (or later, the first
@@ -53,7 +53,7 @@
         return window.barArrival || null;
     }
 
-    // End of the reservation window (ms): 11:00 PM Mexicali on the reservation date
+    // End of the reservation window (ms): 11:05 PM Mexicali on the reservation date
     function nightEndOf(res) {
         var a = arrival();
         return a && res ? a.nightEndMs(res.date) : NaN;
