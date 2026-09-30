@@ -11,7 +11,8 @@
             var phone = /Android|iPhone|iPod|IEMobile|Mobile/i.test(navigator.userAgent);
             var shortSide = Math.min(screen.width || 9999, screen.height || 9999);
             if (phone && shortSide <= 600) {
-                document.getElementById('siteViewport').setAttribute('content', 'width=1180');
+                document.documentElement.classList.add('phone-desktop-layout');
+                document.getElementById('siteViewport').setAttribute('content', 'width=1000');
             }
         })();
     </script>
@@ -23,7 +24,7 @@
     <link rel="apple-touch-icon" href="/IMAGES/apple-touch-icon.png">
     <!-- Cookie consent: the decorative Google Fonts load only after "Aceptar" -->
     <script src="cookie-consent.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20260929-4">
+    <link rel="stylesheet" href="styles.css?v=20260929-5">
 </head>
 <body>
     <!-- Navigation: round logo badge on a gold line, links split around it (front page only).

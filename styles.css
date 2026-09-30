@@ -4367,6 +4367,18 @@ body {
     }
 }
 
+/* The phone reference layout uses a scaled desktop canvas; keep its full header visible. */
+@media (min-width: 769px) and (max-width: 1179px) {
+    .phone-desktop-layout .badge-links,
+    .phone-desktop-layout .badge-social {
+        display: flex;
+    }
+
+    .phone-desktop-layout .badge-quick {
+        display: none;
+    }
+}
+
 /* ---------- Hero slideshow ---------- */
 .front-hero {
     --slides-top: 170px;
