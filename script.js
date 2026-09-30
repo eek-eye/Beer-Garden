@@ -188,6 +188,24 @@ tabBtns.forEach(btn => {
 var MAX_TABLES_TODAY = 2;
 var MAX_TABLES_PER_FUTURE_DAY = 1;
 var MAX_ACTIVE_TABLES = 3;
+var PERMANENTLY_RESERVED_TABLES = [1, 5, 6, 7, 8, 9, 10, 11, 20, 21, 22];
+function isPermanentlyReservedTable(table) {
+    return PERMANENTLY_RESERVED_TABLES.indexOf(parseInt(table, 10)) !== -1;
+}
+function permanentTableLocks() {
+    var locks = {};
+    PERMANENTLY_RESERVED_TABLES.forEach(function(table) {
+        locks[String(table)] = { permanent: true };
+    });
+    return locks;
+}
+function includePermanentTableLocks(locks) {
+    locks = locks || {};
+    PERMANENTLY_RESERVED_TABLES.forEach(function(table) {
+        if (!locks[String(table)]) locks[String(table)] = { permanent: true };
+    });
+    return locks;
+}
 var LIMIT_MESSAGES = {
     today: 'Ya tienes 2 mesas para hoy. Es el máximo por noche.',
     future: 'Solo puedes reservar 1 mesa por día con anticipación. El mismo día de tu reservación se abre un segundo lugar.',
@@ -400,6 +418,7 @@ function pruneActiveIndex(uid, active) {
 // Book one table: reservation + table lock + active-index entry in one transaction (the rules re-check all of it)
 function bookTableInFirestore(user, formData) {
     var table = parseInt(formData.table, 10);
+    if (isPermanentlyReservedTable(table)) return Promise.reject(barError('bar/table-unavailable'));
     var lockRef = firestoreDb.collection('barTableLocks').doc(barLockId(formData.date, table));
     var activeRef = firestoreDb.collection('barUserActive').doc(user.uid);
     var attempts = 0;
@@ -621,6 +640,10 @@ if (reservationForm) {
             alert('Esta mesa ya está reservada para esa fecha (mesa ' + formData.table + ', orden ' + err.orderNumber + '). Elige otra mesa.');
             updateSeatingChartForDate(formData.date, true);
             updateTableDropdownForDate(formData.date);
+        } else if (code === 'bar/table-unavailable') {
+            alert('Esta mesa está reservada permanentemente. Elige otra mesa.');
+            updateSeatingChartForDate(formData.date, true);
+            updateTableDropdownForDate(formData.date);
         } else if (code === 'permission-denied') {
             // The database refused the booking: most likely one of the per-account limits
             getMyReservations(fbUser.uid).then(function(list) {
@@ -696,15 +719,9 @@ También puedes reservar directamente al +52 686 364 2083.
         updateSeatingChartForDate(dateInput.value);
         updateTableDropdownForDate(dateInput.value);
     } else {
-        // Clear all X marks if no date selected
-        const allSeats = document.querySelectorAll('.vip-seat, .seat-circle, .seat-square');
-        allSeats.forEach(seat => {
-            seat.classList.remove('reserved');
-            const seatNumber = seat.dataset.tableNumber;
-            if (seatNumber) {
-                seat.innerHTML = seatNumber;
-            }
-        });
+        // Keep the permanently unavailable tables marked even without a selected date
+        renderSeatingChart(permanentTableLocks());
+        renderTableDropdown(permanentTableLocks());
     }
 
     // Show success message
@@ -800,6 +817,7 @@ function isDateLocked(dateString) {
 // Initialize table dropdown (will be updated when date is selected)
 const tableSelect = document.getElementById('table');
 for (let i = 1; i <= 50; i++) {
+    if (isPermanentlyReservedTable(i)) continue;
     const option = document.createElement('option');
     option.value = i;
     if (i <= 4) {
@@ -839,6 +857,7 @@ document.querySelectorAll('.vip-seat, .seat-circle, .seat-square').forEach(seat 
         selectTableFromChart(seat);
     });
 });
+renderSeatingChart(permanentTableLocks());
 
 const reservationFormEl = document.getElementById('reservationForm');
 if (reservationFormEl) reservationFormEl.addEventListener('reset', () => setTimeout(highlightSelectedTable, 0));
@@ -857,27 +876,9 @@ if (dateInput) dateInput.addEventListener('change', function() {
         updateTableDropdownForDate(selectedDate);
         applyReservationLimit();
     } else {
-        // Clear all X marks if no date selected
-        const allSeats = document.querySelectorAll('.vip-seat, .seat-circle, .seat-square');
-        allSeats.forEach(seat => {
-            seat.classList.remove('reserved');
-            const seatNumber = seat.dataset.tableNumber;
-            if (seatNumber) {
-                seat.innerHTML = seatNumber;
-            }
-        });
-        // Reset dropdown to show all tables
-        tableSelect.innerHTML = '<option value="">Selecciona una mesa...</option>';
-        for (let i = 1; i <= 50; i++) {
-            const option = document.createElement('option');
-            option.value = i;
-            if (i <= 4) {
-                option.textContent = `Mesa VIP ${i}`;
-            } else {
-                option.textContent = `Mesa ${i}`;
-            }
-            tableSelect.appendChild(option);
-        }
+        // Keep permanently unavailable tables blocked when the date is cleared
+        renderSeatingChart(permanentTableLocks());
+        renderTableDropdown(permanentTableLocks());
     }
 });
 
@@ -1016,7 +1017,7 @@ function fetchTableLocks(date, fresh) {
     if (!fresh && cached && Date.now() - cached.at < 5000) return cached.promise;
     var promise;
     if (!firestoreDb) {
-        promise = Promise.resolve({});
+        promise = Promise.resolve(permanentTableLocks());
     } else {
         promise = firestoreDb.collection('barTableLocks').where('date', '==', date).get().then(function(snap) {
             var locked = {};
@@ -1024,11 +1025,11 @@ function fetchTableLocks(date, fresh) {
                 var lock = d.data();
                 locked[String(lock.table)] = { orderNumber: lock.orderNumber, time: lock.time || '' };
             });
-            return locked;
+            return includePermanentTableLocks(locked);
         }).catch(function(err) {
             console.warn('Could not load taken tables:', err && err.code);
             delete tableLocksCache[date];
-            return {};
+            return permanentTableLocks();
         });
     }
     tableLocksCache[date] = { at: Date.now(), promise: promise };
@@ -1082,16 +1083,24 @@ function renderSeatingChart(reservedTables) {
             // Table is taken - show X and time
             const reservationTime = lock.time || '';
             seat.classList.add('reserved');
+            seat.classList.toggle('permanently-reserved', !!lock.permanent);
             seat.innerHTML = `
                 <span class="reserved-x">✕</span>
                 ${reservationTime ? `<span class="reserved-time">${reservationTime}</span>` : ''}
             `;
-            seat.title = `Reservada (orden ${lock.orderNumber})${reservationTime ? ` · Hora: ${reservationTime}` : ''}`;
+            seat.title = lock.permanent
+                ? 'Reservada permanentemente'
+                : `Reservada (orden ${lock.orderNumber})${reservationTime ? ` · Hora: ${reservationTime}` : ''}`;
+            seat.setAttribute('aria-disabled', 'true');
+            seat.setAttribute('tabindex', '-1');
         } else {
             // Table is available - show number
             seat.classList.remove('reserved');
+            seat.classList.remove('permanently-reserved');
             seat.innerHTML = seatNumber.toString();
             seat.title = 'Disponible';
+            seat.removeAttribute('aria-disabled');
+            seat.setAttribute('tabindex', '0');
         }
     });
     highlightSelectedTable();
@@ -1118,7 +1127,7 @@ function renderTableDropdown(reservedTables) {
     for (let i = 1; i <= 50; i++) {
         const tableKey = i.toString();
         // Only add if NOT taken for this date
-        if (!reservedTables.hasOwnProperty(tableKey)) {
+        if (!Object.prototype.hasOwnProperty.call(reservedTables, tableKey)) {
             const option = document.createElement('option');
             option.value = i;
             if (i <= 4) {
