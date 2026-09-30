@@ -218,6 +218,15 @@ function localDateString(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+// Convert the stored 24-hour value to the guest-facing 12-hour format.
+function barTime12(time) {
+    var match = String(time || '').match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+    if (!match) return time || '';
+    var hour = parseInt(match[1], 10);
+    return (hour % 12 || 12) + ':' + match[2] + (hour < 12 ? ' a. m.' : ' p. m.');
+}
+window.barTime12 = barTime12;
+
 function barError(code, extra) {
     var err = new Error(code);
     err.code = code;
@@ -677,7 +686,7 @@ function onReservationBooked(formData, orderNumber, formattedDate) {
 Datos de tu reservación:
 - Número de orden: ${orderNumber}
 - Fecha: ${formattedDate}
-- Hora: ${formData.time}
+- Hora: ${barTime12(formData.time)}
 - Personas: ${formData.guests}
 - Mesa: ${formData.table}
 - Correo: ${formData.email}
@@ -890,11 +899,9 @@ if (dateInput) {
 }
 if (reservationFormEl) reservationFormEl.addEventListener('reset', () => setTimeout(applyReservationLimit, 0));
 
-// Online reservation times: 7 PM through 11 PM. After 11 PM service is walk-in.
+// The dropdown shows 12-hour labels while preserving sortable 24-hour values in Firestore.
 const timeInput = document.getElementById('time');
 if (timeInput) {
-    timeInput.setAttribute('min', '19:00');
-    timeInput.setAttribute('max', '23:00');
     timeInput.setAttribute('title', 'Reservaciones: 7:00 p. m. - 11:00 p. m.');
 }
 
@@ -1083,15 +1090,16 @@ function renderSeatingChart(reservedTables) {
         if (lock) {
             // Table is taken - show X and time
             const reservationTime = lock.time || '';
+            const displayTime = barTime12(reservationTime);
             seat.classList.add('reserved');
             seat.classList.toggle('permanently-reserved', !!lock.permanent);
             seat.innerHTML = `
                 <span class="reserved-x">✕</span>
-                ${reservationTime ? `<span class="reserved-time">${reservationTime}</span>` : ''}
+                ${displayTime ? `<span class="reserved-time">${displayTime}</span>` : ''}
             `;
             seat.title = lock.permanent
                 ? 'Reservada permanentemente'
-                : `Reservada (orden ${lock.orderNumber})${reservationTime ? ` · Hora: ${reservationTime}` : ''}`;
+                : `Reservada (orden ${lock.orderNumber})${displayTime ? ` · Hora: ${displayTime}` : ''}`;
             seat.setAttribute('aria-disabled', 'true');
             seat.setAttribute('tabindex', '-1');
         } else {

@@ -188,7 +188,8 @@
         qrEl.innerHTML = '<p class="checkin-qr-loading">Generando tu código QR…</p>';
         codeEl.textContent = '';
         dlg.querySelector('.checkin-dialog-details').textContent =
-            'Orden ' + res.orderNumber + ' · ' + tableLabel(res.table) + ' · ' + formatDateEs(res.date) + ' · ' + res.time + ' · ' +
+            'Orden ' + res.orderNumber + ' · ' + tableLabel(res.table) + ' · ' + formatDateEs(res.date) + ' · ' +
+            (window.barTime12 ? window.barTime12(res.time) : res.time) + ' · ' +
             res.guests + (String(res.guests) === '1' ? ' persona' : ' personas');
         if (!dlg.open) {
             if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');

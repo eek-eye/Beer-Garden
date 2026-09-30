@@ -340,7 +340,18 @@
                         
                         <div class="form-group">
                             <label for="time">Hora *</label>
-                            <input type="time" id="time" name="time" required>
+                            <select id="time" name="time" required>
+                                <option value="">Selecciona una hora...</option>
+                                <option value="19:00">7:00 p. m.</option>
+                                <option value="19:30">7:30 p. m.</option>
+                                <option value="20:00">8:00 p. m.</option>
+                                <option value="20:30">8:30 p. m.</option>
+                                <option value="21:00">9:00 p. m.</option>
+                                <option value="21:30">9:30 p. m.</option>
+                                <option value="22:00">10:00 p. m.</option>
+                                <option value="22:30">10:30 p. m.</option>
+                                <option value="23:00">11:00 p. m.</option>
+                            </select>
                         </div>
                     </div>
                     
@@ -608,9 +619,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="email-config.js"></script>
-    <script src="script.js?v=20260929-4"></script>
+    <script src="script.js?v=20260930-1"></script>
     <script src="vendor/qrcode.js"></script>
-    <script src="checkin.js?v=20260929-3"></script>
+    <script src="checkin.js?v=20260930-1"></script>
     <script src="front.js"></script>
     <!-- Dragón volador (decorativo): CSS/SVG en styles.css, no recibe clics, se oculta con movimiento reducido -->
     <div class="sky-dragon" aria-hidden="true"><div class="sky-dragon-flight"><div class="sky-dragon-bob"><div class="sky-dragon-body"><span class="sd-tail"></span><span class="sd-seg" style="--i:0;--s:0.6"></span><span class="sd-seg" style="--i:1;--s:0.68"></span><span class="sd-seg" style="--i:2;--s:0.76"></span><span class="sd-seg" style="--i:3;--s:0.84"></span><span class="sd-seg" style="--i:4;--s:0.92"><span class="sd-leg sd-leg-back sd-leg-far"></span></span><span class="sd-seg" style="--i:5"><span class="sd-leg sd-leg-back"></span></span><span class="sd-seg" style="--i:6"></span><span class="sd-seg" style="--i:7"></span><span class="sd-seg" style="--i:8"></span><span class="sd-seg" style="--i:9"></span><span class="sd-seg" style="--i:10"></span><span class="sd-seg" style="--i:11"></span><span class="sd-seg" style="--i:12"></span><span class="sd-seg" style="--i:13"><span class="sd-leg sd-leg-front sd-leg-far"></span></span><span class="sd-seg" style="--i:14"><span class="sd-leg sd-leg-front"></span></span><span class="sd-seg" style="--i:15"></span><span class="sd-seg" style="--i:16;--s:0.95"></span><span class="sd-seg" style="--i:17;--s:0.9"></span><span class="sd-head"></span><span class="sd-pearl"></span></div></div></div></div>

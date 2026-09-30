@@ -130,7 +130,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="email-config.js"></script>
-    <script src="script.js?v=20260929-3"></script>
+    <script src="script.js?v=20260930-1"></script>
     <script>
         // Cancellation page: detects the signed-in guest's upcoming reservations (not cancelled, night not over,
         // not verified at the door). 1 -> "¿Deseas cancelar tu reservación?", several -> pick one, then confirm,
@@ -146,11 +146,11 @@
                 states.forEach(function(s) { $(s).hidden = s !== id; });
             }
             function when(r) {
-                return { table: barTableLabel(r.table), date: barDateLong(r.date), time: r.time || '' };
+                return { table: barTableLabel(r.table), date: barDateLong(r.date), time: barTime12(r.time) };
             }
             function details(r) {
                 var w = when(r);
-                return [w.table, w.date, w.time ? w.time + ' h' : '', { text: 'Orden ' + r.orderNumber + ' · ' + r.guests + (String(r.guests) === '1' ? ' persona' : ' personas'), small: true }]
+                return [w.table, w.date, w.time, { text: 'Orden ' + r.orderNumber + ' · ' + r.guests + (String(r.guests) === '1' ? ' persona' : ' personas'), small: true }]
                     .filter(Boolean);
             }
             function renderList(list) {
@@ -165,7 +165,7 @@
                     info.className = 'cancel-item-info';
                     var t = document.createElement('span'); t.className = 'cancel-item-table'; t.textContent = w.table;
                     var d = document.createElement('span'); d.className = 'cancel-item-date'; d.textContent = w.date;
-                    var h = document.createElement('span'); h.className = 'cancel-item-time'; h.textContent = w.time ? w.time + ' h' : '';
+                    var h = document.createElement('span'); h.className = 'cancel-item-time'; h.textContent = w.time;
                     info.appendChild(t); info.appendChild(d); info.appendChild(h);
                     var b = document.createElement('button');
                     b.type = 'button';
@@ -218,7 +218,7 @@
                     message: 'Tienes ' + list.length + ' reservaciones activas.',
                     options: list.map(function(r) {
                         var w = when(r);
-                        return { label: w.table, sub: w.date + ' · ' + w.time + ' h', value: r.orderNumber };
+                        return { label: w.table, sub: w.date + ' · ' + w.time, value: r.orderNumber };
                     }),
                     buttons: [{ label: 'Cancelar', value: null, role: 'cancel' }]
                 }).then(function(order) {
@@ -250,7 +250,7 @@
                     return barAlert({
                         id: 'cancelDoneAlert',
                         title: 'Reservación cancelada',
-                        details: [label, barDateLong(r.date), r.time ? r.time + ' h' : ''].filter(Boolean),
+                        details: [label, barDateLong(r.date), barTime12(r.time)].filter(Boolean),
                         message: 'Gracias por avisarnos. ¡Te esperamos pronto en Bar Chinesca!',
                         buttons: [{ label: 'Aceptar', value: true }]
                     });
