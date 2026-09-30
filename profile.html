@@ -127,9 +127,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=20260929-3"></script>
     <script src="vendor/qrcode.js"></script>
-    <script src="checkin.js"></script>
+    <script src="checkin.js?v=20260929-3"></script>
     <script src="confetti.js"></script>
     <script>
         // Profile page: show reservations and logout ONLY when the user is logged in
@@ -191,7 +191,7 @@
                 });
             }
             function tableDisplay(t) {
-                return Number(t) <= 4 ? `Mesa VIP ${t}` : `Mesa ${t}`;
+                return Number(t) <= 11 ? `Mesa VIP ${t}` : `Mesa ${t}`;
             }
             function guestsDisplay(g) {
                 return `${g} ${String(g) === '1' ? 'persona' : 'personas'}`;

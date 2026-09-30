@@ -67,12 +67,12 @@ window.createTestOrder = function() {
     
     console.log('✅ Test order created!');
     console.log('Order Number (key):', orderKey, 'Type:', typeof orderKey);
-    console.log('Table:', testTable <= 4 ? `VIP Table ${testTable}` : `Table ${testTable}`);
+    console.log('Table:', testTable <= 11 ? `VIP Table ${testTable}` : `Table ${testTable}`);
     console.log('Date:', testDate);
     console.log('Order details:', orderDetails[orderKey]);
     console.log('\nYou can now use order number', orderKey, 'to test the cancellation flow.');
     
-    alert('¡Orden de prueba creada!\n\nNúmero de orden: ' + orderKey + '\nMesa: ' + (testTable <= 4 ? 'Mesa VIP ' : 'Mesa ') + testTable + '\nFecha: ' + testDate + '\n\nYa puedes cancelar esta reservación con el número de orden.');
+    alert('¡Orden de prueba creada!\n\nNúmero de orden: ' + orderKey + '\nMesa: ' + (testTable <= 11 ? 'Mesa VIP ' : 'Mesa ') + testTable + '\nFecha: ' + testDate + '\n\nYa puedes cancelar esta reservación con el número de orden.');
     
     return orderKey;
 };
@@ -188,7 +188,7 @@ tabBtns.forEach(btn => {
 var MAX_TABLES_TODAY = 2;
 var MAX_TABLES_PER_FUTURE_DAY = 1;
 var MAX_ACTIVE_TABLES = 3;
-var PERMANENTLY_RESERVED_TABLES = [1, 5, 6, 7, 8, 9, 10, 11, 20, 21, 22];
+var PERMANENTLY_RESERVED_TABLES = [1, 20, 21, 22];
 function isPermanentlyReservedTable(table) {
     return PERMANENTLY_RESERVED_TABLES.indexOf(parseInt(table, 10)) !== -1;
 }
@@ -762,7 +762,7 @@ function initializeSeatDataAttributes() {
             seat.dataset.tableNumber = seatNumber.toString();
             seat.setAttribute('role', 'button');
             seat.setAttribute('tabindex', '0');
-            seat.setAttribute('aria-label', `${seatNumber <= 4 ? 'Mesa VIP' : 'Mesa'} ${seatNumber}`);
+            seat.setAttribute('aria-label', `${seatNumber <= 11 ? 'Mesa VIP' : 'Mesa'} ${seatNumber}`);
             seat.setAttribute('aria-pressed', 'false');
         }
     });
@@ -820,7 +820,7 @@ for (let i = 1; i <= 50; i++) {
     if (isPermanentlyReservedTable(i)) continue;
     const option = document.createElement('option');
     option.value = i;
-    if (i <= 4) {
+    if (i <= 11) {
         option.textContent = `Mesa VIP ${i}`;
     } else {
         option.textContent = `Mesa ${i}`;
@@ -1130,7 +1130,7 @@ function renderTableDropdown(reservedTables) {
         if (!Object.prototype.hasOwnProperty.call(reservedTables, tableKey)) {
             const option = document.createElement('option');
             option.value = i;
-            if (i <= 4) {
+            if (i <= 11) {
                 option.textContent = `Mesa VIP ${i}`;
             } else {
                 option.textContent = `Mesa ${i}`;
@@ -1876,7 +1876,7 @@ function barDateLong(date) {
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
 function barTableLabel(t) {
-    return Number(t) <= 4 ? 'Mesa VIP ' + t : 'Mesa ' + t;
+    return Number(t) <= 11 ? 'Mesa VIP ' + t : 'Mesa ' + t;
 }
 window.barDateLong = barDateLong;
 window.barTableLabel = barTableLabel;

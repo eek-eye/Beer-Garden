@@ -90,7 +90,7 @@
 
     function tableLabel(t) {
         var n = parseInt(t, 10);
-        return n <= 4 ? 'Mesa VIP ' + n : 'Mesa ' + n;
+        return n <= 11 ? 'Mesa VIP ' + n : 'Mesa ' + n;
     }
 
     // <svg> QR of the code (Alphanumeric mode: small, easy to scan from a phone screen)

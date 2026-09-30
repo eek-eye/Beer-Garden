@@ -208,7 +208,7 @@ service cloud.firestore {
 
     // House tables: always unavailable for online reservations.
     function barTableCanBeBooked(table) {
-      return !(table in [1, 5, 6, 7, 8, 9, 10, 11, 20, 21, 22]);
+      return !(table in [1, 20, 21, 22]);
     }
 
     // Tables the user held before this request (0 if they never booked)
