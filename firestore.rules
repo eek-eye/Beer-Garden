@@ -56,18 +56,25 @@ service cloud.firestore {
       return /databases/$(database)/documents/barCheckins/$(code);
     }
 
-    // The bar's owners (same powers): fuchendeonze@gmail.com with a verified email, and
-    // nunezmarbyte@gmail.com signed in with Google with a verified email
+    // The bar's owners (same powers). They are identified by Firebase Auth account id, never by
+    // email: this file is published (it ships in the public site repo, readable at
+    // barchinesca.club/firestore.rules), so no personal address belongs in it. An account id
+    // identifies a Firebase user without naming a person.
+    //   barOwnerGoogleOnly: this owner must sign in with Google (verified email), as before
+    function barOwnerUid(uid) {
+      return uid in ['GMySCISdpuRZhA0p0bBcZDaixT43', 'xgkUf5nmlXg9ezO7m0RmLI9u5H12'];
+    }
+
+    function barOwnerGoogleOnly(uid) {
+      return uid == 'xgkUf5nmlXg9ezO7m0RmLI9u5H12';
+    }
+
     function barOwner() {
       return signedIn()
         && request.auth.token.email_verified == true
-        && (request.auth.token.email == 'fuchendeonze@gmail.com'
-            || (request.auth.token.email == 'nunezmarbyte@gmail.com'
-                && request.auth.token.firebase.sign_in_provider == 'google.com'));
-    }
-
-    function barOwnerEmail(email) {
-      return email in ['fuchendeonze@gmail.com', 'nunezmarbyte@gmail.com'];
+        && barOwnerUid(request.auth.uid)
+        && (request.auth.token.firebase.sign_in_provider == 'google.com'
+            || !barOwnerGoogleOnly(request.auth.uid));
     }
 
     // Signed in with Google (not email/password) and Google vouches for the email
@@ -97,7 +104,7 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/barAdmins/$(request.auth.uid));
     }
 
-    // Shared password login (barAdmins/{uid}, e.g. security21): only after someone typed an authorized name
+    // Shared password login (barAdmins/{uid}, the shared staff account): only after an authorized name
     // on a device (session with at least one device, last name entered less than 16 hours ago)
     function barSharedStaff() {
       return barIsSharedAccount()
@@ -622,7 +629,6 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(['email', 'name', 'addedAt', 'addedBy'])
         && email.size() <= 254
         && email.matches('^[a-z0-9._%+-]+@[a-z0-9-]+([.][a-z0-9-]+)*[.][a-z]{2,}$')
-        && !barOwnerEmail(email)
         && request.resource.data.email == email
         && request.resource.data.name is string && request.resource.data.name.size() <= 60
         && request.resource.data.addedAt == request.time

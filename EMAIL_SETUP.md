@@ -1,8 +1,7 @@
 # Reservation emails (Google Apps Script)
 
 Customers get a bilingual (Spanish/English) email when they **book** a table and when they **cancel** one.
-The emails are sent by a free Google Apps Script web app that runs on the bar's Google account
-(fuchendeonze@gmail.com) and sends through Gmail as **"Bar Chinesca Mxli"**. No paid plan is needed
+The emails are sent by a free Google Apps Script web app that runs on the bar's owner Google account and sends through Gmail as **"Bar Chinesca Mxli"**. No paid plan is needed
 (Firebase stays on Spark; consumer Gmail allows about 100 recipients per day, the script stops at 90).
 
 ## How it works
@@ -29,7 +28,7 @@ No Firestore rule changes are needed: the script only does owner reads the site 
 
 ## Setting up the script (once)
 
-1. Go to https://script.google.com/ signed in as fuchendeonze@gmail.com and click **New project**.
+1. Go to https://script.google.com/ signed in as the bar's owner Google account and click **New project**.
    Name it `Bar Chinesca reservation emails`.
 2. **Project Settings** (gear icon) > tick **Show "appsscript.json" manifest file in editor**.
 3. Replace `appsscript.json` with the manifest (scopes: `script.send_mail` + `script.external_request`;
