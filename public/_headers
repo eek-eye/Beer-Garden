@@ -19,8 +19,9 @@
 #               script.googleusercontent.com  ... which answers with a 302 here; fetch follows it
 #   frame-src   bar-chinesca-mxli.firebaseapp.com  Firebase Auth helper iframe (/__/auth/iframe)
 #   style-src / font-src  fonts.googleapis.com / fonts.gstatic.com  decorative fonts after "Aceptar"
-# If Cloudflare Web Analytics (or Rocket Loader) is ever switched on, its script is injected from
-# static.cloudflareinsights.com and is blocked by this policy until that host is added.
+#   script-src  static.cloudflareinsights.com  Cloudflare Web Analytics beacon, injected by the zone on
+#   connect-src cloudflareinsights.com         barchinesca.club (not on *.pages.dev); it reports to /cdn-cgi/rum
+# Rocket Loader must stay off: it rewrites every script and this policy does not allow that.
 
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
@@ -28,7 +29,7 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://script.google.com https://script.googleusercontent.com https://*.firebaseio.com wss://*.firebaseio.com; frame-src https://bar-chinesca-mxli.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://script.google.com https://script.googleusercontent.com https://cloudflareinsights.com https://*.firebaseio.com wss://*.firebaseio.com; frame-src https://bar-chinesca-mxli.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
 
 # Media is the whole page weight, and these filenames are not fingerprinted, so a week
 # rather than a year: long enough that repeat visits cost almost nothing, short enough
