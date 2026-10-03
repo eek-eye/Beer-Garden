@@ -34,11 +34,13 @@ Things that matter:
 - **Nothing outside `public/` is ever published.** `firestore.rules`, `server.js`,
   `package.json` and the `.md` files stay in the repo and stay private.
 
-Local check before pushing:
+Local check before pushing (same routing, `_headers` and `_redirects` as Pages; needs Node 22+):
 
-    python -m http.server 8080 --directory public
+    npx wrangler pages dev public --port 8788
 
-The local server has no extensionless routing, so use `/galeria.html` there.
+Then open http://127.0.0.1:8788/ — `/galeria`, `/galeria.html` → 301, unknown paths → `404.html`,
+and the CSP from `_headers` all behave as they will on Pages. (A plain `python -m http.server`
+has none of that: no extensionless URLs, no headers.)
 
 ## Firestore rules
 
