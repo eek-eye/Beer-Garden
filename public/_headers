@@ -1,0 +1,30 @@
+# Cloudflare Pages response headers. Parsed by Pages — never served as a file itself.
+#
+# Why this file exists: GitHub Pages cannot send custom response headers at all, so the live
+# site sent none. Pages adds Referrer-Policy and X-Content-Type-Options by default; the rest
+# below are ours.
+#
+# CSP caveat: the pages use inline <script> blocks and inline style="" attributes, so
+# 'unsafe-inline' is required for script-src and style-src. To tighten that later, move the
+# inline blocks into .js/.css files first.
+#
+# No 'form-action': login.html's forms submit to action="javascript:void(0);" and a
+# form-action directive blocks that.
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://script.google.com https://*.firebaseio.com wss://*.firebaseio.com; frame-src https://bar-chinesca-mxli.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+
+# Media is the whole page weight, and these filenames are not fingerprinted, so a week
+# rather than a year: long enough that repeat visits cost almost nothing, short enough
+# that replacing a photo actually shows up.
+/IMAGES/*
+  Cache-Control: public, max-age=604800
+/fonts/*
+  Cache-Control: public, max-age=604800
+/vendor/*
+  Cache-Control: public, max-age=604800
