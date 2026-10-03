@@ -1,4 +1,4 @@
-# Troubleshooting: Can't Log In on Published Site (GitHub Pages + Firebase)
+# Troubleshooting: Can't Log In on Published Site (Cloudflare Pages + Firebase)
 
 If you added your domain to Firebase but still can't log in, check these:
 
@@ -8,7 +8,7 @@ If you added your domain to Firebase but still can't log in, check these:
 
 ## 1. **Firebase config must use REAL values on the live site**
 
-Your **published** site (on GitHub Pages) must load a `firebase-config.js` that has your **actual** Firebase keys, not placeholders.
+Your **published** site (the Cloudflare Pages deployment of `public/`) must load a `firebase-config.js` that has your **actual** Firebase keys, not placeholders.
 
 - If the file still has `YOUR_API_KEY`, `YOUR_APP_ID`, etc., Firebase never starts and login will not work.
 - **Fix:** In `firebase-config.js`, replace every placeholder with the values from Firebase Console → Project settings → Your apps → Web app config.
@@ -22,17 +22,15 @@ Your **published** site (on GitHub Pages) must load a `firebase-config.js` that 
 
 In Firebase: **Authentication → Settings → Authorized domains**.
 
-- For **GitHub Pages** (e.g. `https://eek-eye.github.io/` or `https://eek-eye.github.io/law-and-order-bar/`):
-  - Add only the hostname: **`eek-eye.github.io`**
-  - No `https://`, no path, no trailing slash.
-- If you use a **custom domain** (e.g. `www.yourbar.com`), add that: **`yourbar.com`** and **`www.yourbar.com`** if both are used.
-- **This site is live at https://barchinesca.club/** (custom domain set in GitHub Pages + the `CNAME` file; the old https://eekseye.com/Beer-Garden/ address redirects there), so **`barchinesca.club`** and **`www.barchinesca.club`** must be in the list too.
+- The site is live at **`barchinesca.club`**, served by Cloudflare Pages from the `public/` folder of this repo, so **`barchinesca.club`** and **`www.barchinesca.club`** must be in the list.
+- Add hostnames only: no `https://`, no path, no trailing slash.
+- Every preview deployment gets its own hostname (e.g. `abc123.bar-site.pages.dev`); Google sign-in fails there with `auth/unauthorized-domain` until that hostname is added too.
 
 ---
 
 ## 3. **Check the browser on the live site**
 
-1. Open your **published** site (the real GitHub Pages or custom URL).
+1. Open your **published** site (https://barchinesca.club/).
 2. Open **Developer Tools** (F12 or right‑click → Inspect) → **Console** tab.
 3. Click **Continue with Google** and watch for red errors.
 
@@ -54,7 +52,7 @@ Common messages:
 
 - [ ] `firebase-config.js` on the **deployed** site has real `apiKey`, `appId`, etc. (not `YOUR_...`).
 - [ ] In Firebase, **Authentication → Sign-in method**, **Google** is enabled.
-- [ ] In Firebase, **Authentication → Authorized domains**, the **exact** hostname of your live site is added (e.g. `yourusername.github.io` or your custom domain).
-- [ ] You are testing on the **real** URL (e.g. `https://yourusername.github.io/...`), not `file://` or a different domain.
+- [ ] In Firebase, **Authentication → Authorized domains**, the **exact** hostname of your live site is added (e.g. `barchinesca.club`).
+- [ ] You are testing on the **real** URL (e.g. `https://barchinesca.club/`), not `file://` or a different domain.
 
 Once the deployed site has the real config and the correct domain is in Firebase, login should work.

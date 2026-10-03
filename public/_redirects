@@ -1,0 +1,21 @@
+# Cloudflare Pages redirects. Parsed by Pages — never served as a file itself.
+#
+# What does NOT belong in this file: domain-level redirects. Pages does not support them here
+# (`workers.example.com/* ... 301` is explicitly unsupported), so the canonical-host rule
+# www.barchinesca.club -> barchinesca.club has to be a Redirect Rule in the Cloudflare
+# dashboard. Only path rules work below.
+#
+# Why the .html rules exist: Pages already serves extensionless URLs and sends
+# /galeria.html -> /galeria by itself, but as a 307 (temporary). Stating the same destination
+# here makes it a 301 (permanent), so search engines settle on one address per page instead of
+# treating /galeria and /galeria.html as two.
+#
+# Format: [source] [destination] [code]
+
+/index.html     /        301
+
+/galeria.html   /galeria  301
+/login.html     /login    301
+/profile.html   /profile  301
+/cancel.html    /cancel   301
+/privacy.html   /privacy  301

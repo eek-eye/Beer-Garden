@@ -18,7 +18,7 @@ No separate Google OAuth client ID is needed – Firebase provides it.
 2. **Authentication → Settings → Authorized domains** must list every hostname the site is opened on:
    - `localhost` (local testing)
    - `barchinesca.club` and `www.barchinesca.club` (live site: https://barchinesca.club/)
-   - `eek-eye.github.io`, `eekseye.com`, `www.eekseye.com` (old addresses; they redirect to barchinesca.club)
+   - any `*.pages.dev` preview hostname you sign in on (each preview deployment gets its own)
    Hostname only – no `https://`, no path.
 
 3. **Firestore Database** (default, nam5) holds the reservations; its **Rules** tab must contain

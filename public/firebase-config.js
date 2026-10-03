@@ -1,6 +1,6 @@
 // Firebase Configuration (for Authentication: Google + Email/Password)
 // ============================================
-// Project: bar-chinesca-mxli (the bar's own project, separate from eekseye.com)
+// Project: bar-chinesca-mxli (the bar's own Firebase project)
 // In Firebase Console: Authentication → Sign-in method, enable "Google" and "Email/Password"
 // In Authentication → Settings → Authorized domains, add: localhost, barchinesca.club, www.barchinesca.club
 // (add the *.pages.dev hostname too if you sign in on a preview deployment)
